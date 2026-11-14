@@ -15,3 +15,4 @@ export * from './lib/dto/ha.dto';
 export * from './lib/dto/zigbee-catalog.dto';
 export * from './lib/resource-links';
 export * from './lib/dto/manual-lookup.dto';
+export * from './lib/dto/label-scan.dto';

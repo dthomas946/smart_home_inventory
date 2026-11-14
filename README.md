@@ -30,6 +30,8 @@ photos, or a spreadsheet that falls out of date.
 - **Look it up** — every device with a manufacturer/model gets a Resources
   card: manual searches, parts houses, manufacturer support, recalls. "Find
   manual" searches the web and attaches the PDF for you (or paste a link).
+  "Scan label" photographs the rating plate and a local Ollama vision model
+  fills in manufacturer, model, serial and specs — fully local, no cloud.
 
 All of it is stored under the add-on's data directory, so it rides along
 with your normal HA backups — no separate export/import step.
@@ -72,11 +74,15 @@ floor plans, manuals, or invoices.
 
 ```yaml
 read_only: true
+ollama_url: "http://192.168.5.11:11434"
+ollama_model: "qwen3-vl:4b-instruct"
 ```
 
-| Option      | Default | Description                                                                     |
-| ----------- | ------- | -------------------------------------------------------------------------------- |
-| `read_only` | `true`  | Blocks any non-read Home Assistant command from the sync client. Turn off only if you intend to let the add-on write back to HA (not currently used by any feature). |
+| Option         | Default | Description                                                                     |
+| -------------- | ------- | -------------------------------------------------------------------------------- |
+| `read_only`    | `true`  | Blocks any non-read Home Assistant command from the sync client. Turn off only if you intend to let the add-on write back to HA (not currently used by any feature). |
+| `ollama_url`   | —       | Base URL of an Ollama server for **Scan label**. Leave empty to hide the feature. |
+| `ollama_model` | —       | A vision-capable model pulled on that server (e.g. `qwen3-vl:4b-instruct`, `llava`, `minicpm-v`). |
 
 ## Known issues and limitations
 

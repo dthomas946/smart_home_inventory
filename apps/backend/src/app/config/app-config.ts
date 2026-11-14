@@ -19,7 +19,32 @@ const EnvSchema = z.object({
   HA_READ_ONLY: z.string().optional(),
   HA_SYNC_INTERVAL_MINUTES: z.coerce.number().int().nonnegative().default(0),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(50 * 1024 * 1024),
+  OLLAMA_URL: z.string().optional(),
+  OLLAMA_MODEL: z.string().optional(),
 });
+
+/** Add-on options written by the Supervisor to ${DATA_DIR}/options.json;
+ *  {} in dev mode where the file doesn't exist. */
+function readAddonOptions(dataDir: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(path.join(dataDir, 'options.json'), 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Env var wins; else the add-on option; else undefined. Empty strings count as unset. */
+function resolveOptional(
+  envValue: string | undefined,
+  options: Record<string, unknown>,
+  key: string
+): string | undefined {
+  const fromEnv = envValue?.trim();
+  if (fromEnv) return fromEnv;
+  const fromOptions = options[key];
+  return typeof fromOptions === 'string' && fromOptions.trim() ? fromOptions.trim() : undefined;
+}
 
 /**
  * Read-only guard for the Home Assistant connection. Defaults to true — the
@@ -55,6 +80,10 @@ export class AppConfig {
   readonly haReadOnly: boolean;
   readonly haSyncIntervalMinutes: number;
   readonly uploadMaxBytes: number;
+  /** Ollama endpoint for the label-scan feature (e.g. http://192.168.5.11:11434); unset disables it. */
+  readonly ollamaUrl: string | undefined;
+  /** Vision-capable Ollama model used for label scanning. */
+  readonly ollamaModel: string | undefined;
 
   constructor(env: NodeJS.ProcessEnv = process.env) {
     const parsed = EnvSchema.safeParse(env);
@@ -76,6 +105,13 @@ export class AppConfig {
     this.haReadOnly = resolveHaReadOnly(e.HA_READ_ONLY, this.dataDir);
     this.haSyncIntervalMinutes = e.HA_SYNC_INTERVAL_MINUTES;
     this.uploadMaxBytes = e.UPLOAD_MAX_BYTES;
+    const options = readAddonOptions(this.dataDir);
+    this.ollamaUrl = resolveOptional(e.OLLAMA_URL, options, 'ollama_url')?.replace(/\/+$/, '');
+    this.ollamaModel = resolveOptional(e.OLLAMA_MODEL, options, 'ollama_model');
+  }
+
+  get labelScanEnabled(): boolean {
+    return !!(this.ollamaUrl && this.ollamaModel);
   }
 
   get haMode(): HaMode {

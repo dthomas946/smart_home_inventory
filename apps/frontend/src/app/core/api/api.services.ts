@@ -25,6 +25,8 @@ import {
   FloorDto,
   HaCapabilitySuggestionDto,
   HaStatusDto,
+  LabelScanResultDto,
+  LabelScanStatusDto,
   ManualSearchResultDto,
   SetDeviceCapabilityDto,
   SyncResultDto,
@@ -306,5 +308,20 @@ export class ManualLookupApi {
   /** Server fetches the URL and files it as an attachment (PDF-validated for manuals). */
   attachFromUrl(deviceId: string, dto: AttachFromUrlDto): Observable<AttachmentDto> {
     return this.http.post<AttachmentDto>(`api/devices/${deviceId}/attachments/from-url`, dto);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class LabelScanApi {
+  private readonly http = inject(HttpClient);
+
+  status(): Observable<LabelScanStatusDto> {
+    return this.http.get<LabelScanStatusDto>('api/label-scan/status');
+  }
+  /** Sends the photo to the configured Ollama vision model; nothing is stored. */
+  scan(image: File): Observable<LabelScanResultDto> {
+    const form = new FormData();
+    form.append('image', image);
+    return this.http.post<LabelScanResultDto>('api/label-scan', form);
   }
 }

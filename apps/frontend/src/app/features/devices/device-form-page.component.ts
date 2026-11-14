@@ -6,6 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { HttpEventType } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -14,17 +15,82 @@ import {
   CreateDeviceDto,
   DEVICE_CATEGORIES,
   DEVICE_STATUSES,
+  DeviceCategory,
   DeviceDetailDto,
+  LabelScanResultDto,
 } from '@smart-home-inventory/shared';
-import { AreasApi, CapabilitiesApi, DevicesApi } from '../../core/api/api.services';
+import { mdiCameraOutline, mdiClose } from '@mdi/js';
+import {
+  AreasApi,
+  AttachmentsApi,
+  CapabilitiesApi,
+  DevicesApi,
+  LabelScanApi,
+} from '../../core/api/api.services';
 import { ToastService } from '../../core/toast/toast.service';
+import { IconComponent } from '../../shared/ui/icon.component';
 
 @Component({
   selector: 'app-device-form-page',
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1>{{ deviceId() ? 'Edit device' : 'New device' }}</h1>
+    <div class="page-head">
+      <h1>{{ deviceId() ? 'Edit device' : 'New device' }}</h1>
+      @if (scanEnabled()) {
+        <button
+          type="button"
+          class="btn secondary"
+          [disabled]="scanning()"
+          (click)="labelInput.click()"
+          title="Photograph the rating label and let the local vision model fill in the fields"
+        >
+          <app-icon [path]="icons.camera" [size]="18" />
+          {{ scanning() ? 'Reading label…' : 'Scan label' }}
+        </button>
+        <input
+          #labelInput
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          (change)="onLabelPicked($event)"
+        />
+      }
+    </div>
+
+    @if (scanning()) {
+      <div class="card scan-banner">
+        <span class="spinner"></span>
+        Reading the label with {{ scanModel() }} — this takes a minute or two on a small GPU.
+      </div>
+    }
+    @if (scanResult(); as r) {
+      <div class="card scan-banner result">
+        <div class="scan-head">
+          <strong>Read from label</strong>
+          <span class="muted">({{ r.model }}, {{ (r.durationMs / 1000).toFixed(0) }}s)</span>
+          <button type="button" class="btn icon-only" title="Dismiss" (click)="scanResult.set(null)">
+            <app-icon [path]="icons.close" [size]="16" />
+          </button>
+        </div>
+        <div class="chips">
+          @for (chip of scanChips(); track chip) {
+            <span class="chip">{{ chip }}</span>
+          }
+        </div>
+        @if (scanConflicts().length > 0) {
+          <p class="muted small">
+            Kept your existing value for: {{ scanConflicts().join(', ') }}. Edit below if the
+            label is right.
+          </p>
+        }
+        <p class="muted small">
+          Review before saving — the photo will be attached to the device as "Rating label".
+        </p>
+      </div>
+    }
+
     <form class="card" (ngSubmit)="save()">
       <div class="grid">
         <label class="field span2">
@@ -129,6 +195,53 @@ import { ToastService } from '../../core/toast/toast.service';
     </form>
   `,
   styles: `
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .page-head h1 {
+      margin: 0 0 8px;
+    }
+    .scan-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .scan-banner.result {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+    }
+    .scan-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .scan-head .btn {
+      margin-left: auto;
+    }
+    .small {
+      font-size: 0.85em;
+      margin: 0;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--divider-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -167,6 +280,8 @@ export class DeviceFormPageComponent implements OnInit {
   private readonly devicesApi = inject(DevicesApi);
   private readonly areasApi = inject(AreasApi);
   private readonly capabilitiesApi = inject(CapabilitiesApi);
+  private readonly attachmentsApi = inject(AttachmentsApi);
+  private readonly labelScanApi = inject(LabelScanApi);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
@@ -181,6 +296,17 @@ export class DeviceFormPageComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly categories = DEVICE_CATEGORIES;
   protected readonly statuses = DEVICE_STATUSES;
+
+  protected readonly scanEnabled = signal(false);
+  protected readonly scanModel = signal('');
+  protected readonly scanning = signal(false);
+  protected readonly scanResult = signal<LabelScanResultDto | null>(null);
+  protected readonly scanChips = signal<string[]>([]);
+  protected readonly scanConflicts = signal<string[]>([]);
+  /** The label photo, attached to the device after it's saved. */
+  private labelPhoto: File | null = null;
+
+  protected readonly icons = { camera: mdiCameraOutline, close: mdiClose };
 
   private originalCapabilities: string[] = [];
 
@@ -200,6 +326,13 @@ export class DeviceFormPageComponent implements OnInit {
   protected priceEuros: number | null = null;
 
   ngOnInit(): void {
+    this.labelScanApi.status().subscribe({
+      next: (s) => {
+        this.scanEnabled.set(s.enabled);
+        this.scanModel.set(s.model ?? '');
+      },
+      error: () => this.scanEnabled.set(false),
+    });
     this.areasApi.list().subscribe((areas) => this.areas.set(areas));
     this.capabilitiesApi.listTypes().subscribe((caps) => this.capabilities.set(caps));
     const id = this.deviceId();
@@ -231,6 +364,82 @@ export class DeviceFormPageComponent implements OnInit {
     this.originalCapabilities = keys;
   }
 
+  protected onLabelPicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.scanning.set(true);
+    this.scanResult.set(null);
+    this.labelScanApi.scan(file).subscribe({
+      next: (result) => {
+        this.scanning.set(false);
+        this.labelPhoto = file;
+        this.applyScan(result);
+      },
+      error: () => this.scanning.set(false),
+    });
+  }
+
+  /** Fill empty fields from the scan; never silently overwrite what the user
+   *  already typed — report those as conflicts instead. */
+  private applyScan(result: LabelScanResultDto): void {
+    const f = result.fields;
+    const chips: string[] = [];
+    const conflicts: string[] = [];
+    const take = (
+      label: string,
+      key: 'manufacturer' | 'model' | 'serialNumber',
+      value: string | null
+    ) => {
+      if (!value) return;
+      chips.push(`${label}: ${value}`);
+      const current = this.model[key]?.trim();
+      if (!current) this.model[key] = value;
+      else if (current.toLowerCase() !== value.toLowerCase()) conflicts.push(label);
+    };
+    take('Manufacturer', 'manufacturer', f.manufacturer);
+    take('Model', 'model', f.model);
+    take('Serial', 'serialNumber', f.serialNumber);
+
+    if (f.productType) chips.push(`Type: ${f.productType}`);
+    if (!this.model.name.trim()) {
+      const name = [f.productType ?? f.manufacturer, f.model].filter(Boolean).join(' ').trim();
+      if (name) this.model.name = name;
+    }
+    if (!this.model.category && result.categorySuggestion) {
+      this.model.category = result.categorySuggestion as DeviceCategory;
+      chips.push(`Category: ${result.categorySuggestion}`);
+    }
+    if (result.notesSuggestion) {
+      const existing = this.model.notes?.trim();
+      this.model.notes = existing
+        ? `${existing}\n\n${result.notesSuggestion}`
+        : result.notesSuggestion;
+    }
+    if (chips.length === 0) chips.push('Nothing legible found — try a sharper, closer photo');
+
+    this.scanChips.set(chips);
+    this.scanConflicts.set(conflicts);
+    this.scanResult.set(result);
+  }
+
+  private async attachLabelPhoto(deviceId: string): Promise<void> {
+    const file = this.labelPhoto;
+    if (!file) return;
+    await new Promise<void>((resolve) => {
+      this.attachmentsApi.upload({ deviceId }, file, 'image', 'Rating label').subscribe({
+        next: (event) => {
+          if (event.type === HttpEventType.Response) resolve();
+        },
+        error: () => {
+          this.toast.error('Device saved, but the label photo could not be attached');
+          resolve();
+        },
+      });
+    });
+  }
+
   protected toggleCapability(key: string): void {
     this.selectedCapabilities.update((keys) =>
       keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]
@@ -257,6 +466,7 @@ export class DeviceFormPageComponent implements OnInit {
     req.subscribe({
       next: async (device) => {
         await this.syncCapabilities(device.id);
+        await this.attachLabelPhoto(device.id);
         this.saving.set(false);
         this.toast.success(id ? 'Device updated' : 'Device created');
         // replaceUrl: the form itself isn't a page worth keeping in history —

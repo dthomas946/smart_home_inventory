@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.16
+
+- **Scan label**: on the new/edit device form, photograph the rating plate
+  and a local Ollama vision model reads manufacturer, model, serial,
+  product type, electrical ratings and extras (refrigerant, BTU, …) into the
+  form. Empty fields are filled, your existing values are never overwritten,
+  category is suggested from the product type, specs land in Notes, and the
+  photo is attached as "Rating label" on save
+- New add-on options `ollama_url` and `ollama_model` (leave blank to hide the
+  feature). Env `OLLAMA_URL` / `OLLAMA_MODEL` override them in dev
+
 ## 0.2.15
 
 - **Resources** card on the device page: one-tap links to manual searches,
