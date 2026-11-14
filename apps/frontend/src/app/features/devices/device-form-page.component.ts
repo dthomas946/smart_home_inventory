@@ -160,7 +160,21 @@ async function downscaleImage(file: File, maxEdge: number): Promise<File> {
         </label>
         <label class="field">
           <span>Manufacturer</span>
-          <input class="text" name="manufacturer" [(ngModel)]="model.manufacturer" />
+          <input
+            class="text"
+            name="manufacturer"
+            placeholder="As printed on the plate, e.g. Electrolux Home Products"
+            [(ngModel)]="model.manufacturer"
+          />
+        </label>
+        <label class="field">
+          <span>Brand <span class="muted">(if different)</span></span>
+          <input
+            class="text"
+            name="brand"
+            placeholder="e.g. Frigidaire — used for parts & manual lookups"
+            [(ngModel)]="model.brand"
+          />
         </label>
         <label class="field">
           <span>Model</span>
@@ -356,6 +370,7 @@ export class DeviceFormPageComponent implements OnInit {
     category: null,
     areaId: null,
     manufacturer: null,
+    brand: null,
     model: null,
     serialNumber: null,
     productUrl: null,
@@ -390,6 +405,7 @@ export class DeviceFormPageComponent implements OnInit {
       category: device.category,
       areaId: device.areaId,
       manufacturer: device.manufacturer,
+      brand: device.brand,
       model: device.model,
       serialNumber: device.serialNumber,
       productUrl: device.productUrl,
@@ -433,7 +449,7 @@ export class DeviceFormPageComponent implements OnInit {
     const conflicts: string[] = [];
     const take = (
       label: string,
-      key: 'manufacturer' | 'model' | 'serialNumber',
+      key: 'manufacturer' | 'brand' | 'model' | 'serialNumber',
       value: string | null
     ) => {
       if (!value) return;
@@ -443,12 +459,16 @@ export class DeviceFormPageComponent implements OnInit {
       else if (current.toLowerCase() !== value.toLowerCase()) conflicts.push(label);
     };
     take('Manufacturer', 'manufacturer', f.manufacturer);
+    take('Brand', 'brand', f.brand);
     take('Model', 'model', f.model);
     take('Serial', 'serialNumber', f.serialNumber);
 
     if (f.productType) chips.push(`Type: ${f.productType}`);
     if (!this.model.name.trim()) {
-      const name = [f.productType ?? f.manufacturer, f.model].filter(Boolean).join(' ').trim();
+      const name = [f.brand ?? f.manufacturer, f.productType ?? f.model]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
       if (name) this.model.name = name;
     }
     if (!this.model.category && result.categorySuggestion) {

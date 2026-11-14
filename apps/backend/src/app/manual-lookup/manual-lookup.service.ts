@@ -96,14 +96,15 @@ export class ManualLookupService {
     private readonly config: AppConfig
   ) {}
 
-  /** Default query for a device: "<manufacturer> <model> manual". */
+  /** Default query for a device: "<brand or manufacturer> <model> manual". */
   async defaultQuery(deviceId: string): Promise<string> {
     const device = await this.prisma.device.findUnique({
       where: { id: deviceId },
-      select: { name: true, manufacturer: true, model: true },
+      select: { name: true, manufacturer: true, brand: true, model: true },
     });
     if (!device) throw new NotFoundException(`Device ${deviceId} not found`);
-    const parts = [device.manufacturer, device.model].map((p) => p?.trim()).filter(Boolean);
+    const maker = device.brand?.trim() || device.manufacturer?.trim();
+    const parts = [maker, device.model?.trim()].filter(Boolean);
     if (parts.length === 0) {
       throw new BadRequestException(
         'Device has no manufacturer or model to search on — add one first, or paste a URL.'

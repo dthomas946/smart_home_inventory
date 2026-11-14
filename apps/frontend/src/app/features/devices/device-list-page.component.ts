@@ -81,7 +81,7 @@ function writeSourcePref(v: SourceFilter): void {
       <input
         class="text search"
         type="search"
-        placeholder="Search name, manufacturer, model, serial…"
+        placeholder="Search name, brand, manufacturer, model, serial…"
         [value]="query().q ?? ''"
         (input)="setFilter('q', $any($event.target).value)"
       />
@@ -144,7 +144,7 @@ function writeSourcePref(v: SourceFilter): void {
                 }
               </td>
               <td class="muted">{{ device.areaName ?? '—' }}</td>
-              <td class="muted">{{ device.manufacturer }} {{ device.model }}</td>
+              <td class="muted">{{ device.brand ?? device.manufacturer }} {{ device.model }}</td>
               <td class="muted mono">{{ device.serialNumber ?? '—' }}</td>
               <td class="docs-cell">
                 @if (device.manualCount > 0) {

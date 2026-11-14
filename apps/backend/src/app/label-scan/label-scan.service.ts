@@ -27,6 +27,7 @@ const RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
     manufacturer: { type: ['string', 'null'] },
+    brand: { type: ['string', 'null'] },
     model: { type: ['string', 'null'] },
     serialNumber: { type: ['string', 'null'] },
     productType: { type: ['string', 'null'] },
@@ -53,6 +54,7 @@ const RESPONSE_SCHEMA = {
   },
   required: [
     'manufacturer',
+    'brand',
     'model',
     'serialNumber',
     'productType',
@@ -65,7 +67,8 @@ const RESPONSE_SCHEMA = {
 const PROMPT = `You are reading the rating plate / nameplate / specification label on a piece of household equipment (appliance, HVAC unit, water heater, electrical device, etc.).
 
 Extract exactly what is printed. Rules:
-- manufacturer: the brand name as printed (e.g. "Carrier", "Whirlpool", "Rheem").
+- manufacturer: the company named as maker on the plate ("Manufactured by", "Mfd. by", a corporate name like "Electrolux Home Products" or "Whirlpool Corporation"). If only a brand logo is present, put the brand here too.
+- brand: the consumer brand / logo on the plate when it differs from the manufacturer line (e.g. brand "Frigidaire" with manufacturer "Electrolux Home Products"; brand "Bryant" with manufacturer "Carrier Corporation"). null when they are the same or no separate brand is shown.
 - model: the model number / product number (labels say "Model", "Model No.", "M/N", "Cat. No.", "Product No."). Copy it character for character including dashes; do not confuse it with the serial number.
 - serialNumber: the serial number ("Serial", "S/N", "SN"). Copy exactly.
 - productType: the kind of equipment as printed (e.g. "Split System Heat Pump", "Gas Water Heater", "Refrigerator"), or null.
@@ -125,6 +128,7 @@ export function normalizeFields(raw: unknown): LabelScanFields {
   }
   return {
     manufacturer: clean(r['manufacturer']),
+    brand: clean(r['brand']),
     model: clean(r['model']),
     serialNumber: clean(r['serialNumber']),
     productType: clean(r['productType']),
@@ -231,7 +235,7 @@ export class LabelScanService {
     const durationMs = Date.now() - started;
     this.logger.log(
       `Label scan via ${model} in ${durationMs} ms: ` +
-        `${fields.manufacturer ?? '?'} / ${fields.model ?? '?'}`
+        `${fields.brand ?? fields.manufacturer ?? '?'} / ${fields.model ?? '?'}`
     );
     const categorySuggestion = guessCategory(fields.productType);
     return {

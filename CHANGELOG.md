@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.21
+
+- New **Brand** field on devices, for when the consumer brand differs from
+  the manufacturer on the plate (Frigidaire / Electrolux, Bryant / Carrier).
+  Resources links, Find-manual queries, list and header display all prefer
+  brand when set; search matches it too. Label scan now extracts brand and
+  manufacturer separately
+
 ## 0.2.20
 
 - Devices list: **Equipment / Smart home / All** toggle (remembered per

@@ -16,6 +16,8 @@ export interface DeviceDto {
   name: string;
   category: DeviceCategory | null;
   manufacturer: string | null;
+  /** Brand as sold (Frigidaire) when it differs from the manufacturer on the plate (Electrolux). */
+  brand: string | null;
   model: string | null;
   serialNumber: string | null;
   purchaseDate: string | null;
@@ -48,6 +50,7 @@ export const CreateDeviceSchema = z.object({
   name: z.string().min(1).max(200),
   category: DeviceCategorySchema.nullish(),
   manufacturer: z.string().max(200).nullish(),
+  brand: z.string().max(200).nullish(),
   model: z.string().max(200).nullish(),
   serialNumber: z.string().max(200).nullish(),
   purchaseDate: z.iso.datetime().nullish(),

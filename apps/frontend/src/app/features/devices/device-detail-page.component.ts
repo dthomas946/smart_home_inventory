@@ -78,7 +78,7 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
               <app-source-badge [source]="d.source" />
             </h1>
             <span class="muted">
-              {{ d.manufacturer }} {{ d.model }}
+              {{ d.brand ?? d.manufacturer }} {{ d.model }}
               @if (d.areaName) {
                 · <a [routerLink]="['/areas', d.areaId]">{{ d.areaName }}</a>
               }
@@ -188,6 +188,12 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
       <div class="card section">
         <h3>Details</h3>
         <dl>
+          @if (d.brand && d.manufacturer) {
+            <dt>Brand</dt>
+            <dd>{{ d.brand }}</dd>
+            <dt>Manufacturer</dt>
+            <dd>{{ d.manufacturer }}</dd>
+          }
           @if (d.serialNumber) {
             <dt>Serial number</dt>
             <dd>{{ d.serialNumber }}</dd>
@@ -250,7 +256,7 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
             }
           </div>
           <p class="muted hint">
-            Links open external search/parts sites for {{ d.manufacturer }} {{ d.model }}.
+            Links open external search/parts sites for {{ d.brand ?? d.manufacturer }} {{ d.model }}.
             "Find manual" searches the web and attaches the PDF here.
           </p>
         </div>
@@ -496,6 +502,7 @@ export class DeviceDetailPageComponent implements OnInit {
     if (!d) return [];
     const links = buildResourceLinks({
       manufacturer: d.manufacturer,
+      brand: d.brand,
       model: d.model,
       category: d.category,
     });
@@ -512,7 +519,7 @@ export class DeviceDetailPageComponent implements OnInit {
   protected readonly manualQuery = computed(() => {
     const d = this.device();
     if (!d) return '';
-    const parts = [d.manufacturer, d.model].map((p) => p?.trim()).filter(Boolean);
+    const parts = [d.brand ?? d.manufacturer, d.model].map((p) => p?.trim()).filter(Boolean);
     return parts.length ? `${parts.join(' ')} manual` : '';
   });
 

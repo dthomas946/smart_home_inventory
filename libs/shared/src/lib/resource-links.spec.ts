@@ -40,6 +40,18 @@ describe('buildResourceLinks', () => {
     expect(brandSlug('  GE  ')).toBe('ge');
   });
 
+  it('prefers brand over manufacturer for every link', () => {
+    const links = buildResourceLinks({
+      manufacturer: 'Electrolux Home Products',
+      brand: 'Frigidaire',
+      model: 'FSC23F7TDS3',
+      category: 'appliance',
+    });
+    expect(links.find((l) => l.label.endsWith(' support'))?.label).toBe('Frigidaire support');
+    expect(links.find((l) => l.label.startsWith('ManualsLib:'))?.url).toContain('/brand/frigidaire/');
+    expect(links.some((l) => /electrolux/i.test(l.url))).toBe(false);
+  });
+
   it('URL-encodes manufacturer and model', () => {
     const links = buildResourceLinks({ manufacturer: 'A&B Co', model: 'X/1 2' });
     for (const link of links) {

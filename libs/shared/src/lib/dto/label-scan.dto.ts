@@ -22,6 +22,8 @@ export interface LabelScanElectrical {
 
 export interface LabelScanFields {
   manufacturer: string | null;
+  /** Brand/logo on the plate when it differs from the manufacturer line. */
+  brand: string | null;
   model: string | null;
   serialNumber: string | null;
   /** Free-text product type as printed, e.g. "Split System Air Conditioner". */

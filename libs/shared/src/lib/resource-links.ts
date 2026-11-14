@@ -23,6 +23,9 @@ export interface ResourceLink {
 
 export interface ResourceLinkInput {
   manufacturer?: string | null;
+  /** Preferred over manufacturer for every link: parts houses and manual
+   *  sites index by brand (Frigidaire), not the legal maker (Electrolux). */
+  brand?: string | null;
   model?: string | null;
   category?: DeviceCategory | null;
 }
@@ -61,7 +64,8 @@ function q(...parts: string[]): string {
  * and no model), so callers can simply hide the section.
  */
 export function buildResourceLinks(input: ResourceLinkInput): ResourceLink[] {
-  const manufacturer = clean(input.manufacturer);
+  // "manufacturer" below means the name we search by: brand when known.
+  const manufacturer = clean(input.brand) || clean(input.manufacturer);
   const model = clean(input.model);
   if (!manufacturer && !model) return [];
 

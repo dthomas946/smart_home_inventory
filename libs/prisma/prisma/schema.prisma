@@ -117,6 +117,8 @@ model Device {
   name               String
   category           DeviceCategory?
   manufacturer       String?
+  /** Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux). */
+  brand              String?
   model              String?
   serialNumber       String?
   purchaseDate       DateTime?

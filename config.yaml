@@ -1,5 +1,5 @@
 name: "Smart Home Inventory"
-version: "0.2.20"
+version: "0.2.21"
 slug: "smart_home_inventory"
 description: "Document areas, devices, capabilities, connections, and infrastructure"
 url: "https://github.com/dthomas946/smart_home_inventory"

@@ -112,6 +112,7 @@ export const DeviceScalarFieldEnum = {
   name: 'name',
   category: 'category',
   manufacturer: 'manufacturer',
+  brand: 'brand',
   model: 'model',
   serialNumber: 'serialNumber',
   purchaseDate: 'purchaseDate',
