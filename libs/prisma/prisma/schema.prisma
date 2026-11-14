@@ -158,6 +158,9 @@ model Attachment {
   mimeType     String
   sizeBytes    Int
   sha256       String?
+  /** Where the file was fetched from when attached via URL (manual lookup);
+   *  null for direct uploads. */
+  sourceUrl    String?
   deviceId     String?
   device       Device?  @relation("DeviceAttachments", fields: [deviceId], references: [id], onDelete: Cascade)
   areaId       String?

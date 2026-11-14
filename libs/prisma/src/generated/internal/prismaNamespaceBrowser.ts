@@ -144,6 +144,7 @@ export const AttachmentScalarFieldEnum = {
   mimeType: 'mimeType',
   sizeBytes: 'sizeBytes',
   sha256: 'sha256',
+  sourceUrl: 'sourceUrl',
   deviceId: 'deviceId',
   areaId: 'areaId',
   createdAt: 'createdAt'

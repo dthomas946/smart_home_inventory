@@ -51,7 +51,9 @@ export class AttachmentsService {
   async createFromUpload(
     owner: AttachmentOwner,
     file: UploadedFileInfo,
-    dto: UploadAttachmentDto
+    dto: UploadAttachmentDto,
+    /** Set when the file was fetched server-side from a URL rather than uploaded. */
+    sourceUrl: string | null = null
   ): Promise<AttachmentDto> {
     try {
       this.storage.validateMime(dto.kind, file.mimetype);
@@ -66,6 +68,7 @@ export class AttachmentsService {
           mimeType: file.mimetype,
           sizeBytes: file.size,
           sha256,
+          sourceUrl,
           ...ownerData(owner),
         },
       });

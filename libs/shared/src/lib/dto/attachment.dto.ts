@@ -8,6 +8,8 @@ export interface AttachmentDto {
   originalName: string;
   mimeType: string;
   sizeBytes: number;
+  /** Origin URL when the file was fetched server-side (manual lookup / attach from URL); null for uploads. */
+  sourceUrl: string | null;
   deviceId: string | null;
   areaId: string | null;
   createdAt: string;

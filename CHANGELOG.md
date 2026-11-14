@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.15
+
+- **Resources** card on the device page: one-tap links to manual searches,
+  ManualsLib, appliance/HVAC parts houses (RepairClinic, PartSelect,
+  AppliancePartsPros, Encompass), manufacturer support and CPSC recalls,
+  built from the device's manufacturer + model
+- **Find manual**: search the web for a device's documentation, pick a hit,
+  and the add-on downloads the PDF and files it as a `manual` attachment —
+  or paste a direct URL. Content is validated as a real PDF, capped at the
+  upload size limit, and the source URL is recorded on the attachment
+- Local build: `image:` removed from `config.yaml` so the Supervisor builds
+  from source (upstream's prebuilt ghcr.io image is private)
+
 ## 0.2.14
 
 - Add-on repository packaging: DOCS.md with screenshots, icon/logo,

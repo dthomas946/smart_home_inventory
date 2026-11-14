@@ -7,6 +7,7 @@ and the decisions you cannot read out of a single file.
 - [Areas](areas.md)
 - [Devices](devices.md)
 - [Attachments](attachments.md)
+- [Manual lookup & resource links](manual-lookup.md)
 - [Capabilities](capabilities.md)
 - [Connections](connections.md)
 - [Home Assistant sync](ha-sync.md)

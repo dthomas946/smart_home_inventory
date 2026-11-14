@@ -1,0 +1,132 @@
+import { DeviceCategory } from './enums';
+
+/**
+ * External "look it up" links for a physical device — manuals, parts, support.
+ *
+ * Pure URL templating from manufacturer + model: nothing is fetched and no
+ * result is stored. The point is to make the non-smart gear (fridge, HVAC
+ * unit, water heater) one tap away from its documentation and spare parts
+ * without hand-building search queries every time.
+ *
+ * Parts houses are US-centric; that's where the manufacturers' model-number
+ * search actually works well. The groups are open for extension — adding a
+ * regional parts source is a one-line change here, not a backend change.
+ */
+
+export type ResourceLinkGroup = 'docs' | 'parts' | 'support';
+
+export interface ResourceLink {
+  group: ResourceLinkGroup;
+  label: string;
+  url: string;
+}
+
+export interface ResourceLinkInput {
+  manufacturer?: string | null;
+  model?: string | null;
+  category?: DeviceCategory | null;
+}
+
+/** Categories where appliance/HVAC parts houses are a sensible destination. */
+const PARTS_CATEGORIES: ReadonlySet<DeviceCategory> = new Set<DeviceCategory>([
+  'appliance',
+  'thermostat',
+  'water_heater',
+  'radiator',
+  'fan',
+  'air_handling_unit',
+  'pump',
+  'valve',
+  'other',
+]);
+
+function clean(value: string | null | undefined): string {
+  return (value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function q(...parts: string[]): string {
+  return encodeURIComponent(parts.filter(Boolean).join(' '));
+}
+
+/**
+ * Returns an empty list when there is nothing to search on (no manufacturer
+ * and no model), so callers can simply hide the section.
+ */
+export function buildResourceLinks(input: ResourceLinkInput): ResourceLink[] {
+  const manufacturer = clean(input.manufacturer);
+  const model = clean(input.model);
+  if (!manufacturer && !model) return [];
+
+  const mm = [manufacturer, model].filter(Boolean).join(' ');
+  const links: ResourceLink[] = [];
+
+  // --- Manuals & documentation -------------------------------------------
+  links.push({
+    group: 'docs',
+    label: 'Web search: manual (PDF)',
+    url: `https://duckduckgo.com/?q=${q(mm, 'manual', 'filetype:pdf')}`,
+  });
+  links.push({
+    group: 'docs',
+    label: 'ManualsLib',
+    url: `https://www.manualslib.com/products/${q(mm)}.html`,
+  });
+  if (model) {
+    links.push({
+      group: 'docs',
+      label: 'Web search: installation / service manual',
+      url: `https://duckduckgo.com/?q=${q(mm, 'installation OR service manual')}`,
+    });
+  }
+
+  // --- Parts ---------------------------------------------------------------
+  const partsRelevant = !input.category || PARTS_CATEGORIES.has(input.category);
+  if (model && partsRelevant) {
+    links.push(
+      {
+        group: 'parts',
+        label: 'RepairClinic',
+        url: `https://www.repairclinic.com/Shop-For-Parts?query=${q(model)}`,
+      },
+      {
+        group: 'parts',
+        label: 'PartSelect',
+        url: `https://www.partselect.com/Models/${q(model)}/`,
+      },
+      {
+        group: 'parts',
+        label: 'AppliancePartsPros',
+        url: `https://www.appliancepartspros.com/search.aspx?model=${q(model)}`,
+      },
+      {
+        group: 'parts',
+        label: 'Encompass',
+        url: `https://encompass.com/search?searchTerm=${q(model)}`,
+      }
+    );
+  }
+
+  // --- Manufacturer support --------------------------------------------------
+  if (manufacturer) {
+    links.push({
+      group: 'support',
+      label: `${manufacturer} support`,
+      url: `https://duckduckgo.com/?q=${q(manufacturer, 'support', model)}`,
+    });
+    if (model) {
+      links.push({
+        group: 'support',
+        label: 'Recalls (CPSC)',
+        url: `https://www.cpsc.gov/Recalls?search_api_fulltext=${q(manufacturer, model)}`,
+      });
+    }
+  }
+
+  return links;
+}
+
+export const RESOURCE_LINK_GROUP_LABELS: Record<ResourceLinkGroup, string> = {
+  docs: 'Manuals & docs',
+  parts: 'Parts',
+  support: 'Support',
+};

@@ -11,15 +11,20 @@ import { HttpEventType } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import {
+  buildResourceLinks,
   ConnectionDto,
   DeviceDetailDto,
   DiagramDto,
   HaCapabilitySuggestionDto,
+  RESOURCE_LINK_GROUP_LABELS,
+  ResourceLink,
+  ResourceLinkGroup,
   ZigbeeCatalogMatchDto,
 } from '@smart-home-inventory/shared';
 import {
   mdiArrowLeftThin,
   mdiArrowRightThin,
+  mdiBookOpenVariant,
   mdiClose,
   mdiDelete,
   mdiDevices,
@@ -43,6 +48,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
 import { SourceBadgeComponent } from '../../shared/ui/source-badge.component';
 import { OwnerItemsComponent } from '../attachments/owner-items.component';
 import { ConnectionFormDialogComponent } from '../connections/connection-form-dialog.component';
+import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
 
 @Component({
   selector: 'app-device-detail-page',
@@ -52,6 +58,7 @@ import { ConnectionFormDialogComponent } from '../connections/connection-form-di
     SourceBadgeComponent,
     OwnerItemsComponent,
     ConnectionFormDialogComponent,
+    ManualLookupDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -220,6 +227,35 @@ import { ConnectionFormDialogComponent } from '../connections/connection-form-di
         }
       </div>
 
+      @if (resourceGroups().length > 0) {
+        <div class="card section">
+          <div class="section-head">
+            <h3>Resources</h3>
+            <button class="btn secondary" (click)="manualDlg.open()">
+              <app-icon [path]="icons.bookOpen" [size]="18" /> Find manual
+            </button>
+          </div>
+          <div class="resource-groups">
+            @for (group of resourceGroups(); track group.key) {
+              <div class="resource-group">
+                <span class="muted group-label">{{ group.label }}</span>
+                <div class="chips">
+                  @for (link of group.links; track link.url) {
+                    <a class="chip chip-link" [href]="link.url" target="_blank" rel="noopener">
+                      {{ link.label }} <app-icon [path]="icons.openInNew" [size]="12" />
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <p class="muted hint">
+            Links open external search/parts sites for {{ d.manufacturer }} {{ d.model }}.
+            "Find manual" searches the web and attaches the PDF here.
+          </p>
+        </div>
+      }
+
       <div class="card section">
         <div class="section-head">
           <h3>Connections ({{ d.connections.length }})</h3>
@@ -281,6 +317,13 @@ import { ConnectionFormDialogComponent } from '../connections/connection-form-di
         [fixedDevice]="d"
         (closed)="connectionDialogOpen.set(false)"
         (saved)="connectionDialogOpen.set(false); load()"
+      />
+
+      <app-manual-lookup-dialog
+        #manualDlg
+        [deviceId]="d.id"
+        [initialQuery]="manualQuery()"
+        (attached)="load()"
       />
     }
   `,
@@ -386,6 +429,24 @@ import { ConnectionFormDialogComponent } from '../connections/connection-form-di
     .row-actions {
       text-align: right;
     }
+    .resource-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .group-label {
+      font-size: 0.85em;
+    }
+    .chip-link {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hint {
+      font-size: 0.85em;
+      margin: 10px 0 0;
+    }
   `,
 })
 export class DeviceDetailPageComponent implements OnInit {
@@ -428,6 +489,33 @@ export class DeviceDetailPageComponent implements OnInit {
     return !suggestion.suggestedCapabilities.every((c) => this.hasCapability(d, c.key));
   });
 
+  /** External manual/parts/support links, grouped for display. Empty when
+   *  the device has neither manufacturer nor model. */
+  protected readonly resourceGroups = computed(() => {
+    const d = this.device();
+    if (!d) return [];
+    const links = buildResourceLinks({
+      manufacturer: d.manufacturer,
+      model: d.model,
+      category: d.category,
+    });
+    const order: ResourceLinkGroup[] = ['docs', 'parts', 'support'];
+    return order
+      .map((key) => ({
+        key,
+        label: RESOURCE_LINK_GROUP_LABELS[key],
+        links: links.filter((l: ResourceLink) => l.group === key),
+      }))
+      .filter((g) => g.links.length > 0);
+  });
+
+  protected readonly manualQuery = computed(() => {
+    const d = this.device();
+    if (!d) return '';
+    const parts = [d.manufacturer, d.model].map((p) => p?.trim()).filter(Boolean);
+    return parts.length ? `${parts.join(' ')} manual` : '';
+  });
+
   protected readonly icons = {
     pencil: mdiPencil,
     delete: mdiDelete,
@@ -437,6 +525,7 @@ export class DeviceDetailPageComponent implements OnInit {
     arrowRight: mdiArrowRightThin,
     arrowLeft: mdiArrowLeftThin,
     close: mdiClose,
+    bookOpen: mdiBookOpenVariant,
   };
 
   ngOnInit(): void {

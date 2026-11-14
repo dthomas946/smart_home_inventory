@@ -21,6 +21,7 @@ export function toAttachmentDto(a: Attachment): AttachmentDto {
     originalName: a.originalName,
     mimeType: a.mimeType,
     sizeBytes: a.sizeBytes,
+    sourceUrl: a.sourceUrl,
     deviceId: a.deviceId,
     areaId: a.areaId,
     createdAt: a.createdAt.toISOString(),

@@ -14,6 +14,7 @@ import { ConnectionsModule } from './connections/connections.module';
 import { DiagramsModule } from './diagrams/diagrams.module';
 import { HaModule } from './ha/ha.module';
 import { ZigbeeCatalogModule } from './zigbee-catalog/zigbee-catalog.module';
+import { ManualLookupModule } from './manual-lookup/manual-lookup.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ZigbeeCatalogModule } from './zigbee-catalog/zigbee-catalog.module';
     DiagramsModule,
     HaModule,
     ZigbeeCatalogModule,
+    ManualLookupModule,
   ],
 })
 export class AppModule {}

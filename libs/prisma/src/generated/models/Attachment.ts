@@ -43,6 +43,7 @@ export type AttachmentMinAggregateOutputType = {
   mimeType: string | null
   sizeBytes: number | null
   sha256: string | null
+  sourceUrl: string | null
   deviceId: string | null
   areaId: string | null
   createdAt: Date | null
@@ -57,6 +58,7 @@ export type AttachmentMaxAggregateOutputType = {
   mimeType: string | null
   sizeBytes: number | null
   sha256: string | null
+  sourceUrl: string | null
   deviceId: string | null
   areaId: string | null
   createdAt: Date | null
@@ -71,6 +73,7 @@ export type AttachmentCountAggregateOutputType = {
   mimeType: number
   sizeBytes: number
   sha256: number
+  sourceUrl: number
   deviceId: number
   areaId: number
   createdAt: number
@@ -95,6 +98,7 @@ export type AttachmentMinAggregateInputType = {
   mimeType?: true
   sizeBytes?: true
   sha256?: true
+  sourceUrl?: true
   deviceId?: true
   areaId?: true
   createdAt?: true
@@ -109,6 +113,7 @@ export type AttachmentMaxAggregateInputType = {
   mimeType?: true
   sizeBytes?: true
   sha256?: true
+  sourceUrl?: true
   deviceId?: true
   areaId?: true
   createdAt?: true
@@ -123,6 +128,7 @@ export type AttachmentCountAggregateInputType = {
   mimeType?: true
   sizeBytes?: true
   sha256?: true
+  sourceUrl?: true
   deviceId?: true
   areaId?: true
   createdAt?: true
@@ -224,6 +230,7 @@ export type AttachmentGroupByOutputType = {
   mimeType: string
   sizeBytes: number
   sha256: string | null
+  sourceUrl: string | null
   deviceId: string | null
   areaId: string | null
   createdAt: Date
@@ -261,6 +268,7 @@ export type AttachmentWhereInput = {
   mimeType?: Prisma.StringFilter<"Attachment"> | string
   sizeBytes?: Prisma.IntFilter<"Attachment"> | number
   sha256?: Prisma.StringNullableFilter<"Attachment"> | string | null
+  sourceUrl?: Prisma.StringNullableFilter<"Attachment"> | string | null
   deviceId?: Prisma.StringNullableFilter<"Attachment"> | string | null
   areaId?: Prisma.StringNullableFilter<"Attachment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Attachment"> | Date | string
@@ -279,6 +287,7 @@ export type AttachmentOrderByWithRelationInput = {
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   sha256?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   deviceId?: Prisma.SortOrderInput | Prisma.SortOrder
   areaId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -300,6 +309,7 @@ export type AttachmentWhereUniqueInput = Prisma.AtLeast<{
   mimeType?: Prisma.StringFilter<"Attachment"> | string
   sizeBytes?: Prisma.IntFilter<"Attachment"> | number
   sha256?: Prisma.StringNullableFilter<"Attachment"> | string | null
+  sourceUrl?: Prisma.StringNullableFilter<"Attachment"> | string | null
   deviceId?: Prisma.StringNullableFilter<"Attachment"> | string | null
   areaId?: Prisma.StringNullableFilter<"Attachment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Attachment"> | Date | string
@@ -318,6 +328,7 @@ export type AttachmentOrderByWithAggregationInput = {
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   sha256?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   deviceId?: Prisma.SortOrderInput | Prisma.SortOrder
   areaId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -340,6 +351,7 @@ export type AttachmentScalarWhereWithAggregatesInput = {
   mimeType?: Prisma.StringWithAggregatesFilter<"Attachment"> | string
   sizeBytes?: Prisma.IntWithAggregatesFilter<"Attachment"> | number
   sha256?: Prisma.StringNullableWithAggregatesFilter<"Attachment"> | string | null
+  sourceUrl?: Prisma.StringNullableWithAggregatesFilter<"Attachment"> | string | null
   deviceId?: Prisma.StringNullableWithAggregatesFilter<"Attachment"> | string | null
   areaId?: Prisma.StringNullableWithAggregatesFilter<"Attachment"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Attachment"> | Date | string
@@ -354,6 +366,7 @@ export type AttachmentCreateInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   createdAt?: Date | string
   device?: Prisma.DeviceCreateNestedOneWithoutAttachmentsInput
   area?: Prisma.AreaCreateNestedOneWithoutAttachmentsInput
@@ -370,6 +383,7 @@ export type AttachmentUncheckedCreateInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   deviceId?: string | null
   areaId?: string | null
   createdAt?: Date | string
@@ -386,6 +400,7 @@ export type AttachmentUpdateInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   device?: Prisma.DeviceUpdateOneWithoutAttachmentsNestedInput
   area?: Prisma.AreaUpdateOneWithoutAttachmentsNestedInput
@@ -402,6 +417,7 @@ export type AttachmentUncheckedUpdateInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -418,6 +434,7 @@ export type AttachmentCreateManyInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   deviceId?: string | null
   areaId?: string | null
   createdAt?: Date | string
@@ -432,6 +449,7 @@ export type AttachmentUpdateManyMutationInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -444,6 +462,7 @@ export type AttachmentUncheckedUpdateManyInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -473,6 +492,7 @@ export type AttachmentCountOrderByAggregateInput = {
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrder
   deviceId?: Prisma.SortOrder
   areaId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -491,6 +511,7 @@ export type AttachmentMaxOrderByAggregateInput = {
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrder
   deviceId?: Prisma.SortOrder
   areaId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -505,6 +526,7 @@ export type AttachmentMinOrderByAggregateInput = {
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
+  sourceUrl?: Prisma.SortOrder
   deviceId?: Prisma.SortOrder
   areaId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -651,6 +673,7 @@ export type AttachmentCreateWithoutAreaInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   createdAt?: Date | string
   device?: Prisma.DeviceCreateNestedOneWithoutAttachmentsInput
   primaryImageOf?: Prisma.DeviceCreateNestedOneWithoutPrimaryImageInput
@@ -666,6 +689,7 @@ export type AttachmentUncheckedCreateWithoutAreaInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   deviceId?: string | null
   createdAt?: Date | string
   primaryImageOf?: Prisma.DeviceUncheckedCreateNestedOneWithoutPrimaryImageInput
@@ -709,6 +733,7 @@ export type AttachmentScalarWhereInput = {
   mimeType?: Prisma.StringFilter<"Attachment"> | string
   sizeBytes?: Prisma.IntFilter<"Attachment"> | number
   sha256?: Prisma.StringNullableFilter<"Attachment"> | string | null
+  sourceUrl?: Prisma.StringNullableFilter<"Attachment"> | string | null
   deviceId?: Prisma.StringNullableFilter<"Attachment"> | string | null
   areaId?: Prisma.StringNullableFilter<"Attachment"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Attachment"> | Date | string
@@ -723,6 +748,7 @@ export type AttachmentCreateWithoutPrimaryImageOfInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   createdAt?: Date | string
   device?: Prisma.DeviceCreateNestedOneWithoutAttachmentsInput
   area?: Prisma.AreaCreateNestedOneWithoutAttachmentsInput
@@ -738,6 +764,7 @@ export type AttachmentUncheckedCreateWithoutPrimaryImageOfInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   deviceId?: string | null
   areaId?: string | null
   createdAt?: Date | string
@@ -758,6 +785,7 @@ export type AttachmentCreateWithoutDeviceInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   createdAt?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutAttachmentsInput
   primaryImageOf?: Prisma.DeviceCreateNestedOneWithoutPrimaryImageInput
@@ -773,6 +801,7 @@ export type AttachmentUncheckedCreateWithoutDeviceInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   areaId?: string | null
   createdAt?: Date | string
   primaryImageOf?: Prisma.DeviceUncheckedCreateNestedOneWithoutPrimaryImageInput
@@ -808,6 +837,7 @@ export type AttachmentUpdateWithoutPrimaryImageOfInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   device?: Prisma.DeviceUpdateOneWithoutAttachmentsNestedInput
   area?: Prisma.AreaUpdateOneWithoutAttachmentsNestedInput
@@ -823,6 +853,7 @@ export type AttachmentUncheckedUpdateWithoutPrimaryImageOfInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -854,6 +885,7 @@ export type AttachmentCreateWithoutPreviewOfInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   createdAt?: Date | string
   device?: Prisma.DeviceCreateNestedOneWithoutAttachmentsInput
   area?: Prisma.AreaCreateNestedOneWithoutAttachmentsInput
@@ -869,6 +901,7 @@ export type AttachmentUncheckedCreateWithoutPreviewOfInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   deviceId?: string | null
   areaId?: string | null
   createdAt?: Date | string
@@ -900,6 +933,7 @@ export type AttachmentUpdateWithoutPreviewOfInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   device?: Prisma.DeviceUpdateOneWithoutAttachmentsNestedInput
   area?: Prisma.AreaUpdateOneWithoutAttachmentsNestedInput
@@ -915,6 +949,7 @@ export type AttachmentUncheckedUpdateWithoutPreviewOfInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -930,6 +965,7 @@ export type AttachmentCreateManyAreaInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   deviceId?: string | null
   createdAt?: Date | string
 }
@@ -943,6 +979,7 @@ export type AttachmentUpdateWithoutAreaInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   device?: Prisma.DeviceUpdateOneWithoutAttachmentsNestedInput
   primaryImageOf?: Prisma.DeviceUpdateOneWithoutPrimaryImageNestedInput
@@ -958,6 +995,7 @@ export type AttachmentUncheckedUpdateWithoutAreaInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   primaryImageOf?: Prisma.DeviceUncheckedUpdateOneWithoutPrimaryImageNestedInput
@@ -973,6 +1011,7 @@ export type AttachmentUncheckedUpdateManyWithoutAreaInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   deviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -986,6 +1025,7 @@ export type AttachmentCreateManyDeviceInput = {
   mimeType: string
   sizeBytes: number
   sha256?: string | null
+  sourceUrl?: string | null
   areaId?: string | null
   createdAt?: Date | string
 }
@@ -999,6 +1039,7 @@ export type AttachmentUpdateWithoutDeviceInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutAttachmentsNestedInput
   primaryImageOf?: Prisma.DeviceUpdateOneWithoutPrimaryImageNestedInput
@@ -1014,6 +1055,7 @@ export type AttachmentUncheckedUpdateWithoutDeviceInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   primaryImageOf?: Prisma.DeviceUncheckedUpdateOneWithoutPrimaryImageNestedInput
@@ -1029,6 +1071,7 @@ export type AttachmentUncheckedUpdateManyWithoutDeviceInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1044,6 +1087,7 @@ export type AttachmentSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   mimeType?: boolean
   sizeBytes?: boolean
   sha256?: boolean
+  sourceUrl?: boolean
   deviceId?: boolean
   areaId?: boolean
   createdAt?: boolean
@@ -1062,6 +1106,7 @@ export type AttachmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   mimeType?: boolean
   sizeBytes?: boolean
   sha256?: boolean
+  sourceUrl?: boolean
   deviceId?: boolean
   areaId?: boolean
   createdAt?: boolean
@@ -1078,6 +1123,7 @@ export type AttachmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   mimeType?: boolean
   sizeBytes?: boolean
   sha256?: boolean
+  sourceUrl?: boolean
   deviceId?: boolean
   areaId?: boolean
   createdAt?: boolean
@@ -1094,12 +1140,13 @@ export type AttachmentSelectScalar = {
   mimeType?: boolean
   sizeBytes?: boolean
   sha256?: boolean
+  sourceUrl?: boolean
   deviceId?: boolean
   areaId?: boolean
   createdAt?: boolean
 }
 
-export type AttachmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "kind" | "title" | "originalName" | "storedName" | "mimeType" | "sizeBytes" | "sha256" | "deviceId" | "areaId" | "createdAt", ExtArgs["result"]["attachment"]>
+export type AttachmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "kind" | "title" | "originalName" | "storedName" | "mimeType" | "sizeBytes" | "sha256" | "sourceUrl" | "deviceId" | "areaId" | "createdAt", ExtArgs["result"]["attachment"]>
 export type AttachmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   device?: boolean | Prisma.Attachment$deviceArgs<ExtArgs>
   area?: boolean | Prisma.Attachment$areaArgs<ExtArgs>
@@ -1132,6 +1179,11 @@ export type $AttachmentPayload<ExtArgs extends runtime.Types.Extensions.Internal
     mimeType: string
     sizeBytes: number
     sha256: string | null
+    /**
+     * * Where the file was fetched from when attached via URL (manual lookup);
+     *    *  null for direct uploads.
+     */
+    sourceUrl: string | null
     deviceId: string | null
     areaId: string | null
     createdAt: Date
@@ -1570,6 +1622,7 @@ export interface AttachmentFieldRefs {
   readonly mimeType: Prisma.FieldRef<"Attachment", 'String'>
   readonly sizeBytes: Prisma.FieldRef<"Attachment", 'Int'>
   readonly sha256: Prisma.FieldRef<"Attachment", 'String'>
+  readonly sourceUrl: Prisma.FieldRef<"Attachment", 'String'>
   readonly deviceId: Prisma.FieldRef<"Attachment", 'String'>
   readonly areaId: Prisma.FieldRef<"Attachment", 'String'>
   readonly createdAt: Prisma.FieldRef<"Attachment", 'DateTime'>

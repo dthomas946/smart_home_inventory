@@ -27,6 +27,9 @@ photos, or a spreadsheet that falls out of date.
 - **Attachments** — manuals, invoices, warranty cards, floor plans, photos —
   attach them to the device or area they belong to, annotate plans/photos
   directly, and pull mermaid diagrams out of what you've documented.
+- **Look it up** — every device with a manufacturer/model gets a Resources
+  card: manual searches, parts houses, manufacturer support, recalls. "Find
+  manual" searches the web and attaches the PDF for you (or paste a link).
 
 All of it is stored under the add-on's data directory, so it rides along
 with your normal HA backups — no separate export/import step.

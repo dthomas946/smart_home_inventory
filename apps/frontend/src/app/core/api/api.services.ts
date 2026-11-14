@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AreaDto,
+  AttachFromUrlDto,
   AttachmentDto,
   AttachmentKind,
   CapabilityTypeDto,
@@ -24,6 +25,7 @@ import {
   FloorDto,
   HaCapabilitySuggestionDto,
   HaStatusDto,
+  ManualSearchResultDto,
   SetDeviceCapabilityDto,
   SyncResultDto,
   UpdateAreaDto,
@@ -288,5 +290,21 @@ export class ZigbeeCatalogApi {
     return this.http.get<ZigbeeCatalogMatchDto | null>('api/zigbee-catalog/match', {
       params: params({ model }),
     });
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class ManualLookupApi {
+  private readonly http = inject(HttpClient);
+
+  /** Web search for a device's manual. Candidates are ephemeral until attached. */
+  search(deviceId: string, q?: string): Observable<ManualSearchResultDto> {
+    return this.http.get<ManualSearchResultDto>(`api/devices/${deviceId}/manual-candidates`, {
+      params: params({ q }),
+    });
+  }
+  /** Server fetches the URL and files it as an attachment (PDF-validated for manuals). */
+  attachFromUrl(deviceId: string, dto: AttachFromUrlDto): Observable<AttachmentDto> {
+    return this.http.post<AttachmentDto>(`api/devices/${deviceId}/attachments/from-url`, dto);
   }
 }
