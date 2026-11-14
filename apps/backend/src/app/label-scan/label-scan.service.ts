@@ -16,6 +16,10 @@ import { AppConfig } from '../config/app-config';
 
 /** Small vision models on a 4 GB GPU take a minute or two per image. */
 const OLLAMA_TIMEOUT_MS = 300_000;
+/** Ollama defaults to a 4096-token context; one photo plus the prompt and
+ *  schema already exceeds that. Request more per call rather than requiring
+ *  OLLAMA_CONTEXT_LENGTH on the server. */
+const OLLAMA_NUM_CTX = 8192;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
 /** JSON schema handed to Ollama's `format` so the model can't free-wheel. */
@@ -193,7 +197,7 @@ export class LabelScanService {
           model,
           stream: false,
           format: RESPONSE_SCHEMA,
-          options: { temperature: 0 },
+          options: { temperature: 0, num_ctx: OLLAMA_NUM_CTX },
           messages: [{ role: 'user', content: PROMPT, images: [image.toString('base64')] }],
         }),
         signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),

@@ -30,6 +30,29 @@ import {
 import { ToastService } from '../../core/toast/toast.service';
 import { IconComponent } from '../../shared/ui/icon.component';
 
+/** Re-encode an image so its longest edge is at most `maxEdge` px (JPEG).
+ *  Returns the original when it is already small enough or can't be decoded. */
+async function downscaleImage(file: File, maxEdge: number): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    if (scale >= 1) return file;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.9)
+    );
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } finally {
+    bitmap.close();
+  }
+}
+
 @Component({
   selector: 'app-device-form-page',
   imports: [FormsModule, IconComponent],
@@ -381,14 +404,18 @@ export class DeviceFormPageComponent implements OnInit {
     this.originalCapabilities = keys;
   }
 
-  protected onLabelPicked(event: Event): void {
+  protected async onLabelPicked(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
     this.scanning.set(true);
     this.scanResult.set(null);
-    this.labelScanApi.scan(file).subscribe({
+    // The model only needs enough pixels to read the text; a full-size phone
+    // photo blows the context window and is slower to process. The original
+    // is still what gets attached to the device.
+    const forModel = await downscaleImage(file, 1280).catch(() => file);
+    this.labelScanApi.scan(forModel).subscribe({
       next: (result) => {
         this.scanning.set(false);
         this.labelPhoto = file;

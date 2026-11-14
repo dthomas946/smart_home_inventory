@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.18
+
+- Scan label: request an 8k context from Ollama per call and downscale the
+  photo to 1280 px before sending — fixes `request exceeds the available
+  context size (4096 tokens)` on phone photos and speeds up the read. The
+  full-size original is still what gets attached
+
 ## 0.2.17
 
 - Scan label: separate **Take photo** and **Upload photo** buttons, so an
