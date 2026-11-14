@@ -77,33 +77,33 @@ enum EntitySource {
 }
 
 model Floor {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   name       String
   // HA's floor registry `level` (e.g. 0 = ground floor) — used for ordering.
   level      Int?
-  haFloorId  String?  @unique
+  haFloorId  String?      @unique
   haName     String?
   haOrphaned Boolean      @default(false)
   source     EntitySource @default(manual)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   areas Area[]
 }
 
 model Area {
-  id         String   @id @default(cuid())
-  name       String
-  floorId    String?
-  floor      Floor?   @relation(fields: [floorId], references: [id], onDelete: SetNull)
-  notes      String?
-  haAreaId   String?  @unique
-  haName     String?
+  id              String       @id @default(cuid())
+  name            String
+  floorId         String?
+  floor           Floor?       @relation(fields: [floorId], references: [id], onDelete: SetNull)
+  notes           String?
+  haAreaId        String?      @unique
+  haName          String?
   haFloorIdAtSync String?
-  haOrphaned Boolean      @default(false)
-  source     EntitySource @default(manual)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  haOrphaned      Boolean      @default(false)
+  source          EntitySource @default(manual)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   devices     Device[]
   attachments Attachment[]
@@ -113,35 +113,38 @@ model Area {
 }
 
 model Device {
-  id                 String    @id @default(cuid())
+  id                 String          @id @default(cuid())
   name               String
   category           DeviceCategory?
   manufacturer       String?
-  /** Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux). */
+  /**
+   * Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux).
+   */
   brand              String?
   model              String?
   serialNumber       String?
   purchaseDate       DateTime?
   purchasePriceCents Int?
-  purchaseCurrency   String?   @default("EUR")
+  purchaseCurrency   String?         @default("EUR")
   purchasedFrom      String?
   productUrl         String?
   notes              String?
-  status             DeviceStatus @default(installed)
+  status             DeviceStatus    @default(installed)
   areaId             String?
-  area               Area?     @relation(fields: [areaId], references: [id], onDelete: SetNull)
-  haDeviceId         String?   @unique
+  area               Area?           @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  haDeviceId         String?         @unique
   haName             String?
   haAreaIdAtSync     String?
-  haOrphaned         Boolean      @default(false)
-  source             EntitySource @default(manual)
-  primaryImageId     String?   @unique
-  primaryImage       Attachment? @relation("DevicePrimaryImage", fields: [primaryImageId], references: [id], onDelete: SetNull)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  haOrphaned         Boolean         @default(false)
+  source             EntitySource    @default(manual)
+  primaryImageId     String?         @unique
+  primaryImage       Attachment?     @relation("DevicePrimaryImage", fields: [primaryImageId], references: [id], onDelete: SetNull)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   attachments     Attachment[]       @relation("DeviceAttachments")
   capabilities    DeviceCapability[]
+  autoLinkRules   AutoLinkRule[]
   connectionsFrom Connection[]       @relation("ConnectionFrom")
   connectionsTo   Connection[]       @relation("ConnectionTo")
   diagrams        Diagram[]
@@ -152,36 +155,38 @@ model Device {
 }
 
 model Attachment {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   kind         AttachmentKind @default(other)
   title        String?
   originalName String
-  storedName   String   @unique
+  storedName   String         @unique
   mimeType     String
   sizeBytes    Int
   sha256       String?
-  /** Where the file was fetched from when attached via URL (manual lookup);
-   *  null for direct uploads. */
+  /**
+   * Where the file was fetched from when attached via URL (manual lookup);
+   * null for direct uploads.
+   */
   sourceUrl    String?
   deviceId     String?
-  device       Device?  @relation("DeviceAttachments", fields: [deviceId], references: [id], onDelete: Cascade)
+  device       Device?        @relation("DeviceAttachments", fields: [deviceId], references: [id], onDelete: Cascade)
   areaId       String?
-  area         Area?    @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
+  area         Area?          @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now())
 
-  primaryImageOf Device?    @relation("DevicePrimaryImage")
-  previewOf      Diagram?   @relation("DiagramPreview")
+  primaryImageOf Device?  @relation("DevicePrimaryImage")
+  previewOf      Diagram? @relation("DiagramPreview")
 
   @@index([deviceId])
   @@index([areaId])
 }
 
 model CapabilityType {
-  id       String  @id @default(cuid())
-  key      String  @unique
+  id       String             @id @default(cuid())
+  key      String             @unique
   label    String
   category CapabilityCategory @default(other)
-  isSystem Boolean @default(false)
+  isSystem Boolean            @default(false)
 
   devices DeviceCapability[]
 }
@@ -238,6 +243,23 @@ model Connection {
   @@index([fromDeviceId])
   @@index([toDeviceId])
   @@index([type])
+}
+
+/// Default controller per connection type for auto-linking: used when HA's
+/// registry has no via_device for a device (Wi-Fi gear → the router, say).
+model AutoLinkRule {
+  type               String   @id
+  controllerDeviceId String
+  controller         Device   @relation(fields: [controllerDeviceId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime @updatedAt
+}
+
+/// A user override: an auto-created link they deleted or converted to
+/// manual. Keyed by the planner's autoKey so a re-run leaves it alone.
+model AutoLinkSuppression {
+  autoKey   String   @id
+  reason    String
+  createdAt DateTime @default(now())
 }
 
 model Diagram {

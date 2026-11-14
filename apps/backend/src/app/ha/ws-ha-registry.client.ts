@@ -1,6 +1,13 @@
 import { Logger } from '@nestjs/common';
 import WebSocket from 'ws';
-import { HaArea, HaDevice, HaEntity, HaFloor, HaRegistryClient } from './ha-registry.types';
+import {
+  HaArea,
+  HaConfigEntry,
+  HaDevice,
+  HaEntity,
+  HaFloor,
+  HaRegistryClient,
+} from './ha-registry.types';
 
 interface HaWsResultMessage {
   id: number;
@@ -20,6 +27,7 @@ const READ_ONLY_COMMANDS = new Set([
   'config/device_registry/list',
   'config/floor_registry/list',
   'config/entity_registry/list',
+  'config_entries/get',
   'get_config',
   'get_states',
   'ping',
@@ -77,6 +85,19 @@ export class WsHaRegistryClient implements HaRegistryClient {
       model: d.model ?? null,
       area_id: d.area_id ?? null,
       entry_type: d.entry_type ?? null,
+      via_device_id: d.via_device_id ?? null,
+      config_entries: Array.isArray(d.config_entries) ? d.config_entries : [],
+      identifiers: Array.isArray(d.identifiers) ? d.identifiers : [],
+      connections: Array.isArray(d.connections) ? d.connections : [],
+    }));
+  }
+
+  async listConfigEntries(): Promise<HaConfigEntry[]> {
+    const result = await this.command('config_entries/get');
+    return (result as HaConfigEntry[]).map((e) => ({
+      entry_id: e.entry_id,
+      domain: e.domain,
+      title: e.title ?? '',
     }));
   }
 

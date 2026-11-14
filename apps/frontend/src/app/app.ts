@@ -5,6 +5,7 @@ import {
   mdiDevices,
   mdiFloorPlan,
   mdiTransitConnectionVariant,
+  mdiGraphOutline,
 } from '@mdi/js';
 import { IconComponent } from './shared/ui/icon.component';
 import { ToastOutletComponent } from './core/toast/toast-outlet.component';
@@ -32,6 +33,9 @@ import { ConfirmDialogComponent } from './core/confirm/confirm-dialog.component'
         </a>
         <a routerLink="/connections" routerLinkActive="active">
           <app-icon [path]="icons.connections" [size]="18" /> Connections
+        </a>
+        <a routerLink="/network" routerLinkActive="active">
+          <app-icon [path]="icons.network" [size]="18" /> Network
         </a>
         <a routerLink="/settings" routerLinkActive="active">
           <app-icon [path]="icons.settings" [size]="18" /> Settings
@@ -116,6 +120,7 @@ export class App {
     areas: mdiFloorPlan,
     devices: mdiDevices,
     connections: mdiTransitConnectionVariant,
+    network: mdiGraphOutline,
     settings: mdiCog,
   };
 }

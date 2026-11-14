@@ -13,6 +13,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectionTypesService } from '../connection-types/connection-types.service';
 import { toConnectionDto } from '../common/mappers';
+import { AutoLinkService } from '../auto-link/auto-link.service';
+import { isManaged } from '../auto-link/auto-link.planner';
 
 const includeNames = {
   fromDevice: { select: { name: true } },
@@ -23,7 +25,8 @@ const includeNames = {
 export class ConnectionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly connectionTypes: ConnectionTypesService
+    private readonly connectionTypes: ConnectionTypesService,
+    private readonly autoLink: AutoLinkService
   ) {}
 
   async list(query: ConnectionQueryDto): Promise<ConnectionDto[]> {
@@ -81,15 +84,29 @@ export class ConnectionsService {
   }
 
   async update(id: string, dto: UpdateConnectionDto): Promise<ConnectionDto> {
-    await this.get(id);
+    const current = await this.prisma.connection.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException(`Connection ${id} not found`);
     if (dto.type !== undefined) await this.connectionTypes.ensureKeyExists(dto.type);
+
+    // Editing an auto-created link is an override: it becomes a manual link
+    // (auto flag dropped, autoKey kept for traceability) and the planner is
+    // told never to recreate it. Only the type matters to the planner, but
+    // a label/notes edit also signals "I own this now", which is simpler to
+    // reason about than tracking which fields changed.
+    let metadata = dto.metadata;
+    if (isManaged(current.metadata)) {
+      const prev = current.metadata as Record<string, unknown>;
+      metadata = { ...prev, ...(dto.metadata ?? {}), auto: false, overriddenAt: new Date().toISOString() };
+      await this.autoLink.suppress(prev['autoKey'] as string, 'edited');
+    }
+
     const connection = await this.prisma.connection.update({
       where: { id },
       data: {
         ...(dto.type !== undefined ? { type: dto.type } : {}),
         ...(dto.label !== undefined ? { label: dto.label } : {}),
-        ...(dto.metadata !== undefined
-          ? { metadata: (dto.metadata ?? Prisma.JsonNull) as Prisma.InputJsonValue }
+        ...(metadata !== undefined
+          ? { metadata: (metadata ?? Prisma.JsonNull) as Prisma.InputJsonValue }
           : {}),
         ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
       },
@@ -99,7 +116,11 @@ export class ConnectionsService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.get(id);
+    const current = await this.prisma.connection.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException(`Connection ${id} not found`);
+    if (isManaged(current.metadata)) {
+      await this.autoLink.suppress(current.metadata.autoKey, 'deleted');
+    }
     await this.prisma.connection.delete({ where: { id } });
   }
 

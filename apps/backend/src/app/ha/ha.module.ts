@@ -45,5 +45,6 @@ import { WsHaRegistryClient } from './ws-ha-registry.client';
       },
     },
   ],
+  exports: [HA_REGISTRY_CLIENT],
 })
 export class HaModule {}

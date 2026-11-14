@@ -60,6 +60,11 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'network',
+    loadComponent: () =>
+      import('./features/network/network-page.component').then((m) => m.NetworkPageComponent),
+  },
+  {
     path: 'diagrams',
     loadComponent: () =>
       import('./features/diagrams/diagrams-page.component').then(

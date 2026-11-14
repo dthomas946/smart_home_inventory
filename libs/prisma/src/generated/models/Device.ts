@@ -364,6 +364,7 @@ export type DeviceWhereInput = {
   primaryImage?: Prisma.XOR<Prisma.AttachmentNullableScalarRelationFilter, Prisma.AttachmentWhereInput> | null
   attachments?: Prisma.AttachmentListRelationFilter
   capabilities?: Prisma.DeviceCapabilityListRelationFilter
+  autoLinkRules?: Prisma.AutoLinkRuleListRelationFilter
   connectionsFrom?: Prisma.ConnectionListRelationFilter
   connectionsTo?: Prisma.ConnectionListRelationFilter
   diagrams?: Prisma.DiagramListRelationFilter
@@ -397,6 +398,7 @@ export type DeviceOrderByWithRelationInput = {
   primaryImage?: Prisma.AttachmentOrderByWithRelationInput
   attachments?: Prisma.AttachmentOrderByRelationAggregateInput
   capabilities?: Prisma.DeviceCapabilityOrderByRelationAggregateInput
+  autoLinkRules?: Prisma.AutoLinkRuleOrderByRelationAggregateInput
   connectionsFrom?: Prisma.ConnectionOrderByRelationAggregateInput
   connectionsTo?: Prisma.ConnectionOrderByRelationAggregateInput
   diagrams?: Prisma.DiagramOrderByRelationAggregateInput
@@ -433,6 +435,7 @@ export type DeviceWhereUniqueInput = Prisma.AtLeast<{
   primaryImage?: Prisma.XOR<Prisma.AttachmentNullableScalarRelationFilter, Prisma.AttachmentWhereInput> | null
   attachments?: Prisma.AttachmentListRelationFilter
   capabilities?: Prisma.DeviceCapabilityListRelationFilter
+  autoLinkRules?: Prisma.AutoLinkRuleListRelationFilter
   connectionsFrom?: Prisma.ConnectionListRelationFilter
   connectionsTo?: Prisma.ConnectionListRelationFilter
   diagrams?: Prisma.DiagramListRelationFilter
@@ -524,6 +527,7 @@ export type DeviceCreateInput = {
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
@@ -555,6 +559,7 @@ export type DeviceUncheckedCreateInput = {
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
@@ -586,6 +591,7 @@ export type DeviceUpdateInput = {
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
@@ -617,6 +623,7 @@ export type DeviceUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
@@ -948,6 +955,20 @@ export type DeviceUpdateOneRequiredWithoutConnectionsToNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DeviceUpdateToOneWithWhereWithoutConnectionsToInput, Prisma.DeviceUpdateWithoutConnectionsToInput>, Prisma.DeviceUncheckedUpdateWithoutConnectionsToInput>
 }
 
+export type DeviceCreateNestedOneWithoutAutoLinkRulesInput = {
+  create?: Prisma.XOR<Prisma.DeviceCreateWithoutAutoLinkRulesInput, Prisma.DeviceUncheckedCreateWithoutAutoLinkRulesInput>
+  connectOrCreate?: Prisma.DeviceCreateOrConnectWithoutAutoLinkRulesInput
+  connect?: Prisma.DeviceWhereUniqueInput
+}
+
+export type DeviceUpdateOneRequiredWithoutAutoLinkRulesNestedInput = {
+  create?: Prisma.XOR<Prisma.DeviceCreateWithoutAutoLinkRulesInput, Prisma.DeviceUncheckedCreateWithoutAutoLinkRulesInput>
+  connectOrCreate?: Prisma.DeviceCreateOrConnectWithoutAutoLinkRulesInput
+  upsert?: Prisma.DeviceUpsertWithoutAutoLinkRulesInput
+  connect?: Prisma.DeviceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DeviceUpdateToOneWithWhereWithoutAutoLinkRulesInput, Prisma.DeviceUpdateWithoutAutoLinkRulesInput>, Prisma.DeviceUncheckedUpdateWithoutAutoLinkRulesInput>
+}
+
 export type DeviceCreateNestedOneWithoutDiagramsInput = {
   create?: Prisma.XOR<Prisma.DeviceCreateWithoutDiagramsInput, Prisma.DeviceUncheckedCreateWithoutDiagramsInput>
   connectOrCreate?: Prisma.DeviceCreateOrConnectWithoutDiagramsInput
@@ -989,6 +1010,7 @@ export type DeviceCreateWithoutAreaInput = {
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
@@ -1019,6 +1041,7 @@ export type DeviceUncheckedCreateWithoutAreaInput = {
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
@@ -1103,6 +1126,7 @@ export type DeviceCreateWithoutAttachmentsInput = {
   area?: Prisma.AreaCreateNestedOneWithoutDevicesInput
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
@@ -1133,6 +1157,7 @@ export type DeviceUncheckedCreateWithoutAttachmentsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
@@ -1168,6 +1193,7 @@ export type DeviceCreateWithoutPrimaryImageInput = {
   area?: Prisma.AreaCreateNestedOneWithoutDevicesInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
@@ -1198,6 +1224,7 @@ export type DeviceUncheckedCreateWithoutPrimaryImageInput = {
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
@@ -1244,6 +1271,7 @@ export type DeviceUpdateWithoutAttachmentsInput = {
   area?: Prisma.AreaUpdateOneWithoutDevicesNestedInput
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
@@ -1274,6 +1302,7 @@ export type DeviceUncheckedUpdateWithoutAttachmentsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
@@ -1315,6 +1344,7 @@ export type DeviceUpdateWithoutPrimaryImageInput = {
   area?: Prisma.AreaUpdateOneWithoutDevicesNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
@@ -1345,6 +1375,7 @@ export type DeviceUncheckedUpdateWithoutPrimaryImageInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
@@ -1375,6 +1406,7 @@ export type DeviceCreateWithoutCapabilitiesInput = {
   area?: Prisma.AreaCreateNestedOneWithoutDevicesInput
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
@@ -1405,6 +1437,7 @@ export type DeviceUncheckedCreateWithoutCapabilitiesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
@@ -1451,6 +1484,7 @@ export type DeviceUpdateWithoutCapabilitiesInput = {
   area?: Prisma.AreaUpdateOneWithoutDevicesNestedInput
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
@@ -1481,6 +1515,7 @@ export type DeviceUncheckedUpdateWithoutCapabilitiesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
@@ -1512,6 +1547,7 @@ export type DeviceCreateWithoutConnectionsFromInput = {
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
 }
@@ -1542,6 +1578,7 @@ export type DeviceUncheckedCreateWithoutConnectionsFromInput = {
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
 }
@@ -1577,6 +1614,7 @@ export type DeviceCreateWithoutConnectionsToInput = {
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
 }
@@ -1607,6 +1645,7 @@ export type DeviceUncheckedCreateWithoutConnectionsToInput = {
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
 }
@@ -1653,6 +1692,7 @@ export type DeviceUpdateWithoutConnectionsFromInput = {
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
 }
@@ -1683,6 +1723,7 @@ export type DeviceUncheckedUpdateWithoutConnectionsFromInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
 }
@@ -1724,6 +1765,7 @@ export type DeviceUpdateWithoutConnectionsToInput = {
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
 }
@@ -1754,7 +1796,148 @@ export type DeviceUncheckedUpdateWithoutConnectionsToInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
+  diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
+}
+
+export type DeviceCreateWithoutAutoLinkRulesInput = {
+  id?: string
+  name: string
+  category?: $Enums.DeviceCategory | null
+  manufacturer?: string | null
+  brand?: string | null
+  model?: string | null
+  serialNumber?: string | null
+  purchaseDate?: Date | string | null
+  purchasePriceCents?: number | null
+  purchaseCurrency?: string | null
+  purchasedFrom?: string | null
+  productUrl?: string | null
+  notes?: string | null
+  status?: $Enums.DeviceStatus
+  haDeviceId?: string | null
+  haName?: string | null
+  haAreaIdAtSync?: string | null
+  haOrphaned?: boolean
+  source?: $Enums.EntitySource
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  area?: Prisma.AreaCreateNestedOneWithoutDevicesInput
+  primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
+  attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
+  capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
+  connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
+  diagrams?: Prisma.DiagramCreateNestedManyWithoutDeviceInput
+}
+
+export type DeviceUncheckedCreateWithoutAutoLinkRulesInput = {
+  id?: string
+  name: string
+  category?: $Enums.DeviceCategory | null
+  manufacturer?: string | null
+  brand?: string | null
+  model?: string | null
+  serialNumber?: string | null
+  purchaseDate?: Date | string | null
+  purchasePriceCents?: number | null
+  purchaseCurrency?: string | null
+  purchasedFrom?: string | null
+  productUrl?: string | null
+  notes?: string | null
+  status?: $Enums.DeviceStatus
+  areaId?: string | null
+  haDeviceId?: string | null
+  haName?: string | null
+  haAreaIdAtSync?: string | null
+  haOrphaned?: boolean
+  source?: $Enums.EntitySource
+  primaryImageId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
+  capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
+  connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
+  diagrams?: Prisma.DiagramUncheckedCreateNestedManyWithoutDeviceInput
+}
+
+export type DeviceCreateOrConnectWithoutAutoLinkRulesInput = {
+  where: Prisma.DeviceWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeviceCreateWithoutAutoLinkRulesInput, Prisma.DeviceUncheckedCreateWithoutAutoLinkRulesInput>
+}
+
+export type DeviceUpsertWithoutAutoLinkRulesInput = {
+  update: Prisma.XOR<Prisma.DeviceUpdateWithoutAutoLinkRulesInput, Prisma.DeviceUncheckedUpdateWithoutAutoLinkRulesInput>
+  create: Prisma.XOR<Prisma.DeviceCreateWithoutAutoLinkRulesInput, Prisma.DeviceUncheckedCreateWithoutAutoLinkRulesInput>
+  where?: Prisma.DeviceWhereInput
+}
+
+export type DeviceUpdateToOneWithWhereWithoutAutoLinkRulesInput = {
+  where?: Prisma.DeviceWhereInput
+  data: Prisma.XOR<Prisma.DeviceUpdateWithoutAutoLinkRulesInput, Prisma.DeviceUncheckedUpdateWithoutAutoLinkRulesInput>
+}
+
+export type DeviceUpdateWithoutAutoLinkRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
+  manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchasePriceCents?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  purchaseCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  purchasedFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumDeviceStatusFieldUpdateOperationsInput | $Enums.DeviceStatus
+  haDeviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haAreaIdAtSync?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haOrphaned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  source?: Prisma.EnumEntitySourceFieldUpdateOperationsInput | $Enums.EntitySource
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  area?: Prisma.AreaUpdateOneWithoutDevicesNestedInput
+  primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
+  attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
+  capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
+  connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
+  diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
+}
+
+export type DeviceUncheckedUpdateWithoutAutoLinkRulesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
+  manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchasePriceCents?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  purchaseCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  purchasedFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  productUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumDeviceStatusFieldUpdateOperationsInput | $Enums.DeviceStatus
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haDeviceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haAreaIdAtSync?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haOrphaned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  source?: Prisma.EnumEntitySourceFieldUpdateOperationsInput | $Enums.EntitySource
+  primaryImageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
+  capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
+  connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
@@ -1784,6 +1967,7 @@ export type DeviceCreateWithoutDiagramsInput = {
   primaryImage?: Prisma.AttachmentCreateNestedOneWithoutPrimaryImageOfInput
   attachments?: Prisma.AttachmentCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionCreateNestedManyWithoutToDeviceInput
 }
@@ -1814,6 +1998,7 @@ export type DeviceUncheckedCreateWithoutDiagramsInput = {
   updatedAt?: Date | string
   attachments?: Prisma.AttachmentUncheckedCreateNestedManyWithoutDeviceInput
   capabilities?: Prisma.DeviceCapabilityUncheckedCreateNestedManyWithoutDeviceInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedCreateNestedManyWithoutControllerInput
   connectionsFrom?: Prisma.ConnectionUncheckedCreateNestedManyWithoutFromDeviceInput
   connectionsTo?: Prisma.ConnectionUncheckedCreateNestedManyWithoutToDeviceInput
 }
@@ -1860,6 +2045,7 @@ export type DeviceUpdateWithoutDiagramsInput = {
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
 }
@@ -1890,6 +2076,7 @@ export type DeviceUncheckedUpdateWithoutDiagramsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
 }
@@ -1944,6 +2131,7 @@ export type DeviceUpdateWithoutAreaInput = {
   primaryImage?: Prisma.AttachmentUpdateOneWithoutPrimaryImageOfNestedInput
   attachments?: Prisma.AttachmentUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUpdateManyWithoutDeviceNestedInput
@@ -1974,6 +2162,7 @@ export type DeviceUncheckedUpdateWithoutAreaInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attachments?: Prisma.AttachmentUncheckedUpdateManyWithoutDeviceNestedInput
   capabilities?: Prisma.DeviceCapabilityUncheckedUpdateManyWithoutDeviceNestedInput
+  autoLinkRules?: Prisma.AutoLinkRuleUncheckedUpdateManyWithoutControllerNestedInput
   connectionsFrom?: Prisma.ConnectionUncheckedUpdateManyWithoutFromDeviceNestedInput
   connectionsTo?: Prisma.ConnectionUncheckedUpdateManyWithoutToDeviceNestedInput
   diagrams?: Prisma.DiagramUncheckedUpdateManyWithoutDeviceNestedInput
@@ -2012,6 +2201,7 @@ export type DeviceUncheckedUpdateManyWithoutAreaInput = {
 export type DeviceCountOutputType = {
   attachments: number
   capabilities: number
+  autoLinkRules: number
   connectionsFrom: number
   connectionsTo: number
   diagrams: number
@@ -2020,6 +2210,7 @@ export type DeviceCountOutputType = {
 export type DeviceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   attachments?: boolean | DeviceCountOutputTypeCountAttachmentsArgs
   capabilities?: boolean | DeviceCountOutputTypeCountCapabilitiesArgs
+  autoLinkRules?: boolean | DeviceCountOutputTypeCountAutoLinkRulesArgs
   connectionsFrom?: boolean | DeviceCountOutputTypeCountConnectionsFromArgs
   connectionsTo?: boolean | DeviceCountOutputTypeCountConnectionsToArgs
   diagrams?: boolean | DeviceCountOutputTypeCountDiagramsArgs
@@ -2047,6 +2238,13 @@ export type DeviceCountOutputTypeCountAttachmentsArgs<ExtArgs extends runtime.Ty
  */
 export type DeviceCountOutputTypeCountCapabilitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DeviceCapabilityWhereInput
+}
+
+/**
+ * DeviceCountOutputType without action
+ */
+export type DeviceCountOutputTypeCountAutoLinkRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AutoLinkRuleWhereInput
 }
 
 /**
@@ -2099,6 +2297,7 @@ export type DeviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   primaryImage?: boolean | Prisma.Device$primaryImageArgs<ExtArgs>
   attachments?: boolean | Prisma.Device$attachmentsArgs<ExtArgs>
   capabilities?: boolean | Prisma.Device$capabilitiesArgs<ExtArgs>
+  autoLinkRules?: boolean | Prisma.Device$autoLinkRulesArgs<ExtArgs>
   connectionsFrom?: boolean | Prisma.Device$connectionsFromArgs<ExtArgs>
   connectionsTo?: boolean | Prisma.Device$connectionsToArgs<ExtArgs>
   diagrams?: boolean | Prisma.Device$diagramsArgs<ExtArgs>
@@ -2193,6 +2392,7 @@ export type DeviceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   primaryImage?: boolean | Prisma.Device$primaryImageArgs<ExtArgs>
   attachments?: boolean | Prisma.Device$attachmentsArgs<ExtArgs>
   capabilities?: boolean | Prisma.Device$capabilitiesArgs<ExtArgs>
+  autoLinkRules?: boolean | Prisma.Device$autoLinkRulesArgs<ExtArgs>
   connectionsFrom?: boolean | Prisma.Device$connectionsFromArgs<ExtArgs>
   connectionsTo?: boolean | Prisma.Device$connectionsToArgs<ExtArgs>
   diagrams?: boolean | Prisma.Device$diagramsArgs<ExtArgs>
@@ -2214,6 +2414,7 @@ export type $DevicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     primaryImage: Prisma.$AttachmentPayload<ExtArgs> | null
     attachments: Prisma.$AttachmentPayload<ExtArgs>[]
     capabilities: Prisma.$DeviceCapabilityPayload<ExtArgs>[]
+    autoLinkRules: Prisma.$AutoLinkRulePayload<ExtArgs>[]
     connectionsFrom: Prisma.$ConnectionPayload<ExtArgs>[]
     connectionsTo: Prisma.$ConnectionPayload<ExtArgs>[]
     diagrams: Prisma.$DiagramPayload<ExtArgs>[]
@@ -2224,7 +2425,8 @@ export type $DevicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     category: $Enums.DeviceCategory | null
     manufacturer: string | null
     /**
-     * * Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux).
+     * *
+     *    * Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux).
      */
     brand: string | null
     model: string | null
@@ -2643,6 +2845,7 @@ export interface Prisma__DeviceClient<T, Null = never, ExtArgs extends runtime.T
   primaryImage<T extends Prisma.Device$primaryImageArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$primaryImageArgs<ExtArgs>>): Prisma.Prisma__AttachmentClient<runtime.Types.Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   attachments<T extends Prisma.Device$attachmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   capabilities<T extends Prisma.Device$capabilitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$capabilitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceCapabilityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  autoLinkRules<T extends Prisma.Device$autoLinkRulesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$autoLinkRulesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AutoLinkRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   connectionsFrom<T extends Prisma.Device$connectionsFromArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$connectionsFromArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   connectionsTo<T extends Prisma.Device$connectionsToArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$connectionsToArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   diagrams<T extends Prisma.Device$diagramsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$diagramsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DiagramPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3180,6 +3383,30 @@ export type Device$capabilitiesArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.DeviceCapabilityScalarFieldEnum | Prisma.DeviceCapabilityScalarFieldEnum[]
+}
+
+/**
+ * Device.autoLinkRules
+ */
+export type Device$autoLinkRulesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AutoLinkRule
+   */
+  select?: Prisma.AutoLinkRuleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AutoLinkRule
+   */
+  omit?: Prisma.AutoLinkRuleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AutoLinkRuleInclude<ExtArgs> | null
+  where?: Prisma.AutoLinkRuleWhereInput
+  orderBy?: Prisma.AutoLinkRuleOrderByWithRelationInput | Prisma.AutoLinkRuleOrderByWithRelationInput[]
+  cursor?: Prisma.AutoLinkRuleWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AutoLinkRuleScalarFieldEnum | Prisma.AutoLinkRuleScalarFieldEnum[]
 }
 
 /**

@@ -1,4 +1,11 @@
-import { HaArea, HaDevice, HaEntity, HaFloor, HaRegistryClient } from './ha-registry.types';
+import {
+  HaArea,
+  HaConfigEntry,
+  HaDevice,
+  HaEntity,
+  HaFloor,
+  HaRegistryClient,
+} from './ha-registry.types';
 import {
   FIXTURE_AREAS,
   FIXTURE_DEVICES,
@@ -25,6 +32,13 @@ export class MockHaRegistryClient implements HaRegistryClient {
 
   async listEntities(): Promise<HaEntity[]> {
     return FIXTURE_ENTITIES;
+  }
+
+  async listConfigEntries(): Promise<HaConfigEntry[]> {
+    return [
+      { entry_id: 'ce-hue', domain: 'hue', title: 'Philips Hue' },
+      { entry_id: 'ce-zha', domain: 'zha', title: 'Zigbee Home Automation' },
+    ];
   }
 
   async ping(): Promise<boolean> {

@@ -80,6 +80,18 @@ export type ConnectionType = Prisma.ConnectionTypeModel
  */
 export type Connection = Prisma.ConnectionModel
 /**
+ * Model AutoLinkRule
+ * Default controller per connection type for auto-linking: used when HA's
+ * registry has no via_device for a device (Wi-Fi gear → the router, say).
+ */
+export type AutoLinkRule = Prisma.AutoLinkRuleModel
+/**
+ * Model AutoLinkSuppression
+ * A user override: an auto-created link they deleted or converted to
+ * manual. Keyed by the planner's autoKey so a re-run leaves it alone.
+ */
+export type AutoLinkSuppression = Prisma.AutoLinkSuppressionModel
+/**
  * Model Diagram
  * 
  */

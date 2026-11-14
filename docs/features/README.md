@@ -9,6 +9,7 @@ and the decisions you cannot read out of a single file.
 - [Attachments](attachments.md)
 - [Manual lookup & resource links](manual-lookup.md)
 - [Label scan (Ollama vision)](label-scan.md)
+- [Auto-link & Network map](auto-link.md)
 - [Capabilities](capabilities.md)
 - [Connections](connections.md)
 - [Home Assistant sync](ha-sync.md)

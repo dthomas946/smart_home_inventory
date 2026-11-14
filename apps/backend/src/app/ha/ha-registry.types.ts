@@ -14,6 +14,25 @@ export interface HaDevice {
   model: string | null;
   area_id: string | null;
   entry_type: string | null;
+  /** The hub/bridge/coordinator this device is reached through, per HA's
+   *  own registry (Zigbee node → coordinator, Hue bulb → bridge, Z-Wave
+   *  node → controller). Null for devices HA talks to directly. Optional so
+   *  older fixtures and tests need no change. */
+  via_device_id?: string | null;
+  /** Config entry ids this device belongs to; resolve to integration
+   *  domains with listConfigEntries(). */
+  config_entries?: string[];
+  /** Registry identifiers, e.g. [["zha","00:12:4b:…"],["mqtt","zigbee2mqtt_0x…"]]. */
+  identifiers?: Array<[string, string]>;
+  /** Physical connections, e.g. [["mac","aa:bb:…"],["zigbee","00:12:…"]]. */
+  connections?: Array<[string, string]>;
+}
+
+/** A config entry = one configured integration instance. */
+export interface HaConfigEntry {
+  entry_id: string;
+  domain: string;
+  title: string;
 }
 
 /** Subset of HA's floor registry entries we care about. */
@@ -40,6 +59,8 @@ export interface HaRegistryClient {
   listDevices(): Promise<HaDevice[]>;
   listFloors(): Promise<HaFloor[]>;
   listEntities(): Promise<HaEntity[]>;
+  /** Optional: not every client can resolve config entries. */
+  listConfigEntries?(): Promise<HaConfigEntry[]>;
   ping(): Promise<boolean>;
 }
 

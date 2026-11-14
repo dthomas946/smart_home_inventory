@@ -405,6 +405,8 @@ export const ModelName = {
   DeviceCapability: 'DeviceCapability',
   ConnectionType: 'ConnectionType',
   Connection: 'Connection',
+  AutoLinkRule: 'AutoLinkRule',
+  AutoLinkSuppression: 'AutoLinkSuppression',
   Diagram: 'Diagram'
 } as const
 
@@ -421,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "diagram"
+    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "diagram"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1017,6 +1019,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AutoLinkRule: {
+      payload: Prisma.$AutoLinkRulePayload<ExtArgs>
+      fields: Prisma.AutoLinkRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AutoLinkRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AutoLinkRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>
+        }
+        findFirst: {
+          args: Prisma.AutoLinkRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AutoLinkRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>
+        }
+        findMany: {
+          args: Prisma.AutoLinkRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>[]
+        }
+        create: {
+          args: Prisma.AutoLinkRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>
+        }
+        createMany: {
+          args: Prisma.AutoLinkRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AutoLinkRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>[]
+        }
+        delete: {
+          args: Prisma.AutoLinkRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>
+        }
+        update: {
+          args: Prisma.AutoLinkRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.AutoLinkRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AutoLinkRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AutoLinkRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.AutoLinkRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkRulePayload>
+        }
+        aggregate: {
+          args: Prisma.AutoLinkRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAutoLinkRule>
+        }
+        groupBy: {
+          args: Prisma.AutoLinkRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoLinkRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AutoLinkRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoLinkRuleCountAggregateOutputType> | number
+        }
+      }
+    }
+    AutoLinkSuppression: {
+      payload: Prisma.$AutoLinkSuppressionPayload<ExtArgs>
+      fields: Prisma.AutoLinkSuppressionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AutoLinkSuppressionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AutoLinkSuppressionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>
+        }
+        findFirst: {
+          args: Prisma.AutoLinkSuppressionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AutoLinkSuppressionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>
+        }
+        findMany: {
+          args: Prisma.AutoLinkSuppressionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>[]
+        }
+        create: {
+          args: Prisma.AutoLinkSuppressionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>
+        }
+        createMany: {
+          args: Prisma.AutoLinkSuppressionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AutoLinkSuppressionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>[]
+        }
+        delete: {
+          args: Prisma.AutoLinkSuppressionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>
+        }
+        update: {
+          args: Prisma.AutoLinkSuppressionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>
+        }
+        deleteMany: {
+          args: Prisma.AutoLinkSuppressionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AutoLinkSuppressionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AutoLinkSuppressionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>[]
+        }
+        upsert: {
+          args: Prisma.AutoLinkSuppressionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoLinkSuppressionPayload>
+        }
+        aggregate: {
+          args: Prisma.AutoLinkSuppressionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAutoLinkSuppression>
+        }
+        groupBy: {
+          args: Prisma.AutoLinkSuppressionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoLinkSuppressionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AutoLinkSuppressionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoLinkSuppressionCountAggregateOutputType> | number
+        }
+      }
+    }
     Diagram: {
       payload: Prisma.$DiagramPayload<ExtArgs>
       fields: Prisma.DiagramFieldRefs
@@ -1253,6 +1403,24 @@ export const ConnectionScalarFieldEnum = {
 } as const
 
 export type ConnectionScalarFieldEnum = (typeof ConnectionScalarFieldEnum)[keyof typeof ConnectionScalarFieldEnum]
+
+
+export const AutoLinkRuleScalarFieldEnum = {
+  type: 'type',
+  controllerDeviceId: 'controllerDeviceId',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AutoLinkRuleScalarFieldEnum = (typeof AutoLinkRuleScalarFieldEnum)[keyof typeof AutoLinkRuleScalarFieldEnum]
+
+
+export const AutoLinkSuppressionScalarFieldEnum = {
+  autoKey: 'autoKey',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type AutoLinkSuppressionScalarFieldEnum = (typeof AutoLinkSuppressionScalarFieldEnum)[keyof typeof AutoLinkSuppressionScalarFieldEnum]
 
 
 export const DiagramScalarFieldEnum = {
@@ -1573,6 +1741,8 @@ export type GlobalOmitConfig = {
   deviceCapability?: Prisma.DeviceCapabilityOmit
   connectionType?: Prisma.ConnectionTypeOmit
   connection?: Prisma.ConnectionOmit
+  autoLinkRule?: Prisma.AutoLinkRuleOmit
+  autoLinkSuppression?: Prisma.AutoLinkSuppressionOmit
   diagram?: Prisma.DiagramOmit
 }
 

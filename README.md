@@ -32,6 +32,9 @@ photos, or a spreadsheet that falls out of date.
   manual" searches the web and attaches the PDF for you (or paste a link).
   "Scan label" photographs the rating plate and a local Ollama vision model
   fills in manufacturer, model, serial and specs — fully local, no cloud.
+- **Auto-link & Network map** — smart devices are linked to their
+  coordinator/bridge/router straight from HA's registry (override any link,
+  re-run any time), and the whole thing is drawn as a network map.
 
 All of it is stored under the add-on's data directory, so it rides along
 with your normal HA backups — no separate export/import step.

@@ -1180,8 +1180,9 @@ export type $AttachmentPayload<ExtArgs extends runtime.Types.Extensions.Internal
     sizeBytes: number
     sha256: string | null
     /**
-     * * Where the file was fetched from when attached via URL (manual lookup);
-     *    *  null for direct uploads.
+     * *
+     *    * Where the file was fetched from when attached via URL (manual lookup);
+     *    * null for direct uploads.
      */
     sourceUrl: string | null
     deviceId: string | null

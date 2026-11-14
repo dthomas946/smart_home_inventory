@@ -31,6 +31,8 @@ export const FIXTURE_DEVICES: HaDevice[] = [
     model: 'LCA001',
     area_id: 'wohnzimmer',
     entry_type: null,
+    via_device_id: 'mock-hue-bridge',
+    config_entries: ['ce-hue'],
   },
   {
     id: 'mock-zigbee-coordinator',

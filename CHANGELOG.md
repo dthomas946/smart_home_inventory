@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0
+
+- **Auto-link** (Connections page): derive "device → controller" links from
+  Home Assistant's registry. Devices that pair through a hub (Zigbee
+  coordinator / Zigbee2MQTT bridge, Z-Wave stick, Hue bridge, Matter) link
+  to it via HA's `via_device`; devices HA talks to directly use a
+  per-protocol **default controller** you pick (Wi-Fi → router). Preview
+  before Apply, with every skipped device and the reason. Auto links show an
+  **auto** badge; **Make manual** or **Delete** overrides one and re-runs
+  leave it alone (resettable). Manual network links on a device always win
+- **Network map** page: radial hub-and-spoke graph of all connections,
+  coloured/dashed by type, type toggles, pan/zoom, tap to open a device
+- HA client now reads `via_device_id`, config entries and identifiers
+
 ## 0.2.21
 
 - New **Brand** field on devices, for when the consumer brand differs from

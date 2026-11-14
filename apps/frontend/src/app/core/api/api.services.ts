@@ -4,6 +4,12 @@ import { Observable } from 'rxjs';
 import {
   AreaDto,
   AttachFromUrlDto,
+  AutoLinkApplyResultDto,
+  AutoLinkPlanDto,
+  AutoLinkRuleDto,
+  AutoLinkStatusDto,
+  NetworkGraphDto,
+  SetAutoLinkRulesDto,
   AttachmentDto,
   AttachmentKind,
   CapabilityTypeDto,
@@ -323,5 +329,30 @@ export class LabelScanApi {
     const form = new FormData();
     form.append('image', image);
     return this.http.post<LabelScanResultDto>('api/label-scan', form);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AutoLinkApi {
+  private readonly http = inject(HttpClient);
+
+  status(): Observable<AutoLinkStatusDto> {
+    return this.http.get<AutoLinkStatusDto>('api/auto-link/status');
+  }
+  /** Dry run against the live HA registry. */
+  plan(): Observable<AutoLinkPlanDto> {
+    return this.http.get<AutoLinkPlanDto>('api/auto-link/plan');
+  }
+  apply(): Observable<AutoLinkApplyResultDto> {
+    return this.http.post<AutoLinkApplyResultDto>('api/auto-link/apply', {});
+  }
+  setRules(dto: SetAutoLinkRulesDto): Observable<AutoLinkRuleDto[]> {
+    return this.http.put<AutoLinkRuleDto[]>('api/auto-link/rules', dto);
+  }
+  resetSuppressions(): Observable<{ cleared: number }> {
+    return this.http.delete<{ cleared: number }>('api/auto-link/suppressions');
+  }
+  graph(): Observable<NetworkGraphDto> {
+    return this.http.get<NetworkGraphDto>('api/auto-link/graph');
   }
 }

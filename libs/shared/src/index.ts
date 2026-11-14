@@ -16,3 +16,4 @@ export * from './lib/dto/zigbee-catalog.dto';
 export * from './lib/resource-links';
 export * from './lib/dto/manual-lookup.dto';
 export * from './lib/dto/label-scan.dto';
+export * from './lib/dto/auto-link.dto';

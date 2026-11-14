@@ -59,6 +59,8 @@ export const ModelName = {
   DeviceCapability: 'DeviceCapability',
   ConnectionType: 'ConnectionType',
   Connection: 'Connection',
+  AutoLinkRule: 'AutoLinkRule',
+  AutoLinkSuppression: 'AutoLinkSuppression',
   Diagram: 'Diagram'
 } as const
 
@@ -201,6 +203,24 @@ export const ConnectionScalarFieldEnum = {
 } as const
 
 export type ConnectionScalarFieldEnum = (typeof ConnectionScalarFieldEnum)[keyof typeof ConnectionScalarFieldEnum]
+
+
+export const AutoLinkRuleScalarFieldEnum = {
+  type: 'type',
+  controllerDeviceId: 'controllerDeviceId',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AutoLinkRuleScalarFieldEnum = (typeof AutoLinkRuleScalarFieldEnum)[keyof typeof AutoLinkRuleScalarFieldEnum]
+
+
+export const AutoLinkSuppressionScalarFieldEnum = {
+  autoKey: 'autoKey',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type AutoLinkSuppressionScalarFieldEnum = (typeof AutoLinkSuppressionScalarFieldEnum)[keyof typeof AutoLinkSuppressionScalarFieldEnum]
 
 
 export const DiagramScalarFieldEnum = {

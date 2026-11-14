@@ -8,13 +8,15 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ConnectionDto } from '@smart-home-inventory/shared';
-import { mdiDelete, mdiPlus, mdiTransitConnectionVariant } from '@mdi/js';
+import { mdiDelete, mdiGraphOutline, mdiPinOutline, mdiPlus, mdiTransitConnectionVariant } from '@mdi/js';
 import { ConnectionsApi } from '../../core/api/api.services';
 import { ConfirmService } from '../../core/confirm/confirm.service';
 import { ConnectionTypesStore } from '../../core/connection-types/connection-types.store';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { ConnectionFormDialogComponent } from './connection-form-dialog.component';
+import { AutoLinkPanelComponent } from './auto-link-panel.component';
+import { ToastService } from '../../core/toast/toast.service';
 
 @Component({
   selector: 'app-connections-page',
@@ -23,15 +25,23 @@ import { ConnectionFormDialogComponent } from './connection-form-dialog.componen
     IconComponent,
     EmptyStateComponent,
     ConnectionFormDialogComponent,
+    AutoLinkPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="header">
       <h1>Connections</h1>
-      <button class="btn" (click)="dialogOpen.set(true)">
-        <app-icon [path]="icons.plus" [size]="18" /> New connection
-      </button>
+      <div class="head-actions">
+        <a class="btn secondary" routerLink="/network">
+          <app-icon [path]="icons.graph" [size]="18" /> Network map
+        </a>
+        <button class="btn" (click)="dialogOpen.set(true)">
+          <app-icon [path]="icons.plus" [size]="18" /> New connection
+        </button>
+      </div>
     </div>
+
+    <app-auto-link-panel (applied)="load()" />
 
     <div class="chips">
       <button class="chip" [class.active]="!typeFilter()" (click)="typeFilter.set(null)">
@@ -77,10 +87,24 @@ import { ConnectionFormDialogComponent } from './connection-form-dialog.componen
                 <span class="type-dot" [style.background]="connectionTypes.color(conn.type)"></span>
                 {{ connectionTypes.label(conn.type) }}
               </td>
-              <td class="muted">{{ conn.label }}</td>
+              <td class="muted">
+                @if (isAuto(conn)) {
+                  <span class="auto-badge" title="Created by auto-link. Delete or make manual to override.">auto</span>
+                }
+                {{ conn.label }}
+              </td>
               <td class="muted">{{ conn.notes }}</td>
               <td class="row-actions">
-                <button class="btn icon-only" title="Delete" (click)="remove(conn)">
+                @if (isAuto(conn)) {
+                  <button
+                    class="btn icon-only"
+                    title="Make manual — keep this link but stop auto-link from changing it"
+                    (click)="makeManual(conn)"
+                  >
+                    <app-icon [path]="icons.pin" [size]="18" />
+                  </button>
+                }
+                <button class="btn icon-only" [title]="isAuto(conn) ? 'Delete (auto-link will not recreate it)' : 'Delete'" (click)="remove(conn)">
                   <app-icon [path]="icons.delete" [size]="18" />
                 </button>
               </td>
@@ -140,12 +164,28 @@ import { ConnectionFormDialogComponent } from './connection-form-dialog.componen
     }
     .row-actions {
       text-align: right;
+      white-space: nowrap;
+    }
+    .head-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .auto-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-right: 6px;
+      background: color-mix(in srgb, var(--primary-color) 18%, var(--chip-background-color));
     }
   `,
 })
 export class ConnectionsPageComponent implements OnInit {
   private readonly api = inject(ConnectionsApi);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
   protected readonly connectionTypes = inject(ConnectionTypesStore);
 
   protected readonly connections = signal<ConnectionDto[]>([]);
@@ -156,6 +196,8 @@ export class ConnectionsPageComponent implements OnInit {
   protected readonly icons = {
     plus: mdiPlus,
     delete: mdiDelete,
+    pin: mdiPinOutline,
+    graph: mdiGraphOutline,
     connections: mdiTransitConnectionVariant,
   };
 
@@ -180,9 +222,28 @@ export class ConnectionsPageComponent implements OnInit {
     });
   }
 
+  protected isAuto(conn: ConnectionDto): boolean {
+    return conn.metadata?.['auto'] === true;
+  }
+
+  protected async makeManual(conn: ConnectionDto): Promise<void> {
+    const ok = await this.confirm.ask(
+      `Keep the ${this.connectionTypes.label(conn.type)} link "${conn.fromDeviceName}" → "${conn.toDeviceName}" but take it out of auto-link's hands? Re-runs will no longer change or remove it.`,
+      { confirmLabel: 'Make manual' }
+    );
+    if (!ok) return;
+    // Any update to a managed link converts it server-side; sending the
+    // existing metadata back is enough to trigger that.
+    this.api.update(conn.id, { metadata: conn.metadata ?? {} }).subscribe(() => {
+      this.toast.success('Link is now manual');
+      this.load();
+    });
+  }
+
   protected async remove(conn: ConnectionDto): Promise<void> {
     const confirmed = await this.confirm.ask(
-      `Delete the ${this.connectionTypes.label(conn.type)} connection between "${conn.fromDeviceName}" and "${conn.toDeviceName}"?`,
+      `Delete the ${this.connectionTypes.label(conn.type)} connection between "${conn.fromDeviceName}" and "${conn.toDeviceName}"?` +
+        (this.isAuto(conn) ? ' Auto-link will remember this and not recreate it.' : ''),
       { confirmLabel: 'Delete' }
     );
     if (!confirmed) return;
