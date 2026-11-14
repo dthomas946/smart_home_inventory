@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.20
+
+- Devices list: **Equipment / Smart home / All** toggle (remembered per
+  browser, defaults to Equipment) so hand-entered gear isn't buried under
+  HA-synced devices; new **Category** filter; new **Serial** and **Docs**
+  columns — Docs shows the count of attached manuals, or a "scan label"
+  nudge when a device has neither model nor serial yet
+- API: `GET /api/devices?source=manual|ha`; list rows carry `manualCount`
+
 ## 0.2.19
 
 - Resources: ManualsLib link 404'd (guessed product URL). Now links the

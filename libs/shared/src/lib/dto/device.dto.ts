@@ -5,6 +5,7 @@ import {
   DeviceStatus,
   DeviceStatusSchema,
   EntitySource,
+  EntitySourceSchema,
 } from '../enums';
 import { AttachmentDto } from './attachment.dto';
 import { DeviceCapabilityDto } from './capability.dto';
@@ -31,6 +32,8 @@ export interface DeviceDto {
   source: EntitySource;
   primaryImageId: string | null;
   capabilityKeys: string[];
+  /** Number of attachments of kind `manual` — lets lists show "has docs" without loading attachments. */
+  manualCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +71,8 @@ export const DeviceQuerySchema = z.object({
   status: DeviceStatusSchema.optional(),
   category: DeviceCategorySchema.optional(),
   capability: z.string().optional(),
+  /** `manual` = equipment you entered yourself; `ha` = synced from Home Assistant. */
+  source: EntitySourceSchema.optional(),
 });
 export type DeviceQueryDto = z.infer<typeof DeviceQuerySchema>;
 

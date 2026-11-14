@@ -24,6 +24,7 @@ import {
 const listInclude = {
   area: { select: { name: true } },
   capabilities: { include: { capabilityType: true } },
+  _count: { select: { attachments: { where: { kind: 'manual' } } } },
 } satisfies Prisma.DeviceInclude;
 
 const detailInclude = {
@@ -68,6 +69,7 @@ export function toDeviceDto(d: DeviceForList): DeviceDto {
     source: d.source as EntitySource,
     primaryImageId: d.primaryImageId,
     capabilityKeys: d.capabilities.map((c) => c.capabilityType.key),
+    manualCount: d._count.attachments,
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
   };
@@ -92,6 +94,7 @@ export class DevicesService {
         ...(query.areaId ? { areaId: query.areaId } : {}),
         ...(query.status ? { status: query.status } : {}),
         ...(query.category ? { category: query.category } : {}),
+        ...(query.source ? { source: query.source } : {}),
         ...(query.capability
           ? { capabilities: { some: { capabilityType: { key: query.capability } } } }
           : {}),
