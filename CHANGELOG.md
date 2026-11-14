@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4
+
+- Auto-link skips HA *service* entries (integration accounts like
+  "Aarlo for …") — they aren't hardware
+
 ## 0.3.3
 
 - Auto-link: a hand-drawn **Other**, wireless, or **custom** connection type

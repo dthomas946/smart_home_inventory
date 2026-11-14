@@ -161,6 +161,17 @@ describe('auto-link planner', () => {
     expect(out.controllerSuggestions['wifi'].some((c) => c.deviceId === 'L-router')).toBe(true);
   });
 
+  it('ignores HA service entries (integration accounts, not hardware)', () => {
+    const input = base();
+    input.rules = { wifi: 'L-router' };
+    input.haDevices.push(haDev('ha-acct', { entry_type: 'service' }));
+    input.localDevices.push({ id: 'L-acct', name: 'Cloud account', haDeviceId: 'ha-acct', category: null });
+    input.haEntities.push(ent('ha-acct', 'esphome'));
+    const out = plan(input);
+    expect(out.create.some((c) => c.toDeviceId === 'L-acct')).toBe(false);
+    expect(out.skipped.some((s) => s.deviceId === 'L-acct')).toBe(false);
+  });
+
   it('surfaces platforms it cannot classify instead of guessing', () => {
     const input = base();
     input.haDevices.push(haDev('ha-mystery'));

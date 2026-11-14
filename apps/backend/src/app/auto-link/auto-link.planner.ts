@@ -409,6 +409,9 @@ export function plan(input: PlannerInput): PlannerOutput {
     if (!local.haDeviceId) continue;
     const ha = haById.get(local.haDeviceId);
     if (!ha) continue; // orphaned in HA; nothing to derive
+    // entry_type "service" = an integration's account/cloud entry
+    // ("Aarlo for you@…", "Sun", "Forecast"): not hardware, nothing to link.
+    if (ha.entry_type === 'service') continue;
     const platforms = platformsOf.get(ha.id) ?? new Set<string>();
     const hub = ha.via_device_id ? (haById.get(ha.via_device_id) ?? null) : null;
     const hubPlatforms = hub ? (platformsOf.get(hub.id) ?? new Set<string>()) : new Set<string>();
