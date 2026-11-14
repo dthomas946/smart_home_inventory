@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.17
+
+- Scan label: separate **Take photo** and **Upload photo** buttons, so an
+  existing photo from the gallery or a file works too (previously the
+  camera was forced on phones)
+
 ## 0.2.16
 
 - **Scan label**: on the new/edit device form, photograph the rating plate

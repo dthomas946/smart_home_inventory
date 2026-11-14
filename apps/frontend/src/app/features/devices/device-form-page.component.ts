@@ -19,7 +19,7 @@ import {
   DeviceDetailDto,
   LabelScanResultDto,
 } from '@smart-home-inventory/shared';
-import { mdiCameraOutline, mdiClose } from '@mdi/js';
+import { mdiCameraOutline, mdiClose, mdiUploadOutline } from '@mdi/js';
 import {
   AreasApi,
   AttachmentsApi,
@@ -38,24 +38,36 @@ import { IconComponent } from '../../shared/ui/icon.component';
     <div class="page-head">
       <h1>{{ deviceId() ? 'Edit device' : 'New device' }}</h1>
       @if (scanEnabled()) {
-        <button
-          type="button"
-          class="btn secondary"
-          [disabled]="scanning()"
-          (click)="labelInput.click()"
-          title="Photograph the rating label and let the local vision model fill in the fields"
-        >
-          <app-icon [path]="icons.camera" [size]="18" />
-          {{ scanning() ? 'Reading label…' : 'Scan label' }}
-        </button>
+        <div class="scan-actions">
+          <button
+            type="button"
+            class="btn secondary"
+            [disabled]="scanning()"
+            (click)="cameraInput.click()"
+            title="Photograph the rating label and let the local vision model fill in the fields"
+          >
+            <app-icon [path]="icons.camera" [size]="18" />
+            {{ scanning() ? 'Reading label…' : 'Take photo' }}
+          </button>
+          <button
+            type="button"
+            class="btn secondary"
+            [disabled]="scanning()"
+            (click)="uploadInput.click()"
+            title="Pick an existing photo of the rating label"
+          >
+            <app-icon [path]="icons.upload" [size]="18" /> Upload photo
+          </button>
+        </div>
         <input
-          #labelInput
+          #cameraInput
           type="file"
           accept="image/*"
           capture="environment"
           hidden
           (change)="onLabelPicked($event)"
         />
+        <input #uploadInput type="file" accept="image/*" hidden (change)="onLabelPicked($event)" />
       }
     </div>
 
@@ -205,6 +217,11 @@ import { IconComponent } from '../../shared/ui/icon.component';
     .page-head h1 {
       margin: 0 0 8px;
     }
+    .scan-actions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
     .scan-banner {
       display: flex;
       align-items: center;
@@ -306,7 +323,7 @@ export class DeviceFormPageComponent implements OnInit {
   /** The label photo, attached to the device after it's saved. */
   private labelPhoto: File | null = null;
 
-  protected readonly icons = { camera: mdiCameraOutline, close: mdiClose };
+  protected readonly icons = { camera: mdiCameraOutline, upload: mdiUploadOutline, close: mdiClose };
 
   private originalCapabilities: string[] = [];
 
