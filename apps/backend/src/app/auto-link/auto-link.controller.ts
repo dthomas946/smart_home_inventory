@@ -39,6 +39,12 @@ export class AutoLinkController {
     return this.autoLink.resetSuppressions();
   }
 
+  /** Remove every auto-created link. Manual links and overrides are kept. */
+  @Delete('managed')
+  removeAllManaged() {
+    return this.autoLink.removeAllManaged();
+  }
+
   @Get('graph')
   graph() {
     return this.autoLink.graph();

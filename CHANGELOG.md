@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- Auto-link: router-integration clients (Netgear/UniFi/ASUS/Fritz) default
+  to Wi-Fi instead of Ethernet; SmartHQ / SmartThings / LG ThinQ appliances
+  map to Wi-Fi; more HA-internal and cloud-only platforms ignored. New
+  **remove all** for auto links on the panel
+
 ## 0.3.0
 
 - **Auto-link** (Connections page): derive "device → controller" links from

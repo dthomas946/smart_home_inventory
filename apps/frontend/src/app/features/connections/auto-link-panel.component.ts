@@ -66,7 +66,11 @@ import { IconComponent } from '../../shared/ui/icon.component';
         @if (status(); as s) {
           <br />
           <span>
-            {{ s.managedCount }} auto links ·
+            {{ s.managedCount }} auto links
+            @if (s.managedCount > 0) {
+              <button class="linkish" (click)="removeAll()">(remove all)</button>
+            }
+            ·
             @if (s.suppressedCount > 0) {
               {{ s.suppressedCount }} overrides
               <button class="linkish" (click)="resetOverrides()">(reset)</button> ·
@@ -452,6 +456,21 @@ export class AutoLinkPanelComponent implements OnInit {
     );
     if (!ok) return;
     this.api.resetSuppressions().subscribe(() => {
+      this.api.status().subscribe((s) => this.status.set(s));
+      if (this.plan()) this.preview();
+    });
+  }
+
+  protected async removeAll(): Promise<void> {
+    const n = this.status()?.managedCount ?? 0;
+    const ok = await this.confirm.ask(
+      `Remove all ${n} auto-created links? Your manual connections stay. A later Apply can recreate them.`,
+      { confirmLabel: 'Remove all' }
+    );
+    if (!ok) return;
+    this.api.removeAllManaged().subscribe((r) => {
+      this.toast.success(`Removed ${r.removed} auto links`);
+      this.applied.emit();
       this.api.status().subscribe((s) => this.status.set(s));
       if (this.plan()) this.preview();
     });

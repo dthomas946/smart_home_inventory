@@ -92,6 +92,17 @@ export class AutoLinkService {
     return { cleared: count };
   }
 
+  /** Escape hatch: delete every planner-created link (manual ones untouched).
+   *  Does not add suppressions — a later Apply recreates them. */
+  async removeAllManaged(): Promise<{ removed: number }> {
+    const rows = await this.prisma.connection.findMany({ select: { id: true, metadata: true } });
+    const ids = rows.filter((r) => isManaged(r.metadata)).map((r) => r.id);
+    if (ids.length === 0) return { removed: 0 };
+    const { count } = await this.prisma.connection.deleteMany({ where: { id: { in: ids } } });
+    this.logger.log(`Removed ${count} auto links`);
+    return { removed: count };
+  }
+
   /** Record that the user deleted/converted a managed link. Called by
    *  ConnectionsService so overrides are captured wherever they happen. */
   async suppress(autoKey: string, reason: string): Promise<void> {

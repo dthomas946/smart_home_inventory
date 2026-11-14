@@ -352,6 +352,9 @@ export class AutoLinkApi {
   resetSuppressions(): Observable<{ cleared: number }> {
     return this.http.delete<{ cleared: number }>('api/auto-link/suppressions');
   }
+  removeAllManaged(): Observable<{ removed: number }> {
+    return this.http.delete<{ removed: number }>('api/auto-link/managed');
+  }
   graph(): Observable<NetworkGraphDto> {
     return this.http.get<NetworkGraphDto>('api/auto-link/graph');
   }
