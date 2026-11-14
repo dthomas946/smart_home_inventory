@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.19
+
+- Resources: ManualsLib link 404'd (guessed product URL). Now links the
+  brand page plus a site-scoped search for the model
+
 ## 0.2.18
 
 - Scan label: request an 8k context from Ollama per call and downscale the

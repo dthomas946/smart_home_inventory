@@ -1,4 +1,4 @@
-import { buildResourceLinks } from './resource-links';
+import { brandSlug, buildResourceLinks } from './resource-links';
 
 describe('buildResourceLinks', () => {
   it('returns nothing when there is nothing to search on', () => {
@@ -26,6 +26,18 @@ describe('buildResourceLinks', () => {
     });
     expect(links.some((l) => l.group === 'parts')).toBe(false);
     expect(links.some((l) => l.group === 'docs')).toBe(true);
+  });
+
+  it('links ManualsLib by brand page, not a guessed product URL', () => {
+    const links = buildResourceLinks({ manufacturer: 'Jasco Products', model: '43090' });
+    const brand = links.find((l) => l.label.startsWith('ManualsLib:'));
+    expect(brand?.url).toBe('https://www.manualslib.com/brand/jasco-products/');
+    expect(links.some((l) => l.url.includes('/products/'))).toBe(false);
+  });
+
+  it('slugs brand names the way ManualsLib does', () => {
+    expect(brandSlug('Aeotec Ltd.')).toBe('aeotec-ltd');
+    expect(brandSlug('  GE  ')).toBe('ge');
   });
 
   it('URL-encodes manufacturer and model', () => {

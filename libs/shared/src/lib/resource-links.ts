@@ -44,6 +44,14 @@ function clean(value: string | null | undefined): string {
   return (value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+/** "Jasco Products" → "jasco-products"; "Aeotec Ltd." → "aeotec-ltd". */
+export function brandSlug(manufacturer: string): string {
+  return clean(manufacturer)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function q(...parts: string[]): string {
   return encodeURIComponent(parts.filter(Boolean).join(' '));
 }
@@ -66,11 +74,20 @@ export function buildResourceLinks(input: ResourceLinkInput): ResourceLink[] {
     label: 'Web search: manual (PDF)',
     url: `https://duckduckgo.com/?q=${q(mm, 'manual', 'filetype:pdf')}`,
   });
+  // ManualsLib has no plain-GET search; its brand index pages are stable and
+  // a site-scoped web search finds the exact model page.
   links.push({
     group: 'docs',
-    label: 'ManualsLib',
-    url: `https://www.manualslib.com/products/${q(mm)}.html`,
+    label: 'ManualsLib (search)',
+    url: `https://duckduckgo.com/?q=${q('site:manualslib.com', mm)}`,
   });
+  if (manufacturer) {
+    links.push({
+      group: 'docs',
+      label: `ManualsLib: ${manufacturer}`,
+      url: `https://www.manualslib.com/brand/${brandSlug(manufacturer)}/`,
+    });
+  }
   if (model) {
     links.push({
       group: 'docs',
