@@ -265,7 +265,7 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
       <div class="card section">
         <div class="section-head">
           <h3>Connections ({{ d.connections.length }})</h3>
-          <button class="btn secondary" (click)="connectionDialogOpen.set(true)">
+          <button class="btn secondary" (click)="editingConnection.set(null); connectionDialogOpen.set(true)">
             <app-icon [path]="icons.plus" [size]="18" /> Add
           </button>
         </div>
@@ -290,6 +290,13 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
                   </td>
                   <td class="muted">{{ conn.label }}</td>
                   <td class="row-actions">
+                    <button
+                      class="btn icon-only"
+                      title="Edit connection"
+                      (click)="editingConnection.set(conn); connectionDialogOpen.set(true)"
+                    >
+                      <app-icon [path]="icons.pencil" [size]="18" />
+                    </button>
                     <button
                       class="btn icon-only"
                       title="Delete connection"
@@ -321,8 +328,9 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
       <app-connection-form-dialog
         [open]="connectionDialogOpen()"
         [fixedDevice]="d"
-        (closed)="connectionDialogOpen.set(false)"
-        (saved)="connectionDialogOpen.set(false); load()"
+        [editing]="editingConnection()"
+        (closed)="connectionDialogOpen.set(false); editingConnection.set(null)"
+        (saved)="connectionDialogOpen.set(false); editingConnection.set(null); load()"
       />
 
       <app-manual-lookup-dialog
@@ -472,6 +480,7 @@ export class DeviceDetailPageComponent implements OnInit {
   protected readonly device = signal<DeviceDetailDto | null>(null);
   protected readonly diagrams = signal<DiagramDto[]>([]);
   protected readonly connectionDialogOpen = signal(false);
+  protected readonly editingConnection = signal<ConnectionDto | null>(null);
   protected readonly zigbeeMatch = signal<ZigbeeCatalogMatchDto | null>(null);
   protected readonly haSuggestion = signal<HaCapabilitySuggestionDto | null>(null);
   protected readonly applyingImage = signal(false);

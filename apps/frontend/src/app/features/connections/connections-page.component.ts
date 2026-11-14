@@ -8,7 +8,14 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ConnectionDto } from '@smart-home-inventory/shared';
-import { mdiDelete, mdiGraphOutline, mdiPinOutline, mdiPlus, mdiTransitConnectionVariant } from '@mdi/js';
+import {
+  mdiDelete,
+  mdiGraphOutline,
+  mdiPencil,
+  mdiPinOutline,
+  mdiPlus,
+  mdiTransitConnectionVariant,
+} from '@mdi/js';
 import { ConnectionsApi } from '../../core/api/api.services';
 import { ConfirmService } from '../../core/confirm/confirm.service';
 import { ConnectionTypesStore } from '../../core/connection-types/connection-types.store';
@@ -35,7 +42,7 @@ import { ToastService } from '../../core/toast/toast.service';
         <a class="btn secondary" routerLink="/network">
           <app-icon [path]="icons.graph" [size]="18" /> Network map
         </a>
-        <button class="btn" (click)="dialogOpen.set(true)">
+        <button class="btn" (click)="editing.set(null); dialogOpen.set(true)">
           <app-icon [path]="icons.plus" [size]="18" /> New connection
         </button>
       </div>
@@ -95,6 +102,9 @@ import { ToastService } from '../../core/toast/toast.service';
               </td>
               <td class="muted">{{ conn.notes }}</td>
               <td class="row-actions">
+                <button class="btn icon-only" title="Edit" (click)="edit(conn)">
+                  <app-icon [path]="icons.pencil" [size]="18" />
+                </button>
                 @if (isAuto(conn)) {
                   <button
                     class="btn icon-only"
@@ -121,8 +131,9 @@ import { ToastService } from '../../core/toast/toast.service';
 
     <app-connection-form-dialog
       [open]="dialogOpen()"
-      (closed)="dialogOpen.set(false)"
-      (saved)="dialogOpen.set(false); load()"
+      [editing]="editing()"
+      (closed)="dialogOpen.set(false); editing.set(null)"
+      (saved)="dialogOpen.set(false); editing.set(null); load()"
     />
   `,
   styles: `
@@ -192,11 +203,13 @@ export class ConnectionsPageComponent implements OnInit {
   protected readonly typeFilter = signal<string | null>(null);
   protected readonly loaded = signal(false);
   protected readonly dialogOpen = signal(false);
+  protected readonly editing = signal<ConnectionDto | null>(null);
 
   protected readonly icons = {
     plus: mdiPlus,
     delete: mdiDelete,
     pin: mdiPinOutline,
+    pencil: mdiPencil,
     graph: mdiGraphOutline,
     connections: mdiTransitConnectionVariant,
   };
@@ -220,6 +233,11 @@ export class ConnectionsPageComponent implements OnInit {
       this.connections.set(connections);
       this.loaded.set(true);
     });
+  }
+
+  protected edit(conn: ConnectionDto): void {
+    this.editing.set(conn);
+    this.dialogOpen.set(true);
   }
 
   protected isAuto(conn: ConnectionDto): boolean {

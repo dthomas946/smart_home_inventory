@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2
+
+- **Edit connections**: pencil button on the Connections page and on each
+  device's connection list. Change type, label, notes, either endpoint, or
+  swap direction. Editing an auto link turns it into a manual one so
+  auto-link re-runs leave it alone
+- API: `PATCH /api/connections/:id` accepts `fromDeviceId` / `toDeviceId`
+
 ## 0.3.1
 
 - Auto-link: router-integration clients (Netgear/UniFi/ASUS/Fritz) default

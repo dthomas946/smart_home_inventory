@@ -87,6 +87,13 @@ export class ConnectionsService {
     const current = await this.prisma.connection.findUnique({ where: { id } });
     if (!current) throw new NotFoundException(`Connection ${id} not found`);
     if (dto.type !== undefined) await this.connectionTypes.ensureKeyExists(dto.type);
+    const fromDeviceId = dto.fromDeviceId ?? current.fromDeviceId;
+    const toDeviceId = dto.toDeviceId ?? current.toDeviceId;
+    if (fromDeviceId === toDeviceId) {
+      throw new BadRequestException('a device cannot be connected to itself');
+    }
+    if (dto.fromDeviceId !== undefined) await this.ensureDevice(dto.fromDeviceId);
+    if (dto.toDeviceId !== undefined) await this.ensureDevice(dto.toDeviceId);
 
     // Editing an auto-created link is an override: it becomes a manual link
     // (auto flag dropped, autoKey kept for traceability) and the planner is
@@ -104,6 +111,8 @@ export class ConnectionsService {
       where: { id },
       data: {
         ...(dto.type !== undefined ? { type: dto.type } : {}),
+        ...(dto.fromDeviceId !== undefined ? { fromDeviceId: dto.fromDeviceId } : {}),
+        ...(dto.toDeviceId !== undefined ? { toDeviceId: dto.toDeviceId } : {}),
         ...(dto.label !== undefined ? { label: dto.label } : {}),
         ...(metadata !== undefined
           ? { metadata: (metadata ?? Prisma.JsonNull) as Prisma.InputJsonValue }

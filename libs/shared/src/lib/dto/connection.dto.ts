@@ -31,6 +31,10 @@ export type CreateConnectionDto = z.infer<typeof CreateConnectionSchema>;
 
 export const UpdateConnectionSchema = z.object({
   type: ConnectionTypeSchema.optional(),
+  /** Re-point either end. Same-device is rejected server-side once both
+   *  ends are resolved, since only one end may be sent. */
+  fromDeviceId: z.string().min(1).optional(),
+  toDeviceId: z.string().min(1).optional(),
   label: z.string().max(200).nullish(),
   metadata: z.record(z.string(), z.unknown()).nullish(),
   notes: z.string().max(10000).nullish(),

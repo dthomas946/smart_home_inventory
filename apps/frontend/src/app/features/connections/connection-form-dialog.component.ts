@@ -31,7 +31,13 @@ import { IconComponent } from '../../shared/ui/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <dialog #dlg (cancel)="closed.emit()">
-      <h3>New connection</h3>
+      <h3>{{ editing() ? 'Edit connection' : 'New connection' }}</h3>
+      @if (editingAuto()) {
+        <p class="auto-note">
+          This link was created by auto-link. Saving changes makes it a manual link — re-runs
+          won't change or remove it.
+        </p>
+      }
       <form (ngSubmit)="save()">
         <label class="field">
           <span>Type *</span>
@@ -46,7 +52,41 @@ import { IconComponent } from '../../shared/ui/icon.component';
           </select>
         </label>
 
-        @if (effectivePair(); as pair) {
+        @if (editing()) {
+          <div class="field">
+            <span>From device (upstream)</span>
+            @if (changingEnd() === 'from') {
+              <app-device-picker
+                [exclude]="[editTo().id]"
+                (selected)="editFrom.set({ id: $event.id, name: $event.name }); changingEnd.set(null)"
+              />
+            } @else {
+              <div class="pair-row">
+                <div class="value">{{ editFrom().name }}</div>
+                <button type="button" class="btn secondary small-btn" (click)="changingEnd.set('from')">Change</button>
+              </div>
+            }
+          </div>
+          <div class="swap-row">
+            <button type="button" class="btn icon-only" title="Swap direction" (click)="swapEdit()">
+              <app-icon [path]="icons.swap" [size]="16" />
+            </button>
+          </div>
+          <div class="field">
+            <span>To device</span>
+            @if (changingEnd() === 'to') {
+              <app-device-picker
+                [exclude]="[editFrom().id]"
+                (selected)="editTo.set({ id: $event.id, name: $event.name }); changingEnd.set(null)"
+              />
+            } @else {
+              <div class="pair-row">
+                <div class="value">{{ editTo().name }}</div>
+                <button type="button" class="btn secondary small-btn" (click)="changingEnd.set('to')">Change</button>
+              </div>
+            }
+          </div>
+        } @else if (effectivePair(); as pair) {
           <div class="field">
             <span>Connection</span>
             <div class="pair-row">
@@ -110,7 +150,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
             Cancel
           </button>
           <button type="submit" class="btn" [disabled]="!canSave() || saving()">
-            Create
+            {{ editing() ? 'Save' : 'Create' }}
           </button>
         </div>
       </form>
@@ -126,6 +166,22 @@ import { IconComponent } from '../../shared/ui/icon.component';
       align-items: center;
       justify-content: space-between;
       gap: 8px;
+    }
+    .auto-note {
+      font-size: 0.85em;
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+    }
+    .swap-row {
+      display: flex;
+      justify-content: center;
+      margin: -6px 0 2px;
+    }
+    .small-btn {
+      padding: 2px 10px;
+      font-size: 12px;
     }
     .actions {
       display: flex;
@@ -148,6 +204,8 @@ export class ConnectionFormDialogComponent {
   readonly initialLabel = input('');
   /** Pre-fills the type, e.g. with the diagram edge/wire's own type. */
   readonly initialType = input<ConnectionType | ''>('');
+  /** When set, the dialog edits this connection instead of creating one. */
+  readonly editing = input<ConnectionDto | null>(null);
   readonly closed = output<void>();
   readonly saved = output<ConnectionDto>();
 
@@ -164,6 +222,12 @@ export class ConnectionFormDialogComponent {
    *  the opposite way from the real upstream/downstream relationship. */
   protected readonly swapped = signal(false);
 
+  // Edit mode state
+  protected readonly editFrom = signal<{ id: string; name: string }>({ id: '', name: '' });
+  protected readonly editTo = signal<{ id: string; name: string }>({ id: '', name: '' });
+  protected readonly changingEnd = signal<'from' | 'to' | null>(null);
+  protected readonly editingAuto = computed(() => this.editing()?.metadata?.['auto'] === true);
+
   protected readonly effectivePair = computed(() => {
     const pair = this.fixedPair();
     if (!pair) return null;
@@ -173,7 +237,16 @@ export class ConnectionFormDialogComponent {
   constructor() {
     effect(() => {
       const el = this.dlg().nativeElement;
-      if (this.open()) {
+      const editing = this.editing();
+      if (this.open() && editing) {
+        this.type = editing.type;
+        this.label = editing.label ?? '';
+        this.notes = editing.notes ?? '';
+        this.editFrom.set({ id: editing.fromDeviceId, name: editing.fromDeviceName });
+        this.editTo.set({ id: editing.toDeviceId, name: editing.toDeviceName });
+        this.changingEnd.set(null);
+        if (!el.open) el.showModal();
+      } else if (this.open()) {
         this.type = this.initialType() || this.connectionTypes.types()[0]?.key || '';
         this.fixedIsSource = false;
         this.label = this.initialLabel();
@@ -188,14 +261,26 @@ export class ConnectionFormDialogComponent {
     });
   }
 
+  protected swapEdit(): void {
+    const from = this.editFrom();
+    this.editFrom.set(this.editTo());
+    this.editTo.set(from);
+  }
+
   protected canSave(): boolean {
     if (!this.type) return false;
+    if (this.editing()) return this.editFrom().id !== this.editTo().id && this.changingEnd() === null;
     if (this.fixedPair()) return true;
     if (this.fixedDevice()) return this.otherDevice() !== null;
     return this.sourceDevice() !== null && this.otherDevice() !== null;
   }
 
   protected save(): void {
+    const editing = this.editing();
+    if (editing) {
+      this.saveEdit(editing);
+      return;
+    }
     let fromDeviceId: string;
     let toDeviceId: string;
     const pair = this.effectivePair();
@@ -227,6 +312,30 @@ export class ConnectionFormDialogComponent {
         next: (connection) => {
           this.saving.set(false);
           this.toast.success('Connection created');
+          this.saved.emit(connection);
+        },
+        error: () => this.saving.set(false),
+      });
+  }
+
+  private saveEdit(current: ConnectionDto): void {
+    const from = this.editFrom().id;
+    const to = this.editTo().id;
+    const label = this.label.trim() || null;
+    const notes = this.notes.trim() || null;
+    this.saving.set(true);
+    this.api
+      .update(current.id, {
+        ...(this.type !== current.type ? { type: this.type } : {}),
+        ...(from !== current.fromDeviceId ? { fromDeviceId: from } : {}),
+        ...(to !== current.toDeviceId ? { toDeviceId: to } : {}),
+        label,
+        notes,
+      })
+      .subscribe({
+        next: (connection) => {
+          this.saving.set(false);
+          this.toast.success(this.editingAuto() ? 'Connection saved — now manual' : 'Connection saved');
           this.saved.emit(connection);
         },
         error: () => this.saving.set(false),
