@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.7
+
+- Add attachment: new default type **Auto (from file)** — the picker accepts
+  photos and PDFs and files PDFs as `manual`, images as `image`. Previously
+  the dialog defaulted to `image`, which greyed PDFs out of the picker
+- File filters list `.pdf` alongside the MIME type (iOS / webviews ignore
+  MIME-only filters)
+- Server identifies uploads by content (PDF, JPEG, PNG, WebP magic bytes), so
+  PDFs a device labels `application/octet-stream` are accepted as manuals
+
 ## 0.3.6
 
 - Auto-link: custom power types ("120V", "240V", "24V AC"…) never count

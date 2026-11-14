@@ -56,7 +56,8 @@ export class AttachmentsService {
     sourceUrl: string | null = null
   ): Promise<AttachmentDto> {
     try {
-      this.storage.validateMime(dto.kind, file.mimetype);
+      const mimeType = await this.storage.sniffMime(file.path, file.mimetype);
+      this.storage.validateMime(dto.kind, mimeType);
       await this.ensureOwnerExists(owner);
       const sha256 = await this.storage.sha256(file.path);
       const attachment = await this.prisma.attachment.create({
@@ -65,7 +66,7 @@ export class AttachmentsService {
           title: dto.title ?? null,
           originalName: file.originalname,
           storedName: file.filename,
-          mimeType: file.mimetype,
+          mimeType,
           sizeBytes: file.size,
           sha256,
           sourceUrl,

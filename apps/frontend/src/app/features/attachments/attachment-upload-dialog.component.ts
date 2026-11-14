@@ -30,6 +30,7 @@ import { FileDropzoneComponent } from './file-dropzone.component';
       <label class="field">
         <span>Type</span>
         <select class="text kind" [value]="uploadKind()" (change)="onKindChange($event)">
+          <option value="auto">Auto (from file)</option>
           @for (kind of kinds; track kind) {
             <option [value]="kind">{{ kind }}</option>
           }
@@ -68,7 +69,8 @@ export class AttachmentUploadDialogComponent {
   readonly uploaded = output<void>();
 
   protected readonly kinds = ATTACHMENT_KINDS;
-  protected readonly uploadKind = signal<AttachmentKind>('image');
+  /** 'auto' picks the kind from the file: PDF → manual, image → image. */
+  protected readonly uploadKind = signal<AttachmentKind | 'auto'>('auto');
   protected readonly uploadProgress = signal<number | null>(null);
   protected readonly uploadOpen = signal(false);
 
@@ -88,28 +90,44 @@ export class AttachmentUploadDialogComponent {
   }
 
   protected onKindChange(event: Event): void {
-    this.uploadKind.set((event.target as HTMLSelectElement).value as AttachmentKind);
+    this.uploadKind.set((event.target as HTMLSelectElement).value as AttachmentKind | 'auto');
   }
 
-  protected acceptFor(kind: AttachmentKind): string {
+  /** File-picker filter. Extensions are listed alongside MIME types because
+   *  iOS and some webviews ignore MIME-only filters (or grey PDFs out). */
+  protected acceptFor(kind: AttachmentKind | 'auto'): string {
     switch (kind) {
+      case 'auto':
+        return 'image/*,application/pdf,.pdf';
       case 'manual':
-        return 'application/pdf';
+        return 'application/pdf,.pdf';
       case 'image':
       case 'plan':
         return 'image/*';
       case 'invoice':
-        return 'application/pdf,image/*';
+        return 'application/pdf,.pdf,image/*';
       default:
         return '*/*';
     }
+  }
+
+  private resolveKind(file: File): AttachmentKind {
+    const chosen = this.uploadKind();
+    if (chosen !== 'auto') return chosen;
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    if (isPdf) return 'manual';
+    if (file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(file.name)) {
+      return 'image';
+    }
+    return 'other';
   }
 
   protected upload(files: File[]): void {
     const file = files[0];
     if (!file) return;
     this.uploadProgress.set(0);
-    this.api.upload(this.owner(), file, this.uploadKind()).subscribe({
+    const kind = this.resolveKind(file);
+    this.api.upload(this.owner(), file, kind).subscribe({
       next: (event) => {
         if (event.type === HttpEventType.UploadProgress && event.total) {
           this.uploadProgress.set(Math.round((100 * event.loaded) / event.total));
@@ -117,7 +135,7 @@ export class AttachmentUploadDialogComponent {
         if (event.type === HttpEventType.Response) {
           this.uploadProgress.set(null);
           this.uploadOpen.set(false);
-          this.toast.success(`Uploaded ${file.name}`);
+          this.toast.success(`Uploaded ${file.name} as ${kind}`);
           this.uploaded.emit();
         }
       },
