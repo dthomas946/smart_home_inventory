@@ -1,9 +1,9 @@
 # Changelog
 
-## 0.3.4
+## 0.3.5
 
-- Auto-link skips HA *service* entries (integration accounts like
-  "Aarlo for …") — they aren't hardware
+- Auto-link skips HA *service* entries and account pseudo-devices named
+  after an email address ("Aarlo for you@…") — they aren't hardware
 
 ## 0.3.3
 

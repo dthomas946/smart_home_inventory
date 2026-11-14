@@ -412,6 +412,9 @@ export function plan(input: PlannerInput): PlannerOutput {
     // entry_type "service" = an integration's account/cloud entry
     // ("Aarlo for you@…", "Sun", "Forecast"): not hardware, nothing to link.
     if (ha.entry_type === 'service') continue;
+    // Some integrations (aarlo, others) register the cloud account itself
+    // as a plain device named "<Integration> for you@example.com".
+    if (!ha.model && /\S+@\S+\.\S+/.test(`${ha.name ?? ''} ${ha.name_by_user ?? ''}`)) continue;
     const platforms = platformsOf.get(ha.id) ?? new Set<string>();
     const hub = ha.via_device_id ? (haById.get(ha.via_device_id) ?? null) : null;
     const hubPlatforms = hub ? (platformsOf.get(hub.id) ?? new Set<string>()) : new Set<string>();

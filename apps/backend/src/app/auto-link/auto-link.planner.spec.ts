@@ -172,6 +172,15 @@ describe('auto-link planner', () => {
     expect(out.skipped.some((s) => s.deviceId === 'L-acct')).toBe(false);
   });
 
+  it('ignores account pseudo-devices named after an email address', () => {
+    const input = base();
+    input.rules = { wifi: 'L-router' };
+    input.haDevices.push(haDev('ha-acct2', { name: 'Aarlo for someone@example.com', model: null }));
+    input.localDevices.push({ id: 'L-acct2', name: 'Aarlo acct', haDeviceId: 'ha-acct2', category: null });
+    input.haEntities.push(ent('ha-acct2', 'aarlo'));
+    expect(plan(input).create.some((c) => c.toDeviceId === 'L-acct2')).toBe(false);
+  });
+
   it('surfaces platforms it cannot classify instead of guessing', () => {
     const input = base();
     input.haDevices.push(haDev('ha-mystery'));
