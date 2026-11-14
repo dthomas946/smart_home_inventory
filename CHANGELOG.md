@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.3
+
+- Auto-link: a hand-drawn **Other**, wireless, or **custom** connection type
+  onto a device now counts as "you placed this device" and auto-link backs
+  off (previously only the built-in network types did). Power, HDMI, USB,
+  coax and pipes still don't count
+
 ## 0.3.2
 
 - **Edit connections**: pencil button on the Connections page and on each

@@ -24,7 +24,13 @@ import {
   HaRegistryClient,
 } from '../ha/ha-registry.types';
 import { PrismaService } from '../prisma/prisma.service';
-import { isManaged, plan, PlannerInput, PlannerOutput } from './auto-link.planner';
+import {
+  isManaged,
+  NETWORK_TYPES,
+  plan,
+  PlannerInput,
+  PlannerOutput,
+} from './auto-link.planner';
 
 @Injectable()
 export class AutoLinkService {
@@ -262,7 +268,7 @@ export class AutoLinkService {
       );
     }
 
-    const [localDevices, existing, ruleRows, suppressions] = await Promise.all([
+    const [localDevices, existing, ruleRows, suppressions, types] = await Promise.all([
       this.prisma.device.findMany({
         select: { id: true, name: true, haDeviceId: true, category: true },
       }),
@@ -271,7 +277,22 @@ export class AutoLinkService {
       }),
       this.listRules(),
       this.prisma.autoLinkSuppression.findMany({ select: { autoKey: true } }),
+      this.connectionTypes.list(),
     ]);
+
+    // A hand-drawn link of any of these types onto a device means the user
+    // has placed it: the built-in network types, 'other', every wireless
+    // type, and any custom type outside plumbing/ventilation (e.g. "Direct
+    // wire", "Internal", a proprietary radio). Power, HDMI, USB, coax and
+    // pipes never count — a lamp being plugged in says nothing about its
+    // network.
+    const overrideTypes = new Set<string>([...NETWORK_TYPES, 'other']);
+    for (const t of types) {
+      if (t.group === 'wireless') overrideTypes.add(t.key);
+      if (!t.isSystem && t.group !== 'plumbing' && t.group !== 'ventilation') {
+        overrideTypes.add(t.key);
+      }
+    }
 
     const input: PlannerInput = {
       localDevices,
@@ -281,6 +302,7 @@ export class AutoLinkService {
       rules: Object.fromEntries(ruleRows.map((r) => [r.type, r.controllerDeviceId])),
       existing,
       suppressedKeys: new Set(suppressions.map((s) => s.autoKey)),
+      overrideTypes,
     };
     const managedIdByKey = new Map<string, string>();
     for (const c of existing) if (isManaged(c.metadata)) managedIdByKey.set(c.metadata.autoKey, c.id);

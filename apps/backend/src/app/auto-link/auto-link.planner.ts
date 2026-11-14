@@ -43,6 +43,10 @@ export interface PlannerInput {
   rules: Record<string, string>;
   existing: ExistingConnection[];
   suppressedKeys: Set<string>;
+  /** Connection types that, drawn by hand onto a device, mean "the user
+   *  placed this device — leave it alone". Defaults to NETWORK_TYPES; the
+   *  service widens it with 'other' and the user's own custom types. */
+  overrideTypes?: ReadonlySet<string>;
 }
 
 export interface PlannerOutput {
@@ -468,10 +472,11 @@ export function plan(input: PlannerInput): PlannerOutput {
       continue;
     }
     // A hand-made network link on this device wins over anything we'd infer.
+    const overrideTypes = input.overrideTypes ?? NETWORK_TYPES;
     const manualNetworkLink = input.existing.some(
       (c) =>
         !isManaged(c.metadata) &&
-        NETWORK_TYPES.has(c.type) &&
+        overrideTypes.has(c.type) &&
         (c.toDeviceId === local.id || c.fromDeviceId === local.id)
     );
     if (manualNetworkLink) {

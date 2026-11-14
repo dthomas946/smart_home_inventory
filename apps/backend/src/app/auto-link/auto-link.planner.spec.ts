@@ -101,6 +101,19 @@ describe('auto-link planner', () => {
     expect(out.create.some((c) => c.toDeviceId === 'L-bulb')).toBe(true);
   });
 
+  it('honours caller-supplied override types (e.g. a custom proprietary radio)', () => {
+    const input = base();
+    input.rules = { wifi: 'L-router' };
+    input.existing = [
+      { id: 'c1', type: 'arlo_wireless', fromDeviceId: 'L-coord', toDeviceId: 'L-esp', metadata: null },
+    ];
+    expect(plan(input).create.some((c) => c.toDeviceId === 'L-esp')).toBe(true);
+    input.overrideTypes = new Set(['arlo_wireless']);
+    const out = plan(input);
+    expect(out.create.some((c) => c.toDeviceId === 'L-esp')).toBe(false);
+    expect(out.skipped.find((s) => s.deviceId === 'L-esp')?.reason).toBe('manual_override');
+  });
+
   it('respects suppressions and removes the stale managed link', () => {
     const input = base();
     const key = autoKeyFor('ha-bulb');
