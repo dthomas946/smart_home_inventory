@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.6
+
+- Auto-link: custom power types ("120V", "240V", "24V AC"…) never count
+  as a manual network placement — drawing a power line to a smart plug no
+  longer stops auto-link from linking its radio
+
 ## 0.3.5
 
 - Auto-link skips HA *service* entries and account pseudo-devices named

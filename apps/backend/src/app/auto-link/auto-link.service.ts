@@ -287,9 +287,17 @@ export class AutoLinkService {
     // pipes never count — a lamp being plugged in says nothing about its
     // network.
     const overrideTypes = new Set<string>([...NETWORK_TYPES, 'other']);
+    // Custom power types ("120V", "240V", "24V AC") are excluded by name.
+    const looksLikePower = (key: string, label: string) =>
+      /\b\d+\s*v(ac|dc)?\b|\d+v_|_\d+v\b|mains|volt|power|^ac\b|\bdc\b/i.test(`${key} ${label}`);
     for (const t of types) {
       if (t.group === 'wireless') overrideTypes.add(t.key);
-      if (!t.isSystem && t.group !== 'plumbing' && t.group !== 'ventilation') {
+      if (
+        !t.isSystem &&
+        t.group !== 'plumbing' &&
+        t.group !== 'ventilation' &&
+        !looksLikePower(t.key, t.label)
+      ) {
         overrideTypes.add(t.key);
       }
     }
