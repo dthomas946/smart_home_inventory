@@ -206,11 +206,11 @@ const H_COL = 140; // px per node column (room for a ~20-char label)
 const H_ROW_GAP = 64; // px between stacked rows (leaf rows; subtree rows add their height)
 const H_TREE_GAP_X = 60; // px between top-level trees in a row
 const H_TREE_GAP_Y = 90; // px between rows of top-level trees
-export const H_WRAP = 5; // max children (and top-level trees) side by side
+export const H_WRAP = 3; // max children (and top-level trees) side by side
 
 /**
  * Top-down tidy tree, never more than H_WRAP wide at any level: each
- * parent's children are laid out in rows of up to 5 (controllers first,
+ * parent's children are laid out in rows of up to H_WRAP (controllers first,
  * then end devices), each row centred under the parent; top-level trees are
  * packed the same way. Wide hubs like a router with 100+ clients become a
  * compact block instead of an endless line.

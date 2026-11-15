@@ -102,7 +102,7 @@ describe('layoutHierarchy', () => {
     expect(Math.max(...perRow.values())).toBeLessThanOrEqual(H_WRAP);
   });
 
-  it('wraps mixed children (controllers + end devices) at 5 too', () => {
+  it('wraps mixed children (controllers + end devices) too', () => {
     const kids = Array.from({ length: 12 }, (_, i) => node(`k${i}`, i < 3));
     const grand = [0, 1, 2].flatMap((i) => [node(`g${i}a`), node(`g${i}b`)]);
     const g: NetworkGraphDto = {
@@ -123,7 +123,7 @@ describe('layoutHierarchy', () => {
     expect(keys.size).toBe(l.nodes.length);
   });
 
-  it('packs many separate trees 5 per row', () => {
+  it('packs many separate trees H_WRAP per row', () => {
     const nodes = Array.from({ length: 12 }, (_, i) => [node(`r${i}`, true), node(`c${i}`)]).flat();
     const g: NetworkGraphDto = {
       nodes,
@@ -134,7 +134,7 @@ describe('layoutHierarchy', () => {
     const roots = l.nodes.filter((n) => n.depth === 0);
     const perRow = new Map<number, number>();
     for (const n of roots) perRow.set(n.y, (perRow.get(n.y) ?? 0) + 1);
-    expect(perRow.size).toBe(3);
+    expect(perRow.size).toBe(Math.ceil(12 / H_WRAP));
     expect(Math.max(...perRow.values())).toBe(H_WRAP);
   });
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+
+- Network map Hierarchy layout wraps at **3 wide** (was 5) at every level
+
 ## 0.4.1
 
 - **Physical devices only.** HA sync now skips virtual "devices": add-ons,
