@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+- **Network map: Hierarchy layout** (now the default) — a top-down tree with
+  controllers above what they serve; hubs with many clients wrap them into
+  rows. Toggle **Hierarchy / Radial**; the choice is remembered per browser
+- **Drag devices** on the map to arrange it yourself. Positions are saved on
+  the server per layout (same on phone and desktop); a reset button appears
+  once anything has been moved
+- **Edit connection types** in Settings: name, group, colour and line style
+  are editable inline for every type, built-ins included
+- **Create a device from the picker**: when adding or editing a connection,
+  type a name that doesn't exist (e.g. "Panel A – Breaker 12", "Furnace 24V
+  transformer") and choose **+ Create** — handy for power sources and other
+  non-smart endpoints. Category is guessed from the name
+
 ## 0.3.7
 
 - Add attachment: new default type **Auto (from file)** — the picker accepts

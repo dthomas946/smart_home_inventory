@@ -262,6 +262,15 @@ model AutoLinkSuppression {
   createdAt DateTime @default(now())
 }
 
+/// Hand-arranged node positions on the Network map, one row per layout mode
+/// ("radial" | "hierarchy"). positions = { [deviceId]: { x, y } }. Devices
+/// without an entry fall back to the computed layout.
+model NetworkLayout {
+  mode      String   @id
+  positions Json
+  updatedAt DateTime @updatedAt
+}
+
 model Diagram {
   id        String   @id @default(cuid())
   title     String

@@ -9,12 +9,33 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { DASH_STYLE_PATTERNS, DashStyle, NetworkGraphDto } from '@smart-home-inventory/shared';
-import { mdiFitToScreenOutline, mdiGraphOutline, mdiRefresh } from '@mdi/js';
+import {
+  DASH_STYLE_PATTERNS,
+  DashStyle,
+  NetworkGraphDto,
+  NetworkLayoutMode,
+  NetworkPositions,
+} from '@smart-home-inventory/shared';
+import {
+  mdiBackupRestore,
+  mdiFileTreeOutline,
+  mdiFitToScreenOutline,
+  mdiGraphOutline,
+  mdiRefresh,
+} from '@mdi/js';
 import { AutoLinkApi } from '../../core/api/api.services';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { LaidOutNode, layoutGraph } from './network-layout';
+import { LaidOutNode, layoutGraph, layoutHierarchy } from './network-layout';
+
+const MODE_PREF_KEY = 'shi.network.mode';
+function readModePref(): NetworkLayoutMode {
+  try {
+    return localStorage.getItem(MODE_PREF_KEY) === 'radial' ? 'radial' : 'hierarchy';
+  } catch {
+    return 'hierarchy';
+  }
+}
 
 /**
  * Network map: every documented connection as a graph, laid out as radial
@@ -30,6 +51,19 @@ import { LaidOutNode, layoutGraph } from './network-layout';
     <div class="header">
       <h1>Network map</h1>
       <div class="head-actions">
+        <div class="segmented" role="group" aria-label="Layout">
+          <button type="button" [class.active]="mode() === 'hierarchy'" (click)="setMode('hierarchy')" title="Top-down tree">
+            <app-icon [path]="icons.tree" [size]="16" /> Hierarchy
+          </button>
+          <button type="button" [class.active]="mode() === 'radial'" (click)="setMode('radial')" title="Hub and spoke">
+            <app-icon [path]="icons.graph" [size]="16" /> Radial
+          </button>
+        </div>
+        @if (hasOverrides()) {
+          <button class="btn secondary" (click)="resetPositions()" title="Forget dragged positions for this layout">
+            <app-icon [path]="icons.reset" [size]="18" />
+          </button>
+        }
         <button class="btn secondary" (click)="fit()" title="Fit to screen">
           <app-icon [path]="icons.fit" [size]="18" />
         </button>
@@ -85,22 +119,21 @@ import { LaidOutNode, layoutGraph } from './network-layout';
           (pointercancel)="onPointerUp($event)"
           (pointerleave)="onPointerUp($event)"
         >
-          <svg [attr.viewBox]="viewBox()" preserveAspectRatio="xMidYMid meet">
+          <svg #svg [attr.viewBox]="viewBox()" preserveAspectRatio="xMidYMid meet">
             <g>
               @for (e of layout().edges; track e.edge.id) {
-                <line
-                  [attr.x1]="e.from.x"
-                  [attr.y1]="e.from.y"
-                  [attr.x2]="e.to.x"
-                  [attr.y2]="e.to.y"
+                <path
+                  [attr.d]="edgePath(e.from, e.to)"
+                  fill="none"
                   [attr.stroke]="colorOf(e.edge.type)"
                   [attr.stroke-dasharray]="dash(dashOf(e.edge.type))"
                   [attr.stroke-opacity]="e.edge.auto ? 0.55 : 0.9"
                   stroke-width="2"
                   stroke-linecap="round"
+                  stroke-linejoin="round"
                 >
                   <title>{{ e.from.node.name }} → {{ e.to.node.name }} · {{ labelOf(e.edge.type) }}{{ e.edge.auto ? ' (auto)' : '' }}</title>
-                </line>
+                </path>
               }
             </g>
             <g>
@@ -109,7 +142,9 @@ import { LaidOutNode, layoutGraph } from './network-layout';
                   class="node"
                   [class.controller]="n.node.isController"
                   [class.hover]="hovered() === n.node.id"
+                  [class.dragging]="dragId === n.node.id"
                   [attr.transform]="'translate(' + n.x + ',' + n.y + ')'"
+                  (pointerdown)="onNodeDown($event, n)"
                   (click)="open(n)"
                   (pointerenter)="hovered.set(n.node.id)"
                   (pointerleave)="hovered.set(null)"
@@ -131,7 +166,10 @@ import { LaidOutNode, layoutGraph } from './network-layout';
             </g>
           </svg>
         </div>
-        <p class="muted small hint">Drag to pan · scroll or pinch to zoom · tap a device to open it. Faded lines were created by auto-link.</p>
+        <p class="muted small hint">
+          Drag a device to move it (saved) · drag the background to pan · scroll or pinch to zoom ·
+          tap a device to open it. Faded lines were created by auto-link.
+        </p>
       } @else {
         <app-empty-state
           [icon]="icons.graph"
@@ -166,6 +204,41 @@ import { LaidOutNode, layoutGraph } from './network-layout';
     .head-actions {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .segmented {
+      display: inline-flex;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .segmented button {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: transparent;
+      border: 0;
+      border-right: 1px solid var(--divider-color);
+      padding: 6px 10px;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+      font: inherit;
+    }
+    .segmented button:last-child {
+      border-right: 0;
+    }
+    .segmented button.active {
+      background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+      color: var(--primary-text-color);
+      font-weight: 600;
+    }
+    .node.dragging {
+      cursor: grabbing;
+    }
+    .node.dragging circle {
+      stroke: var(--primary-text-color);
+      stroke-width: 2;
     }
     .legend {
       display: flex;
@@ -248,8 +321,20 @@ export class NetworkPageComponent implements OnInit {
   private readonly api = inject(AutoLinkApi);
   private readonly router = inject(Router);
   private readonly canvas = viewChild<ElementRef<HTMLDivElement>>('canvas');
+  private readonly svgRef = viewChild<ElementRef<SVGSVGElement>>('svg');
 
-  protected readonly icons = { fit: mdiFitToScreenOutline, refresh: mdiRefresh, graph: mdiGraphOutline };
+  protected readonly icons = {
+    fit: mdiFitToScreenOutline,
+    refresh: mdiRefresh,
+    graph: mdiGraphOutline,
+    tree: mdiFileTreeOutline,
+    reset: mdiBackupRestore,
+  };
+
+  protected readonly mode = signal<NetworkLayoutMode>(readModePref());
+  /** Hand-placed positions for the current mode (deviceId → x,y). */
+  protected readonly overrides = signal<NetworkPositions>({});
+  protected readonly hasOverrides = computed(() => Object.keys(this.overrides()).length > 0);
 
   protected readonly graph = signal<NetworkGraphDto | null>(null);
   protected readonly loaded = signal(false);
@@ -264,11 +349,28 @@ export class NetworkPageComponent implements OnInit {
     return `${c.x} ${c.y} ${c.w} ${c.h}`;
   });
 
-  protected readonly layout = computed(() => {
+  /** Computed layout for the current mode, before hand-placed overrides. */
+  private readonly baseLayout = computed(() => {
     const g = this.graph();
-    return g
-      ? layoutGraph(g, this.visibleTypes())
-      : { nodes: [], edges: [], width: 1, height: 1, unlinked: [] };
+    if (!g) return { nodes: [], edges: [], width: 1, height: 1, unlinked: [] };
+    return this.mode() === 'hierarchy'
+      ? layoutHierarchy(g, this.visibleTypes())
+      : layoutGraph(g, this.visibleTypes());
+  });
+
+  /** Final positions: overrides win. Edges re-point at the moved nodes. */
+  protected readonly layout = computed(() => {
+    const base = this.baseLayout();
+    const ov = this.overrides();
+    if (Object.keys(ov).length === 0) return base;
+    const nodes = base.nodes.map((n) => (ov[n.node.id] ? { ...n, ...ov[n.node.id] } : n));
+    const byId = new Map(nodes.map((n) => [n.node.id, n]));
+    const edges = base.edges.map((e) => ({
+      ...e,
+      from: byId.get(e.from.node.id) ?? e.from,
+      to: byId.get(e.to.node.id) ?? e.to,
+    }));
+    return { ...base, nodes, edges };
   });
 
   /** Only types that actually appear in the graph, in store order. */
@@ -283,6 +385,55 @@ export class NetworkPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadPositions();
+  }
+
+  protected setMode(mode: NetworkLayoutMode): void {
+    if (mode === this.mode()) return;
+    this.mode.set(mode);
+    try {
+      localStorage.setItem(MODE_PREF_KEY, mode);
+    } catch {
+      /* per-browser convenience only */
+    }
+    this.loadPositions();
+  }
+
+  private loadPositions(): void {
+    const mode = this.mode();
+    this.api.getLayout(mode).subscribe({
+      next: (l) => {
+        if (this.mode() !== mode) return;
+        this.overrides.set(l.positions);
+        queueMicrotask(() => this.fit());
+      },
+      error: () => this.overrides.set({}),
+    });
+  }
+
+  protected resetPositions(): void {
+    const mode = this.mode();
+    this.api.resetLayout(mode).subscribe(() => {
+      this.overrides.set({});
+      queueMicrotask(() => this.fit());
+    });
+  }
+
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  private scheduleSave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    const mode = this.mode();
+    this.saveTimer = setTimeout(() => {
+      this.api.saveLayout(mode, this.overrides()).subscribe();
+    }, 600);
+  }
+
+  /** Straight in radial mode; right-angled "org chart" elbows in hierarchy. */
+  protected edgePath(a: LaidOutNode, b: LaidOutNode): string {
+    if (this.mode() === 'radial') return `M${a.x},${a.y} L${b.x},${b.y}`;
+    if (b.y <= a.y + 10) return `M${a.x},${a.y} L${b.x},${b.y}`;
+    const midY = Math.max(a.y + 30, b.y - 34);
+    return `M${a.x},${a.y} V${midY} H${b.x} V${b.y}`;
   }
 
   protected load(): void {
@@ -363,6 +514,33 @@ export class NetworkPageComponent implements OnInit {
     this.router.navigate(['/devices', n.node.id]);
   }
 
+  // --- node drag -------------------------------------------------------------
+  protected dragId: string | null = null;
+  private dragOffset = { x: 0, y: 0 };
+
+  private toSvg(clientX: number, clientY: number): { x: number; y: number } | null {
+    const svg = this.svgRef()?.nativeElement;
+    const ctm = svg?.getScreenCTM();
+    if (!svg || !ctm) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  }
+
+  protected onNodeDown(ev: PointerEvent, n: LaidOutNode): void {
+    if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+    ev.stopPropagation();
+    const p = this.toSvg(ev.clientX, ev.clientY);
+    if (!p) return;
+    this.dragId = n.node.id;
+    this.dragged = false;
+    this.dragOffset = { x: p.x - n.x, y: p.y - n.y };
+    this.last = { x: ev.clientX, y: ev.clientY };
+    (this.canvas()?.nativeElement as HTMLElement | undefined)?.setPointerCapture?.(ev.pointerId);
+  }
+
   // --- pan & zoom -----------------------------------------------------------
   private dragging = false;
   private dragged = false;
@@ -371,6 +549,7 @@ export class NetworkPageComponent implements OnInit {
   private pinchDist = 0;
 
   protected onPointerDown(ev: PointerEvent): void {
+    if (this.dragId) return;
     (ev.currentTarget as HTMLElement).setPointerCapture?.(ev.pointerId);
     this.pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     this.dragging = true;
@@ -380,6 +559,18 @@ export class NetworkPageComponent implements OnInit {
   }
 
   protected onPointerMove(ev: PointerEvent): void {
+    if (this.dragId) {
+      const p = this.toSvg(ev.clientX, ev.clientY);
+      if (!p) return;
+      if (Math.abs(ev.clientX - this.last.x) + Math.abs(ev.clientY - this.last.y) > 3) {
+        this.dragged = true;
+      }
+      if (!this.dragged) return;
+      const id = this.dragId;
+      const pos = { x: Math.round(p.x - this.dragOffset.x), y: Math.round(p.y - this.dragOffset.y) };
+      this.overrides.update((o) => ({ ...o, [id]: pos }));
+      return;
+    }
     if (!this.dragging) return;
     this.pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     const el = this.canvas()?.nativeElement;
@@ -400,6 +591,13 @@ export class NetworkPageComponent implements OnInit {
   }
 
   protected onPointerUp(ev: PointerEvent): void {
+    if (this.dragId) {
+      const moved = this.dragged;
+      this.dragId = null;
+      if (moved) this.scheduleSave();
+      setTimeout(() => (this.dragged = false), 0);
+      return;
+    }
     this.pointers.delete(ev.pointerId);
     if (this.pointers.size === 0) {
       this.dragging = false;

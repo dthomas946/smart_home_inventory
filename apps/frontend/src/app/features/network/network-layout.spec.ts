@@ -1,5 +1,5 @@
 import { NetworkGraphDto } from '@smart-home-inventory/shared';
-import { layoutGraph } from './network-layout';
+import { layoutGraph, layoutHierarchy } from './network-layout';
 
 const node = (id: string, isController = false): NetworkGraphDto['nodes'][number] => ({
   id,
@@ -66,5 +66,57 @@ describe('layoutGraph', () => {
     const l = layoutGraph(cyc, new Set(['zigbee_network']));
     expect(l.nodes).toHaveLength(2);
     expect(l.edges).toHaveLength(2);
+  });
+});
+
+describe('layoutHierarchy', () => {
+  const all = new Set(['zigbee_network', 'ethernet', 'wifi']);
+
+  it('puts controllers above the devices they serve', () => {
+    const l = layoutHierarchy(graph, all);
+    const by = new Map(l.nodes.map((n) => [n.node.id, n]));
+    expect(by.get('router')!.y).toBeLessThan(by.get('coord')!.y);
+    expect(by.get('coord')!.y).toBeLessThan(by.get('a')!.y);
+    // parent is centred over its children
+    const kidsX = ['a', 'b', 'c'].map((id) => by.get(id)!.x);
+    const mid = (Math.min(...kidsX) + Math.max(...kidsX)) / 2;
+    expect(Math.abs(by.get('coord')!.x - mid)).toBeLessThan(1);
+  });
+
+  it('wraps a hub with many leaf clients into rows instead of one wide row', () => {
+    const many: NetworkGraphDto = {
+      nodes: [node('orbi', true), ...Array.from({ length: 30 }, (_, i) => node(`c${i}`))],
+      edges: Array.from({ length: 30 }, (_, i) => edge('orbi', `c${i}`, 'wifi')),
+      types: [],
+    };
+    const l = layoutHierarchy(many, all);
+    const leaves = l.nodes.filter((n) => n.node.id !== 'orbi');
+    const rows = new Set(leaves.map((n) => n.y));
+    expect(rows.size).toBeGreaterThan(1);
+    const keys = new Set(leaves.map((n) => `${n.x},${n.y}`));
+    expect(keys.size).toBe(30);
+    expect(l.width).toBeLessThan(30 * 140);
+  });
+
+  it('places separate trees side by side without overlap', () => {
+    const two: NetworkGraphDto = {
+      nodes: [node('r1', true), node('a'), node('r2', true), node('b')],
+      edges: [edge('r1', 'a'), edge('r2', 'b')],
+      types: [],
+    };
+    const l = layoutHierarchy(two, all);
+    const by = new Map(l.nodes.map((n) => [n.node.id, n]));
+    expect(by.get('r1')!.x).not.toBe(by.get('r2')!.x);
+    expect(l.unlinked).toEqual([]);
+  });
+
+  it('survives a cycle', () => {
+    const cyc: NetworkGraphDto = {
+      nodes: [node('x'), node('y')],
+      edges: [edge('x', 'y'), edge('y', 'x')],
+      types: [],
+    };
+    const l = layoutHierarchy(cyc, all);
+    expect(l.nodes).toHaveLength(2);
   });
 });

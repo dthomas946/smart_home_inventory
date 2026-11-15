@@ -6,10 +6,28 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { DeviceDto } from '@smart-home-inventory/shared';
+import { DeviceCategory, DeviceDto } from '@smart-home-inventory/shared';
 import { DevicesApi } from '../../core/api/api.services';
+import { ToastService } from '../../core/toast/toast.service';
 
-/** Lightweight autocomplete for picking a device. */
+/** Name → category guess for devices created on the fly from the picker,
+ *  which are mostly power sources and other non-smart infrastructure. */
+function guessCategory(name: string): DeviceCategory | null {
+  if (/panel|breaker|fuse|load cent(er|re)|disconnect|sub-?panel/i.test(name)) return 'breaker';
+  if (/junction|j-?box/i.test(name)) return 'junction_box';
+  if (/outlet|receptacle|socket/i.test(name)) return 'outlet';
+  if (/\bhub\b|bridge|coordinator/i.test(name)) return 'hub';
+  if (/router|network switch|access point|\bap\b|modem|gateway/i.test(name)) return 'network';
+  if (/thermostat/i.test(name)) return 'thermostat';
+  if (/water heater/i.test(name)) return 'water_heater';
+  if (/pump/i.test(name)) return 'pump';
+  return null;
+}
+
+/** Lightweight autocomplete for picking a device. With `allowCreate`, a
+ *  name that doesn't exist can be created on the spot (a breaker, a 24V
+ *  transformer, a junction box) — the endpoint you need often isn't a
+ *  smart device and isn't in the inventory yet. */
 @Component({
   selector: 'app-device-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,7 +42,7 @@ import { DevicesApi } from '../../core/api/api.services';
         (focus)="search(query())"
         (blur)="onBlur()"
       />
-      @if (open() && results().length > 0) {
+      @if (open() && (results().length > 0 || canCreate())) {
         <ul class="results card">
           @for (device of results(); track device.id) {
             <li (mousedown)="pick(device)">
@@ -32,6 +50,12 @@ import { DevicesApi } from '../../core/api/api.services';
               @if (device.areaName) {
                 <span class="muted">{{ device.areaName }}</span>
               }
+            </li>
+          }
+          @if (canCreate()) {
+            <li class="create" (mousedown)="create()">
+              <span>+ Create “{{ query().trim() }}”</span>
+              <span class="muted">new device</span>
             </li>
           }
         </ul>
@@ -66,10 +90,16 @@ import { DevicesApi } from '../../core/api/api.services';
     li:hover {
       background: var(--hover-color);
     }
+    li.create {
+      border-top: 1px solid var(--divider-color);
+      color: var(--primary-color);
+      font-weight: 500;
+    }
   `,
 })
 export class DevicePickerComponent {
   private readonly devicesApi = inject(DevicesApi);
+  private readonly toast = inject(ToastService);
 
   readonly placeholder = input('Search device…');
   /** Device ids to exclude from results (e.g. the other endpoint). */
@@ -81,11 +111,41 @@ export class DevicePickerComponent {
    *  lingering name would otherwise resurface, confusingly, on next use)
    *  rather than keeping the picker visible as a record of the selection. */
   readonly clearOnSelect = input(false);
+  /** Offer "+ Create …" when the typed name has no exact match. */
+  readonly allowCreate = input(false);
   readonly selected = output<DeviceDto>();
 
   protected readonly query = signal('');
   protected readonly results = signal<DeviceDto[]>([]);
   protected readonly open = signal(false);
+  private creating = false;
+
+  protected canCreate(): boolean {
+    if (!this.allowCreate()) return false;
+    const q = this.query().trim().toLowerCase();
+    return q.length >= 2 && !this.results().some((d) => d.name.trim().toLowerCase() === q);
+  }
+
+  protected create(): void {
+    const name = this.query().trim();
+    if (!name || this.creating) return;
+    this.creating = true;
+    this.devicesApi
+      .create({
+        name,
+        status: 'installed',
+        category: guessCategory(name),
+        areaId: this.currentAreaId() ?? null,
+      })
+      .subscribe({
+        next: (device) => {
+          this.creating = false;
+          this.toast.success(`Created device “${device.name}”`);
+          this.pick(device);
+        },
+        error: () => (this.creating = false),
+      });
+  }
 
   protected onQuery(event: Event): void {
     const q = (event.target as HTMLInputElement).value;

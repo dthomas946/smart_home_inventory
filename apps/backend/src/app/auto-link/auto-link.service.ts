@@ -13,6 +13,9 @@ import {
   AutoLinkRuleDto,
   AutoLinkStatusDto,
   NetworkGraphDto,
+  NetworkLayoutDto,
+  NetworkLayoutMode,
+  NetworkPositions,
   SetAutoLinkRulesDto,
 } from '@smart-home-inventory/shared';
 import { ConnectionTypesService } from '../connection-types/connection-types.service';
@@ -173,6 +176,37 @@ export class AutoLinkService {
     this.lastResult = { created, updated, removed, at: this.lastRunAt.toISOString() };
     this.logger.log(`Auto-link applied: +${created} ~${updated} -${removed}`);
     return this.lastResult;
+  }
+
+  async getLayout(mode: NetworkLayoutMode): Promise<NetworkLayoutDto> {
+    const row = await this.prisma.networkLayout.findUnique({ where: { mode } });
+    return {
+      mode,
+      positions: (row?.positions as NetworkPositions | undefined) ?? {},
+      updatedAt: row?.updatedAt.toISOString() ?? null,
+    };
+  }
+
+  async saveLayout(mode: NetworkLayoutMode, positions: NetworkPositions): Promise<NetworkLayoutDto> {
+    // Drop positions for devices that no longer exist so the blob can't grow forever.
+    const ids = Object.keys(positions);
+    const existing = new Set(
+      (await this.prisma.device.findMany({ where: { id: { in: ids } }, select: { id: true } })).map(
+        (d) => d.id
+      )
+    );
+    const clean: NetworkPositions = {};
+    for (const id of ids) if (existing.has(id)) clean[id] = positions[id];
+    const row = await this.prisma.networkLayout.upsert({
+      where: { mode },
+      create: { mode, positions: clean as Prisma.InputJsonValue },
+      update: { positions: clean as Prisma.InputJsonValue },
+    });
+    return { mode, positions: clean, updatedAt: row.updatedAt.toISOString() };
+  }
+
+  async resetLayout(mode: NetworkLayoutMode): Promise<void> {
+    await this.prisma.networkLayout.deleteMany({ where: { mode } });
   }
 
   /** Everything the Network page needs in one call. */

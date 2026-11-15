@@ -111,6 +111,26 @@ export interface AutoLinkStatusDto {
   rules: AutoLinkRuleDto[];
 }
 
+/** Network map layout modes and saved hand-arranged positions. */
+export const NETWORK_LAYOUT_MODES = ['hierarchy', 'radial'] as const;
+export const NetworkLayoutModeSchema = z.enum(NETWORK_LAYOUT_MODES);
+export type NetworkLayoutMode = z.infer<typeof NetworkLayoutModeSchema>;
+
+export const NetworkPositionsSchema = z.record(
+  z.string(),
+  z.object({ x: z.number().finite(), y: z.number().finite() })
+);
+export type NetworkPositions = z.infer<typeof NetworkPositionsSchema>;
+
+export const SaveNetworkLayoutSchema = z.object({ positions: NetworkPositionsSchema });
+export type SaveNetworkLayoutDto = z.infer<typeof SaveNetworkLayoutSchema>;
+
+export interface NetworkLayoutDto {
+  mode: NetworkLayoutMode;
+  positions: NetworkPositions;
+  updatedAt: string | null;
+}
+
 /** Network graph for the visualization page. */
 export interface NetworkGraphNodeDto {
   id: string;

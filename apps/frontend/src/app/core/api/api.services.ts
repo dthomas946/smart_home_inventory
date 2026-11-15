@@ -9,6 +9,9 @@ import {
   AutoLinkRuleDto,
   AutoLinkStatusDto,
   NetworkGraphDto,
+  NetworkLayoutDto,
+  NetworkLayoutMode,
+  NetworkPositions,
   SetAutoLinkRulesDto,
   AttachmentDto,
   AttachmentKind,
@@ -357,5 +360,14 @@ export class AutoLinkApi {
   }
   graph(): Observable<NetworkGraphDto> {
     return this.http.get<NetworkGraphDto>('api/auto-link/graph');
+  }
+  getLayout(mode: NetworkLayoutMode): Observable<NetworkLayoutDto> {
+    return this.http.get<NetworkLayoutDto>(`api/auto-link/layout/${mode}`);
+  }
+  saveLayout(mode: NetworkLayoutMode, positions: NetworkPositions): Observable<NetworkLayoutDto> {
+    return this.http.put<NetworkLayoutDto>(`api/auto-link/layout/${mode}`, { positions });
+  }
+  resetLayout(mode: NetworkLayoutMode): Observable<void> {
+    return this.http.delete<void>(`api/auto-link/layout/${mode}`);
   }
 }

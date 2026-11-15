@@ -57,6 +57,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
             <span>From device (upstream)</span>
             @if (changingEnd() === 'from') {
               <app-device-picker
+                [allowCreate]="true"
                 [exclude]="[editTo().id]"
                 (selected)="editFrom.set({ id: $event.id, name: $event.name }); changingEnd.set(null)"
               />
@@ -76,6 +77,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
             <span>To device</span>
             @if (changingEnd() === 'to') {
               <app-device-picker
+                [allowCreate]="true"
                 [exclude]="[editFrom().id]"
                 (selected)="editTo.set({ id: $event.id, name: $event.name }); changingEnd.set(null)"
               />
@@ -107,6 +109,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
           <div class="field">
             <span>Other device *</span>
             <app-device-picker
+                [allowCreate]="true"
               [exclude]="[fixed.id]"
               [currentAreaId]="fixed.areaId"
               (selected)="otherDevice.set($event)"
@@ -116,6 +119,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
           <div class="field">
             <span>From device (upstream) *</span>
             <app-device-picker
+                [allowCreate]="true"
               [exclude]="otherDevice() ? [otherDevice()!.id] : []"
               [currentAreaId]="otherDevice()?.areaId ?? null"
               (selected)="sourceDevice.set($event)"
@@ -124,6 +128,7 @@ import { IconComponent } from '../../shared/ui/icon.component';
           <div class="field">
             <span>To device *</span>
             <app-device-picker
+                [allowCreate]="true"
               [exclude]="sourceDevice() ? [sourceDevice()!.id] : []"
               [currentAreaId]="sourceDevice()?.areaId ?? null"
               (selected)="otherDevice.set($event)"

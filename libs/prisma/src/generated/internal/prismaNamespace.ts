@@ -407,6 +407,7 @@ export const ModelName = {
   Connection: 'Connection',
   AutoLinkRule: 'AutoLinkRule',
   AutoLinkSuppression: 'AutoLinkSuppression',
+  NetworkLayout: 'NetworkLayout',
   Diagram: 'Diagram'
 } as const
 
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "diagram"
+    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "networkLayout" | "diagram"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1167,6 +1168,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    NetworkLayout: {
+      payload: Prisma.$NetworkLayoutPayload<ExtArgs>
+      fields: Prisma.NetworkLayoutFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NetworkLayoutFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NetworkLayoutFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>
+        }
+        findFirst: {
+          args: Prisma.NetworkLayoutFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NetworkLayoutFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>
+        }
+        findMany: {
+          args: Prisma.NetworkLayoutFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>[]
+        }
+        create: {
+          args: Prisma.NetworkLayoutCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>
+        }
+        createMany: {
+          args: Prisma.NetworkLayoutCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NetworkLayoutCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>[]
+        }
+        delete: {
+          args: Prisma.NetworkLayoutDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>
+        }
+        update: {
+          args: Prisma.NetworkLayoutUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>
+        }
+        deleteMany: {
+          args: Prisma.NetworkLayoutDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NetworkLayoutUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NetworkLayoutUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>[]
+        }
+        upsert: {
+          args: Prisma.NetworkLayoutUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkLayoutPayload>
+        }
+        aggregate: {
+          args: Prisma.NetworkLayoutAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNetworkLayout>
+        }
+        groupBy: {
+          args: Prisma.NetworkLayoutGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NetworkLayoutGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NetworkLayoutCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NetworkLayoutCountAggregateOutputType> | number
+        }
+      }
+    }
     Diagram: {
       payload: Prisma.$DiagramPayload<ExtArgs>
       fields: Prisma.DiagramFieldRefs
@@ -1421,6 +1496,15 @@ export const AutoLinkSuppressionScalarFieldEnum = {
 } as const
 
 export type AutoLinkSuppressionScalarFieldEnum = (typeof AutoLinkSuppressionScalarFieldEnum)[keyof typeof AutoLinkSuppressionScalarFieldEnum]
+
+
+export const NetworkLayoutScalarFieldEnum = {
+  mode: 'mode',
+  positions: 'positions',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NetworkLayoutScalarFieldEnum = (typeof NetworkLayoutScalarFieldEnum)[keyof typeof NetworkLayoutScalarFieldEnum]
 
 
 export const DiagramScalarFieldEnum = {
@@ -1743,6 +1827,7 @@ export type GlobalOmitConfig = {
   connection?: Prisma.ConnectionOmit
   autoLinkRule?: Prisma.AutoLinkRuleOmit
   autoLinkSuppression?: Prisma.AutoLinkSuppressionOmit
+  networkLayout?: Prisma.NetworkLayoutOmit
   diagram?: Prisma.DiagramOmit
 }
 

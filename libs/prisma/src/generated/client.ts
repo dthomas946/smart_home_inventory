@@ -92,6 +92,13 @@ export type AutoLinkRule = Prisma.AutoLinkRuleModel
  */
 export type AutoLinkSuppression = Prisma.AutoLinkSuppressionModel
 /**
+ * Model NetworkLayout
+ * Hand-arranged node positions on the Network map, one row per layout mode
+ * ("radial" | "hierarchy"). positions = { [deviceId]: { x, y } }. Devices
+ * without an entry fall back to the computed layout.
+ */
+export type NetworkLayout = Prisma.NetworkLayoutModel
+/**
  * Model Diagram
  * 
  */

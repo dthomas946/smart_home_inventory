@@ -13,6 +13,7 @@ import {
   CONNECTION_TYPE_GROUPS,
   ConnectionTypeDto,
   ConnectionTypeGroup,
+  UpdateConnectionTypeDto,
   DASH_STYLES,
   DASH_STYLE_LABELS,
   DashStyle,
@@ -158,20 +159,57 @@ import { IconComponent } from '../../shared/ui/icon.component';
       <h3>Connection types</h3>
       <p class="muted">
         The wire/protocol types available on connections and diagram
-        wires/ports. Built-in types cannot be deleted; add your own for
-        anything missing (DALI, 1-Wire, …).
+        wires/ports. Change any type's name, group, colour or line style right
+        in the table — the Network map and diagrams follow. Built-in types
+        cannot be deleted; add your own for anything missing (DALI, 1-Wire, …).
       </p>
       <table class="data">
         <tbody>
           @for (type of connectionTypes.types(); track type.id) {
             <tr>
               <td><span class="chip">{{ type.key }}</span></td>
-              <td>{{ type.label }}</td>
-              <td class="muted">{{ type.group }}</td>
               <td>
-                <span class="swatch" [style.background]="type.color"></span>
+                <input
+                  class="text inline-edit"
+                  [value]="type.label"
+                  (change)="patchType(type, { label: $any($event.target).value.trim() })"
+                  (keydown.enter)="$any($event.target).blur()"
+                  aria-label="Label"
+                />
               </td>
-              <td class="muted">{{ dashLabel(type.dash) }}</td>
+              <td>
+                <select
+                  class="text inline-edit"
+                  [value]="type.group"
+                  (change)="patchType(type, { group: $any($event.target).value })"
+                  aria-label="Group"
+                >
+                  @for (g of connectionTypeGroups; track g) {
+                    <option [value]="g">{{ g }}</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <input
+                  class="color"
+                  type="color"
+                  [value]="type.color"
+                  (change)="patchType(type, { color: $any($event.target).value })"
+                  [title]="'Colour for ' + type.label"
+                />
+              </td>
+              <td>
+                <select
+                  class="text inline-edit"
+                  [value]="type.dash"
+                  (change)="patchType(type, { dash: $any($event.target).value })"
+                  aria-label="Line style"
+                >
+                  @for (d of dashStyles; track d) {
+                    <option [value]="d">{{ dashStyleLabels[d] }}</option>
+                  }
+                </select>
+              </td>
               <td class="muted">
                 {{ type.connectionCount }} connection{{ type.connectionCount === 1 ? '' : 's' }}
               </td>
@@ -242,6 +280,20 @@ import { IconComponent } from '../../shared/ui/icon.component';
       width: auto;
       flex: 1;
       min-width: 120px;
+    }
+    .inline-edit {
+      padding: 4px 6px;
+      min-width: 0;
+      width: 100%;
+    }
+    td input.color {
+      width: 36px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid var(--divider-color);
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
     }
     .new-cap input.color {
       flex: 0 0 auto;
@@ -357,6 +409,16 @@ export class SettingsPageComponent implements OnInit {
         this.newTypeLabel = '';
         this.connectionTypes.reload();
       });
+  }
+
+  protected patchType(type: ConnectionTypeDto, change: UpdateConnectionTypeDto): void {
+    if (change.label !== undefined && !change.label) return; // label is required
+    const key = Object.keys(change)[0] as keyof UpdateConnectionTypeDto;
+    if (key && (type as unknown as Record<string, unknown>)[key] === change[key]) return;
+    this.connectionTypesApi.update(type.id, change).subscribe(() => {
+      this.connectionTypes.reload();
+      this.toast.success(`Updated ${change.label ?? type.label}`);
+    });
   }
 
   protected async removeConnectionType(type: ConnectionTypeDto): Promise<void> {

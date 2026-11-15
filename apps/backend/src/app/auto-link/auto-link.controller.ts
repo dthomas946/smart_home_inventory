@@ -1,5 +1,12 @@
-import { Body, Controller, Delete, Get, Post, Put } from '@nestjs/common';
-import { SetAutoLinkRulesDto, SetAutoLinkRulesSchema } from '@smart-home-inventory/shared';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  NetworkLayoutMode,
+  NetworkLayoutModeSchema,
+  SaveNetworkLayoutDto,
+  SaveNetworkLayoutSchema,
+  SetAutoLinkRulesDto,
+  SetAutoLinkRulesSchema,
+} from '@smart-home-inventory/shared';
 import { zodPipe } from '../common/zod-validation.pipe';
 import { AutoLinkService } from './auto-link.service';
 
@@ -48,5 +55,24 @@ export class AutoLinkController {
   @Get('graph')
   graph() {
     return this.autoLink.graph();
+  }
+
+  /** Hand-arranged Network map positions for a layout mode. */
+  @Get('layout/:mode')
+  getLayout(@Param('mode', zodPipe(NetworkLayoutModeSchema)) mode: NetworkLayoutMode) {
+    return this.autoLink.getLayout(mode);
+  }
+
+  @Put('layout/:mode')
+  saveLayout(
+    @Param('mode', zodPipe(NetworkLayoutModeSchema)) mode: NetworkLayoutMode,
+    @Body(zodPipe(SaveNetworkLayoutSchema)) dto: SaveNetworkLayoutDto
+  ) {
+    return this.autoLink.saveLayout(mode, dto.positions);
+  }
+
+  @Delete('layout/:mode')
+  resetLayout(@Param('mode', zodPipe(NetworkLayoutModeSchema)) mode: NetworkLayoutMode) {
+    return this.autoLink.resetLayout(mode);
   }
 }
