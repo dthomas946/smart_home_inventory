@@ -408,6 +408,7 @@ export const ModelName = {
   AutoLinkRule: 'AutoLinkRule',
   AutoLinkSuppression: 'AutoLinkSuppression',
   NetworkLayout: 'NetworkLayout',
+  SyncExclusion: 'SyncExclusion',
   Diagram: 'Diagram'
 } as const
 
@@ -424,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "networkLayout" | "diagram"
+    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "networkLayout" | "syncExclusion" | "diagram"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1242,6 +1243,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SyncExclusion: {
+      payload: Prisma.$SyncExclusionPayload<ExtArgs>
+      fields: Prisma.SyncExclusionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SyncExclusionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SyncExclusionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>
+        }
+        findFirst: {
+          args: Prisma.SyncExclusionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SyncExclusionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>
+        }
+        findMany: {
+          args: Prisma.SyncExclusionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>[]
+        }
+        create: {
+          args: Prisma.SyncExclusionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>
+        }
+        createMany: {
+          args: Prisma.SyncExclusionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SyncExclusionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>[]
+        }
+        delete: {
+          args: Prisma.SyncExclusionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>
+        }
+        update: {
+          args: Prisma.SyncExclusionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>
+        }
+        deleteMany: {
+          args: Prisma.SyncExclusionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SyncExclusionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SyncExclusionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>[]
+        }
+        upsert: {
+          args: Prisma.SyncExclusionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SyncExclusionPayload>
+        }
+        aggregate: {
+          args: Prisma.SyncExclusionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSyncExclusion>
+        }
+        groupBy: {
+          args: Prisma.SyncExclusionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SyncExclusionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SyncExclusionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SyncExclusionCountAggregateOutputType> | number
+        }
+      }
+    }
     Diagram: {
       payload: Prisma.$DiagramPayload<ExtArgs>
       fields: Prisma.DiagramFieldRefs
@@ -1505,6 +1580,17 @@ export const NetworkLayoutScalarFieldEnum = {
 } as const
 
 export type NetworkLayoutScalarFieldEnum = (typeof NetworkLayoutScalarFieldEnum)[keyof typeof NetworkLayoutScalarFieldEnum]
+
+
+export const SyncExclusionScalarFieldEnum = {
+  id: 'id',
+  kind: 'kind',
+  value: 'value',
+  label: 'label',
+  createdAt: 'createdAt'
+} as const
+
+export type SyncExclusionScalarFieldEnum = (typeof SyncExclusionScalarFieldEnum)[keyof typeof SyncExclusionScalarFieldEnum]
 
 
 export const DiagramScalarFieldEnum = {
@@ -1828,6 +1914,7 @@ export type GlobalOmitConfig = {
   autoLinkRule?: Prisma.AutoLinkRuleOmit
   autoLinkSuppression?: Prisma.AutoLinkSuppressionOmit
   networkLayout?: Prisma.NetworkLayoutOmit
+  syncExclusion?: Prisma.SyncExclusionOmit
   diagram?: Prisma.DiagramOmit
 }
 

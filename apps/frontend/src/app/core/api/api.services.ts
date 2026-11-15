@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import {
   AreaDto,
   AttachFromUrlDto,
+  CreateSyncExclusionDto,
+  SyncExclusionsDto,
   AutoLinkApplyResultDto,
   AutoLinkPlanDto,
   AutoLinkRuleDto,
@@ -283,6 +285,19 @@ export class HaApi {
   }
   status(): Observable<HaStatusDto> {
     return this.http.get<HaStatusDto>('api/ha/status');
+  }
+  exclusions(): Observable<SyncExclusionsDto> {
+    return this.http.get<SyncExclusionsDto>('api/ha/exclusions');
+  }
+  addExclusion(dto: CreateSyncExclusionDto): Observable<{ sync: SyncResultDto }> {
+    return this.http.post<{ sync: SyncResultDto }>('api/ha/exclusions', dto);
+  }
+  removeExclusion(id: string): Observable<{ sync: SyncResultDto }> {
+    return this.http.delete<{ sync: SyncResultDto }>(`api/ha/exclusions/${id}`);
+  }
+  /** Exclude one synced device and remove it from the inventory now. */
+  excludeDevice(localDeviceId: string): Observable<{ haDeviceId: string }> {
+    return this.http.post<{ haDeviceId: string }>(`api/ha/exclusions/device/${localDeviceId}`, {});
   }
   /** Null when the device isn't HA-sourced, or HA can't be reached. */
   capabilitySuggestions(deviceId: string): Observable<HaCapabilitySuggestionDto | null> {

@@ -62,6 +62,7 @@ export const ModelName = {
   AutoLinkRule: 'AutoLinkRule',
   AutoLinkSuppression: 'AutoLinkSuppression',
   NetworkLayout: 'NetworkLayout',
+  SyncExclusion: 'SyncExclusion',
   Diagram: 'Diagram'
 } as const
 
@@ -231,6 +232,17 @@ export const NetworkLayoutScalarFieldEnum = {
 } as const
 
 export type NetworkLayoutScalarFieldEnum = (typeof NetworkLayoutScalarFieldEnum)[keyof typeof NetworkLayoutScalarFieldEnum]
+
+
+export const SyncExclusionScalarFieldEnum = {
+  id: 'id',
+  kind: 'kind',
+  value: 'value',
+  label: 'label',
+  createdAt: 'createdAt'
+} as const
+
+export type SyncExclusionScalarFieldEnum = (typeof SyncExclusionScalarFieldEnum)[keyof typeof SyncExclusionScalarFieldEnum]
 
 
 export const DiagramScalarFieldEnum = {

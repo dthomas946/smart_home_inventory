@@ -1,5 +1,5 @@
 import { NetworkGraphDto } from '@smart-home-inventory/shared';
-import { layoutGraph, layoutHierarchy } from './network-layout';
+import { H_WRAP, layoutGraph, layoutHierarchy } from './network-layout';
 
 const node = (id: string, isController = false): NetworkGraphDto['nodes'][number] => ({
   id,
@@ -96,6 +96,46 @@ describe('layoutHierarchy', () => {
     const keys = new Set(leaves.map((n) => `${n.x},${n.y}`));
     expect(keys.size).toBe(30);
     expect(l.width).toBeLessThan(30 * 140);
+    // never more than H_WRAP (5) in any row
+    const perRow = new Map<number, number>();
+    for (const n of leaves) perRow.set(n.y, (perRow.get(n.y) ?? 0) + 1);
+    expect(Math.max(...perRow.values())).toBeLessThanOrEqual(H_WRAP);
+  });
+
+  it('wraps mixed children (controllers + end devices) at 5 too', () => {
+    const kids = Array.from({ length: 12 }, (_, i) => node(`k${i}`, i < 3));
+    const grand = [0, 1, 2].flatMap((i) => [node(`g${i}a`), node(`g${i}b`)]);
+    const g: NetworkGraphDto = {
+      nodes: [node('root', true), ...kids, ...grand],
+      edges: [
+        ...kids.map((k) => edge('root', k.id, 'wifi')),
+        ...[0, 1, 2].flatMap((i) => [edge(`k${i}`, `g${i}a`), edge(`k${i}`, `g${i}b`)]),
+      ],
+      types: [],
+    };
+    const l = layoutHierarchy(g, all);
+    const depth1 = l.nodes.filter((n) => n.depth === 1);
+    const perRow = new Map<number, number>();
+    for (const n of depth1) perRow.set(n.y, (perRow.get(n.y) ?? 0) + 1);
+    expect(perRow.size).toBeGreaterThan(1);
+    expect(Math.max(...perRow.values())).toBeLessThanOrEqual(H_WRAP);
+    const keys = new Set(l.nodes.map((n) => `${Math.round(n.x)},${Math.round(n.y)}`));
+    expect(keys.size).toBe(l.nodes.length);
+  });
+
+  it('packs many separate trees 5 per row', () => {
+    const nodes = Array.from({ length: 12 }, (_, i) => [node(`r${i}`, true), node(`c${i}`)]).flat();
+    const g: NetworkGraphDto = {
+      nodes,
+      edges: Array.from({ length: 12 }, (_, i) => edge(`r${i}`, `c${i}`)),
+      types: [],
+    };
+    const l = layoutHierarchy(g, all);
+    const roots = l.nodes.filter((n) => n.depth === 0);
+    const perRow = new Map<number, number>();
+    for (const n of roots) perRow.set(n.y, (perRow.get(n.y) ?? 0) + 1);
+    expect(perRow.size).toBe(3);
+    expect(Math.max(...perRow.values())).toBe(H_WRAP);
   });
 
   it('places separate trees side by side without overlap', () => {

@@ -11,6 +11,8 @@ export interface SyncResultDto {
   floors: SyncCounts;
   areas: SyncCounts;
   devices: SyncCounts;
+  /** Non-physical HA devices skipped (built-in + user exclusion rules). */
+  excluded?: { skipped: number; removed: number; kept: number };
   warnings: string[];
   syncedAt: string;
 }

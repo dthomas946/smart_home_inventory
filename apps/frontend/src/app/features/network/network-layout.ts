@@ -201,111 +201,122 @@ function radial(
 // Hierarchy (top-down tree)
 // ---------------------------------------------------------------------------
 
-const H_LEVEL = 120; // px between a parent row and its children's first row
+const H_LEVEL = 110; // px from a parent down to its first row of children
 const H_COL = 140; // px per node column (room for a ~20-char label)
-const H_ROW = 72; // px between wrapped leaf rows
-const H_WRAP = 8; // leaf children per row before wrapping
-const H_TREE_GAP = 80; // px between separate trees
+const H_ROW_GAP = 64; // px between stacked rows (leaf rows; subtree rows add their height)
+const H_TREE_GAP_X = 60; // px between top-level trees in a row
+const H_TREE_GAP_Y = 90; // px between rows of top-level trees
+export const H_WRAP = 5; // max children (and top-level trees) side by side
 
 /**
- * Top-down tidy tree. Controllers sit above what they serve; a controller
- * whose children are all leaves (the Orbi with 100+ Wi-Fi clients) lays
- * them out in a wrapped grid instead of one absurdly wide row. Trees are
- * placed left to right, biggest first.
+ * Top-down tidy tree, never more than H_WRAP wide at any level: each
+ * parent's children are laid out in rows of up to 5 (controllers first,
+ * then end devices), each row centred under the parent; top-level trees are
+ * packed the same way. Wide hubs like a router with 100+ clients become a
+ * compact block instead of an endless line.
  */
 export function layoutHierarchy(graph: NetworkGraphDto, visibleTypes: Set<string>): Layout {
   const { nodesById, edges, children, roots, linked } = buildForest(graph, visibleTypes);
 
   interface Box {
+    w: number; // subtree width
+    h: number; // subtree height below this node's own row (0 for a leaf)
+  }
+  interface Row {
+    ids: string[];
     w: number;
-    h: number;
+    h: number; // tallest subtree in the row
   }
   const box = new Map<string, Box>();
+  const rowsOf = new Map<string, Row[]>();
   const seen = new Set<string>();
 
-  const kidsOf = (id: string) => (children.get(id) ?? []).filter((k) => !seen.has(k));
+  const chunk = (ids: string[]): Row[] => {
+    const rows: Row[] = [];
+    for (let i = 0; i < ids.length; i += H_WRAP) {
+      const slice = ids.slice(i, i + H_WRAP);
+      rows.push({
+        ids: slice,
+        w: slice.reduce((sum, id) => sum + (box.get(id)?.w ?? H_COL), 0),
+        h: Math.max(0, ...slice.map((id) => box.get(id)?.h ?? 0)),
+      });
+    }
+    return rows;
+  };
 
-  // Measure (post-order). `seen` guards against cycles and shared children.
   const measure = (id: string): Box => {
     seen.add(id);
-    const kids = kidsOf(id);
-    kids.forEach((k) => seen.add(k));
+    const kids = (children.get(id) ?? []).filter((k) => !seen.has(k));
+    kids.forEach((k) => seen.add(k)); // claim before recursing: shared/cyclic safe
+    for (const k of kids) measure(k);
     if (kids.length === 0) {
       const b = { w: H_COL, h: 0 };
       box.set(id, b);
       return b;
     }
-    const allLeaves = kids.every((k) => (children.get(k) ?? []).length === 0);
-    let b: Box;
-    if (allLeaves && kids.length > H_WRAP) {
-      const cols = H_WRAP;
-      const rows = Math.ceil(kids.length / cols);
-      kids.forEach((k) => box.set(k, { w: H_COL, h: 0 }));
-      b = { w: cols * H_COL, h: H_LEVEL + (rows - 1) * H_ROW };
-    } else {
-      let w = 0;
-      let h = 0;
-      for (const k of kids) {
-        const kb = measure(k);
-        w += kb.w;
-        h = Math.max(h, kb.h);
-      }
-      b = { w: Math.max(w, H_COL), h: H_LEVEL + h };
-    }
+    const rows = chunk(kids);
+    rowsOf.set(id, rows);
+    const w = Math.max(H_COL, ...rows.map((r) => r.w));
+    // first row sits H_LEVEL below; each further row sits below the
+    // previous row's tallest subtree plus a gap
+    let h = H_LEVEL;
+    rows.forEach((r, i) => {
+      h += r.h;
+      if (i < rows.length - 1) h += H_ROW_GAP;
+    });
+    const b = { w, h };
     box.set(id, b);
-    childOrder.set(id, kids);
     return b;
   };
-  const childOrder = new Map<string, string[]>();
 
   const out: LaidOutNode[] = [];
   const place = (id: string, left: number, top: number, depth: number, rootId: string) => {
     const b = box.get(id) ?? { w: H_COL, h: 0 };
     const node = nodesById.get(id);
-    const kids = childOrder.get(id) ?? [];
+    const rows = rowsOf.get(id) ?? [];
     if (node) {
-      out.push({ node, x: left + b.w / 2, y: top, depth, rootId, childCount: kids.length });
-    }
-    if (kids.length === 0) return;
-    const allLeaves = kids.every((k) => !childOrder.has(k));
-    if (allLeaves && kids.length > H_WRAP) {
-      kids.forEach((k, i) => {
-        const row = Math.floor(i / H_WRAP);
-        const col = i % H_WRAP;
-        const inRow = Math.min(H_WRAP, kids.length - row * H_WRAP);
-        // centre a short last row
-        const rowLeft = left + (b.w - inRow * H_COL) / 2;
-        const kn = nodesById.get(k);
-        if (kn) {
-          out.push({
-            node: kn,
-            x: rowLeft + col * H_COL + H_COL / 2,
-            y: top + H_LEVEL + row * H_ROW,
-            depth: depth + 1,
-            rootId,
-            childCount: 0,
-          });
-        }
+      out.push({
+        node,
+        x: left + b.w / 2,
+        y: top,
+        depth,
+        rootId,
+        childCount: rows.reduce((n, r) => n + r.ids.length, 0),
       });
-      return;
     }
-    const kidsW = kids.reduce((s, k) => s + (box.get(k)?.w ?? H_COL), 0);
-    let x = left + (b.w - kidsW) / 2;
-    for (const k of kids) {
-      place(k, x, top + H_LEVEL, depth + 1, rootId);
-      x += box.get(k)?.w ?? H_COL;
+    let y = top + H_LEVEL;
+    for (const r of rows) {
+      let x = left + (b.w - r.w) / 2;
+      for (const k of r.ids) {
+        place(k, x, y, depth + 1, rootId);
+        x += box.get(k)?.w ?? H_COL;
+      }
+      y += r.h + H_ROW_GAP;
     }
   };
 
+  // Measure every tree, then pack trees H_WRAP per row.
   const ordered = [...roots, ...[...linked].filter((id) => !roots.includes(id))];
-  let cursorX = 0;
-  let height = 0;
+  const treeRoots: string[] = [];
   for (const rootId of ordered) {
     if (seen.has(rootId)) continue;
-    const b = measure(rootId);
-    place(rootId, cursorX, 40, 0, rootId);
-    cursorX += b.w + H_TREE_GAP;
-    height = Math.max(height, b.h + 80);
+    measure(rootId);
+    treeRoots.push(rootId);
+  }
+  let y = 40;
+  let width = 0;
+  for (let i = 0; i < treeRoots.length; i += H_WRAP) {
+    const rowIds = treeRoots.slice(i, i + H_WRAP);
+    let x = 0;
+    let rowH = 0;
+    for (const rootId of rowIds) {
+      const b = box.get(rootId) ?? { w: H_COL, h: 0 };
+      place(rootId, x, y, 0, rootId);
+      x += b.w + H_TREE_GAP_X;
+      rowH = Math.max(rowH, b.h);
+    }
+    width = Math.max(width, x);
+    y += rowH + H_TREE_GAP_Y;
   }
 
   const byId = new Map(out.map((n) => [n.node.id, n]));
@@ -318,8 +329,8 @@ export function layoutHierarchy(graph: NetworkGraphDto, visibleTypes: Set<string
   return {
     nodes: out,
     edges: laidEdges,
-    width: Math.max(cursorX, 1),
-    height: Math.max(height, 1),
+    width: Math.max(width, 1),
+    height: Math.max(y, 1),
     unlinked: graph.nodes.filter((n) => !linked.has(n.id)),
   };
 }

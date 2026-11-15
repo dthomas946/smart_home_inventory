@@ -271,6 +271,20 @@ model NetworkLayout {
   updatedAt DateTime @updatedAt
 }
 
+/// A rule that keeps Home Assistant devices out of the inventory — for
+/// virtual devices (Downdetector feeds, add-ons, cloud accounts) that HA
+/// registers as ordinary devices. kind: manufacturer | integration | device
+/// (value = HA device id).
+model SyncExclusion {
+  id        String   @id @default(cuid())
+  kind      String
+  value     String
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@unique([kind, value])
+}
+
 model Diagram {
   id        String   @id @default(cuid())
   title     String

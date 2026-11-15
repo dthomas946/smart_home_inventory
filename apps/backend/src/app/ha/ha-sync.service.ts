@@ -11,6 +11,7 @@ import { AppConfig } from '../config/app-config';
 import { PrismaService } from '../prisma/prisma.service';
 import { HA_REGISTRY_CLIENT, HaRegistryClient } from './ha-registry.types';
 import { mergeRegistry } from './ha-sync.merge';
+import { HaExclusionsService } from './ha-exclusions.service';
 
 @Injectable()
 export class HaSyncService implements OnModuleInit, OnModuleDestroy {
@@ -23,7 +24,8 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: AppConfig,
-    @Inject(HA_REGISTRY_CLIENT) private readonly client: HaRegistryClient
+    @Inject(HA_REGISTRY_CLIENT) private readonly client: HaRegistryClient,
+    private readonly exclusions: HaExclusionsService
   ) {}
 
   onModuleInit(): void {
@@ -72,11 +74,18 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async doSync(): Promise<SyncResultDto> {
-    const [remoteFloors, remoteAreas, remoteDevices] = await Promise.all([
+    const [remoteFloors, remoteAreas, allRemoteDevices, configEntries, rules] = await Promise.all([
       this.client.listFloors(),
       this.client.listAreas(),
       this.client.listDevices(),
+      this.exclusions.configEntries(),
+      this.exclusions.rules(),
     ]);
+    // Physical devices only: drop virtual ones (add-ons, Downdetector feeds,
+    // weather, cloud accounts, user rules) before merging, then purge any
+    // local copies left from earlier syncs.
+    const { excluded } = this.exclusions.classify(allRemoteDevices, configEntries, rules);
+    const remoteDevices = allRemoteDevices.filter((d) => !excluded.has(d.id));
 
     const result = await this.prisma.$transaction(async (tx) => {
       const localFloors = await tx.floor.findMany({
@@ -228,12 +237,17 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
       return syncResult;
     });
 
+    const purge = await this.exclusions.purge(excluded.keys());
+    const skipped = [...excluded.values()].filter((r) => r !== 'service entry').length;
+    result.excluded = { skipped, removed: purge.removed, kept: purge.kept };
+
     this.lastSyncAt = new Date();
     this.lastSyncResult = result;
     this.logger.log(
       `HA sync done: floors +${result.floors.created}/~${result.floors.updated}, ` +
         `areas +${result.areas.created}/~${result.areas.updated}, ` +
-        `devices +${result.devices.created}/~${result.devices.updated}`
+        `devices +${result.devices.created}/~${result.devices.updated}, ` +
+        `non-physical skipped ${skipped} (removed ${purge.removed}, kept ${purge.kept})`
     );
     return result;
   }

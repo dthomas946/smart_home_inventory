@@ -4,6 +4,7 @@ import { HaCapabilitySuggestionsService } from './ha-capability-suggestions.serv
 import { HA_REGISTRY_CLIENT } from './ha-registry.types';
 import { HaController } from './ha.controller';
 import { HaSyncService } from './ha-sync.service';
+import { HaExclusionsService } from './ha-exclusions.service';
 import { MockHaRegistryClient } from './mock-ha-registry.client';
 import { WsHaRegistryClient } from './ws-ha-registry.client';
 
@@ -11,6 +12,7 @@ import { WsHaRegistryClient } from './ws-ha-registry.client';
   controllers: [HaController],
   providers: [
     HaSyncService,
+    HaExclusionsService,
     HaCapabilitySuggestionsService,
     {
       provide: HA_REGISTRY_CLIENT,

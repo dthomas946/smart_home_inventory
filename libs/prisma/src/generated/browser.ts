@@ -77,6 +77,14 @@ export type AutoLinkSuppression = Prisma.AutoLinkSuppressionModel
  */
 export type NetworkLayout = Prisma.NetworkLayoutModel
 /**
+ * Model SyncExclusion
+ * A rule that keeps Home Assistant devices out of the inventory — for
+ * virtual devices (Downdetector feeds, add-ons, cloud accounts) that HA
+ * registers as ordinary devices. kind: manufacturer | integration | device
+ * (value = HA device id).
+ */
+export type SyncExclusion = Prisma.SyncExclusionModel
+/**
  * Model Diagram
  * 
  */

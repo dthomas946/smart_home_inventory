@@ -98,6 +98,15 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
           <a class="btn secondary" [routerLink]="['/devices', d.id, 'edit']">
             <app-icon [path]="icons.pencil" [size]="18" /> Edit
           </a>
+          @if (d.haDeviceId) {
+            <button
+              class="btn secondary"
+              (click)="excludeDevice()"
+              title="Not a physical device — remove it and keep future syncs from adding it back"
+            >
+              Exclude from inventory
+            </button>
+          }
           <button class="btn danger" (click)="removeDevice()">
             <app-icon [path]="icons.delete" [size]="18" /> Delete
           </button>
@@ -621,6 +630,20 @@ export class DeviceDetailPageComponent implements OnInit {
     );
     if (!confirmed) return;
     this.connectionsApi.remove(conn.id).subscribe(() => this.load());
+  }
+
+  protected async excludeDevice(): Promise<void> {
+    const device = this.device();
+    if (!device) return;
+    const confirmed = await this.confirm.ask(
+      `Exclude "${device.name}" from the inventory? It's removed now (with any attachments and connections) and future Home Assistant syncs won't add it back. You can undo this in Settings → Physical devices only.`,
+      { confirmLabel: 'Exclude' }
+    );
+    if (!confirmed) return;
+    this.haApi.excludeDevice(device.id).subscribe(() => {
+      this.toast.success(`Excluded ${device.name}`);
+      this.router.navigate(['/devices']);
+    });
   }
 
   protected async removeDevice(): Promise<void> {

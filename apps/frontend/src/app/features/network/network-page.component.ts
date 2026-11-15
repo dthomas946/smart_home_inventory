@@ -432,7 +432,9 @@ export class NetworkPageComponent implements OnInit {
   protected edgePath(a: LaidOutNode, b: LaidOutNode): string {
     if (this.mode() === 'radial') return `M${a.x},${a.y} L${b.x},${b.y}`;
     if (b.y <= a.y + 10) return `M${a.x},${a.y} L${b.x},${b.y}`;
-    const midY = Math.max(a.y + 30, b.y - 34);
+    // Bend just above the child's row so lines to wrapped rows run down the
+    // gaps between rows rather than through the labels above them.
+    const midY = b.y - 30;
     return `M${a.x},${a.y} V${midY} H${b.x} V${b.y}`;
   }
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.1
+
+- **Physical devices only.** HA sync now skips virtual "devices": add-ons,
+  weather/system/calendar/helper integrations and cloud accounts (built-in),
+  plus your own rules by **manufacturer** or **integration** (Settings →
+  Physical devices only) or per device (**Exclude from inventory** on a
+  synced device's page). Excluded devices are removed from the inventory
+  unless they hold your data (attachments, notes, serial, hand-drawn
+  connections); removing a rule syncs them back
+- Network map **Hierarchy** layout wraps at **5 wide at every level** —
+  mixed branches and top-level trees too, not just all-leaf hubs. Links to
+  wrapped rows bend in the gap above each row
+
 ## 0.4.0
 
 - **Network map: Hierarchy layout** (now the default) — a top-down tree with

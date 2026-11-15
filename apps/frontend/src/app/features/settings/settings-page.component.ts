@@ -26,10 +26,11 @@ import { ConfirmService } from '../../core/confirm/confirm.service';
 import { ConnectionTypesStore } from '../../core/connection-types/connection-types.store';
 import { ToastService } from '../../core/toast/toast.service';
 import { IconComponent } from '../../shared/ui/icon.component';
+import { SyncExclusionsComponent } from './sync-exclusions.component';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, IconComponent],
+  imports: [FormsModule, IconComponent, SyncExclusionsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1>Settings</h1>
@@ -103,6 +104,8 @@ import { IconComponent } from '../../shared/ui/icon.component';
         }
       }
     </div>
+
+    <app-sync-exclusions />
 
     <div class="card section">
       <h3>Capability types</h3>
