@@ -5,6 +5,7 @@ import { HA_REGISTRY_CLIENT } from './ha-registry.types';
 import { HaController } from './ha.controller';
 import { HaSyncService } from './ha-sync.service';
 import { HaExclusionsService } from './ha-exclusions.service';
+import { HaLocaleService } from './ha-locale.service';
 import { MockHaRegistryClient } from './mock-ha-registry.client';
 import { WsHaRegistryClient } from './ws-ha-registry.client';
 
@@ -13,6 +14,7 @@ import { WsHaRegistryClient } from './ws-ha-registry.client';
   providers: [
     HaSyncService,
     HaExclusionsService,
+    HaLocaleService,
     HaCapabilitySuggestionsService,
     {
       provide: HA_REGISTRY_CLIENT,
@@ -47,6 +49,6 @@ import { WsHaRegistryClient } from './ws-ha-registry.client';
       },
     },
   ],
-  exports: [HA_REGISTRY_CLIENT],
+  exports: [HA_REGISTRY_CLIENT, HaLocaleService],
 })
 export class HaModule {}

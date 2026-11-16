@@ -28,6 +28,16 @@ export interface HaDevice {
   connections?: Array<[string, string]>;
 }
 
+/** The subset of HA's core config (`get_config`) used for app defaults. */
+export interface HaCoreConfig {
+  currency: string | null;
+  country: string | null;
+  language: string | null;
+  time_zone: string | null;
+  /** "metric" | "us_customary" */
+  unit_system: string | null;
+}
+
 /** A config entry = one configured integration instance. */
 export interface HaConfigEntry {
   entry_id: string;
@@ -61,6 +71,8 @@ export interface HaRegistryClient {
   listEntities(): Promise<HaEntity[]>;
   /** Optional: not every client can resolve config entries. */
   listConfigEntries?(): Promise<HaConfigEntry[]>;
+  /** Optional: HA core config (currency, country, units…). */
+  getCoreConfig?(): Promise<HaCoreConfig>;
   ping(): Promise<boolean>;
 }
 

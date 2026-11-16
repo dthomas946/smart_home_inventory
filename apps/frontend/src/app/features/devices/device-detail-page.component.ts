@@ -44,6 +44,7 @@ import {
 } from '../../core/api/api.services';
 import { ConfirmService } from '../../core/confirm/confirm.service';
 import { ToastService } from '../../core/toast/toast.service';
+import { LocaleStore } from '../../core/locale/locale.store';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { SourceBadgeComponent } from '../../shared/ui/source-badge.component';
 import { OwnerItemsComponent } from '../attachments/owner-items.component';
@@ -86,7 +87,28 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
               @if (d.haOrphaned) {
                 · <span class="warn">no longer in HA</span>
               }
+              @if (d.integrations.length) {
+                · via
+                @for (i of d.integrations; track i) {
+                  <span class="int-chip">{{ i }}</span>
+                }
+              }
             </span>
+            @if (d.duplicates.length) {
+              <div class="dup-banner">
+                <strong>Possible duplicate.</strong>
+                This may be the same hardware as
+                @for (h of d.duplicates; track h.id; let last = $last) {
+                  <a [routerLink]="['/devices', h.id]">{{ h.name }}</a>
+                  <span class="muted">
+                    ({{ h.integrations.join(', ') || 'added by you' }} ·
+                    {{ h.reason === 'mac' ? 'same MAC address' : 'same name' }})</span
+                  >{{ last ? '.' : ',' }}
+                }
+                Keep the copy from the device's own integration and use
+                <em>Exclude from inventory</em> on the other.
+              </div>
+            }
             <div class="chips">
               @for (cap of d.capabilities; track cap.key) {
                 <span class="chip" [title]="cap.notes ?? ''">{{ cap.label }}</span>
@@ -216,8 +238,7 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
             <dd>
               {{ d.purchaseDate.slice(0, 10) }}
               @if (d.purchasePriceCents !== null) {
-                for {{ (d.purchasePriceCents / 100).toFixed(2) }}
-                {{ d.purchaseCurrency }}
+                for {{ localeStore.money(d.purchasePriceCents, d.purchaseCurrency) }}
               }
               @if (d.purchasedFrom) {
                 at {{ d.purchasedFrom }}
@@ -452,6 +473,22 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
     .row-actions {
       text-align: right;
     }
+    .int-chip {
+      display: inline-block;
+      font-size: 11px;
+      padding: 0 6px;
+      margin-right: 3px;
+      border-radius: 4px;
+      background: var(--chip-background-color);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .dup-banner {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      background: color-mix(in srgb, var(--warning-color, #f9a825) 18%, transparent);
+    }
     .resource-groups {
       display: flex;
       flex-direction: column;
@@ -480,6 +517,7 @@ export class DeviceDetailPageComponent implements OnInit {
   private readonly capabilitiesApi = inject(CapabilitiesApi);
   private readonly zigbeeCatalogApi = inject(ZigbeeCatalogApi);
   private readonly haApi = inject(HaApi);
+  protected readonly localeStore = inject(LocaleStore);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -554,6 +592,7 @@ export class DeviceDetailPageComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.localeStore.ensureLoaded();
     this.load();
   }
 

@@ -121,6 +121,10 @@ model Device {
    * Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux).
    */
   brand              String?
+  /// HA integration domains this device belongs to, comma-separated (zha,netgear). Sync-maintained.
+  haIntegrations     String?
+  /// Lower-case MAC addresses from HA's device connections, comma-separated. Drives duplicate hints.
+  haMacs             String?
   model              String?
   serialNumber       String?
   purchaseDate       DateTime?

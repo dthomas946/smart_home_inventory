@@ -12,6 +12,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { HA_REGISTRY_CLIENT, HaRegistryClient } from './ha-registry.types';
 import { mergeRegistry } from './ha-sync.merge';
 import { HaExclusionsService } from './ha-exclusions.service';
+import { HaLocaleService } from './ha-locale.service';
+import { integrationsOf } from './device-exclusion';
+import { HaConfigEntry, HaDevice } from './ha-registry.types';
 
 @Injectable()
 export class HaSyncService implements OnModuleInit, OnModuleDestroy {
@@ -25,7 +28,8 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly config: AppConfig,
     @Inject(HA_REGISTRY_CLIENT) private readonly client: HaRegistryClient,
-    private readonly exclusions: HaExclusionsService
+    private readonly exclusions: HaExclusionsService,
+    private readonly locale: HaLocaleService
   ) {}
 
   onModuleInit(): void {
@@ -49,6 +53,59 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy(): void {
     if (this.interval) clearInterval(this.interval);
+  }
+
+  /** Keep each synced device's integration list and MACs current — they
+   *  drive the Integration column and duplicate hints on the Devices page. */
+  private async refreshDeviceIdentity(
+    remoteDevices: HaDevice[],
+    configEntries: HaConfigEntry[]
+  ): Promise<void> {
+    const byHaId = new Map(remoteDevices.map((d) => [d.id, d]));
+    const locals = await this.prisma.device.findMany({
+      where: { haDeviceId: { not: null } },
+      select: { id: true, haDeviceId: true, haIntegrations: true, haMacs: true },
+    });
+    let changed = 0;
+    for (const l of locals) {
+      const remote = byHaId.get(l.haDeviceId as string);
+      if (!remote) continue;
+      const integrations = integrationsOf(remote, configEntries).join(',') || null;
+      const macs =
+        [
+          ...new Set(
+            (remote.connections ?? [])
+              .filter(([kind]) => kind === 'mac')
+              .map(([, v]) => v.toLowerCase().replace(/-/g, ':'))
+          ),
+        ]
+          .sort()
+          .join(',') || null;
+      if (integrations !== l.haIntegrations || macs !== l.haMacs) {
+        await this.prisma.device.update({
+          where: { id: l.id },
+          data: { haIntegrations: integrations, haMacs: macs },
+        });
+        changed++;
+      }
+    }
+    if (changed) this.logger.log(`Updated integrations/MACs on ${changed} devices`);
+  }
+
+  /** Devices still on the old built-in currency default (EUR, no price
+   *  entered) follow Home Assistant's currency. Anything with a price the
+   *  user typed is left exactly as entered. */
+  private async applyLocaleDefaults(): Promise<void> {
+    const locale = await this.locale.get(true);
+    if (!locale.fromHa || locale.currency === 'EUR') return;
+    const { count } = await this.prisma.device.updateMany({
+      where: {
+        purchasePriceCents: null,
+        OR: [{ purchaseCurrency: 'EUR' }, { purchaseCurrency: null }],
+      },
+      data: { purchaseCurrency: locale.currency },
+    });
+    if (count) this.logger.log(`Set currency to ${locale.currency} (from HA) on ${count} devices`);
   }
 
   async status(): Promise<HaStatusDto> {
@@ -238,6 +295,8 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
     });
 
     const purge = await this.exclusions.purge(excluded.keys());
+    await this.refreshDeviceIdentity(remoteDevices, configEntries);
+    await this.applyLocaleDefaults();
     const skipped = [...excluded.values()].filter((r) => r !== 'service entry').length;
     result.excluded = { skipped, removed: purge.removed, kept: purge.kept };
 

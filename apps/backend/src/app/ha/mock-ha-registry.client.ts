@@ -1,6 +1,7 @@
 import {
   HaArea,
   HaConfigEntry,
+  HaCoreConfig,
   HaDevice,
   HaEntity,
   HaFloor,
@@ -32,6 +33,16 @@ export class MockHaRegistryClient implements HaRegistryClient {
 
   async listEntities(): Promise<HaEntity[]> {
     return FIXTURE_ENTITIES;
+  }
+
+  async getCoreConfig(): Promise<HaCoreConfig> {
+    return {
+      currency: 'EUR',
+      country: 'DE',
+      language: 'de',
+      time_zone: 'Europe/Berlin',
+      unit_system: 'metric',
+    };
   }
 
   async listConfigEntries(): Promise<HaConfigEntry[]> {

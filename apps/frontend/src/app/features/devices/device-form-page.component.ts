@@ -28,6 +28,7 @@ import {
   LabelScanApi,
 } from '../../core/api/api.services';
 import { ToastService } from '../../core/toast/toast.service';
+import { LocaleStore } from '../../core/locale/locale.store';
 import { IconComponent } from '../../shared/ui/icon.component';
 
 /** Re-encode an image so its longest edge is at most `maxEdge` px (JPEG).
@@ -199,7 +200,7 @@ async function downscaleImage(file: File, maxEdge: number): Promise<File> {
           <input class="text" name="purchaseDate" type="date" [(ngModel)]="purchaseDate" />
         </label>
         <label class="field">
-          <span>Price (€)</span>
+          <span>Price ({{ localeStore.symbol(currency) }})</span>
           <input
             class="text"
             name="price"
@@ -338,6 +339,9 @@ export class DeviceFormPageComponent implements OnInit {
   private readonly labelScanApi = inject(LabelScanApi);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  protected readonly localeStore = inject(LocaleStore);
+  /** Existing device's currency; null for new devices → Home Assistant's currency. */
+  protected currency: string | null = null;
 
   /** Route param when editing; undefined when creating. */
   readonly deviceId = input<string | undefined>(undefined);
@@ -381,6 +385,7 @@ export class DeviceFormPageComponent implements OnInit {
   protected priceEuros: number | null = null;
 
   ngOnInit(): void {
+    this.localeStore.ensureLoaded();
     this.labelScanApi.status().subscribe({
       next: (s) => {
         this.scanEnabled.set(s.enabled);
@@ -415,6 +420,7 @@ export class DeviceFormPageComponent implements OnInit {
     this.purchaseDate = device.purchaseDate?.slice(0, 10) ?? '';
     this.priceEuros =
       device.purchasePriceCents !== null ? device.purchasePriceCents / 100 : null;
+    this.currency = device.purchaseCurrency;
     const keys = device.capabilities.map((c) => c.key);
     this.selectedCapabilities.set(keys);
     this.originalCapabilities = keys;
@@ -524,6 +530,8 @@ export class DeviceFormPageComponent implements OnInit {
         this.priceEuros !== null && this.priceEuros !== undefined
           ? Math.round(this.priceEuros * 100)
           : null,
+      // new devices: omitted, so the server applies Home Assistant's currency
+      ...(this.currency ? { purchaseCurrency: this.currency } : {}),
     };
     const id = this.deviceId();
     const req = id ? this.devicesApi.update(id, dto) : this.devicesApi.create(dto);

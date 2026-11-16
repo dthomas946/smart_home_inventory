@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0
+
+- **Home Assistant defaults**: currency (and country, units, time zone,
+  language — `GET /api/ha/locale`) come from HA's general settings. New
+  devices default to HA's currency; existing devices still on the old EUR
+  default with no price entered are switched on the next sync. Prices show
+  with the right symbol and formatting
+- **Integration** column on the Devices list (zha, netgear, esphome…) with an
+  integration filter; the device page shows "via …" too
+- **Duplicate hints**: devices that share a MAC address (near-certain) or
+  have the same name in a different integration (likely) are badged, with a
+  **Possible duplicates** filter, a banner on the device page linking the
+  other copy, and a one-tap **Exclude** for the copy you don't want
+
 ## 0.4.2
 
 - Network map Hierarchy layout wraps at **3 wide** (was 5) at every level

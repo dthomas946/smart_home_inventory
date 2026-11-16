@@ -22,7 +22,10 @@ import {
   AreasApi,
   CapabilitiesApi,
   DevicesApi,
+  HaApi,
 } from '../../core/api/api.services';
+import { ConfirmService } from '../../core/confirm/confirm.service';
+import { ToastService } from '../../core/toast/toast.service';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { DeviceThumbComponent } from '../../shared/ui/device-thumb.component';
@@ -91,6 +94,25 @@ function writeSourcePref(v: SourceFilter): void {
           <option [value]="area.id">{{ area.name }}</option>
         }
       </select>
+      @if (integrationOptions().length) {
+        <select class="text" [value]="query().integration ?? ''" (change)="setFilter('integration', $any($event.target).value)">
+          <option value="">All integrations</option>
+          @for (opt of integrationOptions(); track opt.key) {
+            <option [value]="opt.key">{{ opt.key }} ({{ opt.count }})</option>
+          }
+        </select>
+      }
+      @if (duplicateTotal() > 0) {
+        <button
+          type="button"
+          class="dup-toggle"
+          [class.active]="!!query().duplicates"
+          (click)="setFilter('duplicates', query().duplicates ? '' : '1')"
+          title="Show only devices that look like the same hardware as another"
+        >
+          Possible duplicates ({{ duplicateTotal() }})
+        </button>
+      }
       <select class="text" [value]="query().category ?? ''" (change)="setFilter('category', $any($event.target).value)">
         <option value="">All categories</option>
         @for (cat of categories; track cat) {
@@ -124,11 +146,13 @@ function writeSourcePref(v: SourceFilter): void {
             <th>Name</th>
             <th>Area</th>
             <th>Model</th>
+            <th>Integration</th>
             <th>Serial</th>
             <th>Docs</th>
             <th>Capabilities</th>
             <th>Status</th>
             <th>Source</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -142,9 +166,21 @@ function writeSourcePref(v: SourceFilter): void {
                 @if (device.haOrphaned) {
                   <span class="warn" title="No longer in Home Assistant">⚠</span>
                 }
+                @if (device.duplicates.length) {
+                  <span class="dup-badge" [title]="dupTitle(device)">
+                    {{ device.duplicates[0].reason === 'mac' ? 'duplicate' : 'possible duplicate' }}
+                  </span>
+                }
               </td>
               <td class="muted">{{ device.areaName ?? '—' }}</td>
               <td class="muted">{{ device.brand ?? device.manufacturer }} {{ device.model }}</td>
+              <td class="int-cell">
+                @for (i of device.integrations; track i) {
+                  <span class="int-chip">{{ i }}</span>
+                } @empty {
+                  <span class="muted">—</span>
+                }
+              </td>
               <td class="muted mono">{{ device.serialNumber ?? '—' }}</td>
               <td class="docs-cell">
                 @if (device.manualCount > 0) {
@@ -170,6 +206,17 @@ function writeSourcePref(v: SourceFilter): void {
               <td class="muted">{{ device.status }}</td>
               <td class="source-cell">
                 <app-source-badge [source]="device.source" />
+              </td>
+              <td class="row-actions">
+                @if (device.haDeviceId && device.duplicates.length) {
+                  <button
+                    class="btn secondary small-btn"
+                    title="Not the copy you want — remove it and keep future syncs from adding it back"
+                    (click)="exclude(device, $event)"
+                  >
+                    Exclude
+                  </button>
+                }
               </td>
             </tr>
           }
@@ -279,6 +326,52 @@ function writeSourcePref(v: SourceFilter): void {
       background: color-mix(in srgb, var(--warning-color, #f9a825) 22%, transparent);
       color: var(--primary-text-color);
     }
+    .int-cell {
+      white-space: nowrap;
+    }
+    .int-chip {
+      display: inline-block;
+      font-size: 11px;
+      padding: 1px 6px;
+      margin-right: 3px;
+      border-radius: 4px;
+      background: var(--chip-background-color);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .dup-badge {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--warning-color, #f9a825) 28%, transparent);
+      cursor: help;
+    }
+    .dup-toggle {
+      background: transparent;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+      font: inherit;
+    }
+    .dup-toggle.active {
+      background: color-mix(in srgb, var(--warning-color, #f9a825) 22%, transparent);
+      color: var(--primary-text-color);
+      font-weight: 600;
+    }
+    .row-actions {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .small-btn {
+      padding: 2px 10px;
+      font-size: 12px;
+    }
     .doc-badge.none {
       color: var(--secondary-text-color);
     }
@@ -290,6 +383,9 @@ export class DeviceListPageComponent implements OnInit {
   private readonly capabilitiesApi = inject(CapabilitiesApi);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly haApi = inject(HaApi);
+  private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
 
   protected readonly devices = signal<DeviceDto[]>([]);
   protected readonly areas = signal<AreaDto[]>([]);
@@ -313,6 +409,8 @@ export class DeviceListPageComponent implements OnInit {
     { value: 'all', label: 'All', hint: 'Everything' },
   ];
   protected readonly sourceFilter = signal<SourceFilter>('manual');
+  protected readonly integrationOptions = signal<Array<{ key: string; count: number }>>([]);
+  protected readonly duplicateTotal = signal(0);
 
   ngOnInit(): void {
     this.areasApi.list().subscribe((areas) => this.areas.set(areas));
@@ -330,8 +428,53 @@ export class DeviceListPageComponent implements OnInit {
         category: (params.get('category') as DeviceCategory | null) ?? undefined,
         capability: params.get('capability') ?? undefined,
         source: source === 'all' ? undefined : (source as EntitySource),
+        integration: params.get('integration') ?? undefined,
+        duplicates: params.get('duplicates') ? '1' : undefined,
       });
       this.load();
+    });
+    this.loadFacets();
+  }
+
+  /** Integration choices and the duplicate count come from the whole table,
+   *  not the filtered view, so the filters don't hide their own options. */
+  private loadFacets(): void {
+    this.devicesApi.list({}).subscribe((all) => {
+      const counts = new Map<string, number>();
+      for (const d of all) for (const i of d.integrations) counts.set(i, (counts.get(i) ?? 0) + 1);
+      this.integrationOptions.set(
+        [...counts.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => a.key.localeCompare(b.key))
+      );
+      this.duplicateTotal.set(all.filter((d) => d.duplicates.length > 0).length);
+    });
+  }
+
+  protected dupTitle(device: DeviceDto): string {
+    return (
+      'Looks like the same hardware as: ' +
+      device.duplicates
+        .map(
+          (h) =>
+            `${h.name} (${h.integrations.join(', ') || 'added by you'}; ${h.reason === 'mac' ? 'same MAC' : 'same name'})`
+        )
+        .join('; ')
+    );
+  }
+
+  protected async exclude(device: DeviceDto, event: Event): Promise<void> {
+    event.stopPropagation();
+    const other = device.duplicates[0];
+    const ok = await this.confirm.ask(
+      `Exclude "${device.name}" (${device.integrations.join(', ') || 'Home Assistant'}) from the inventory?` +
+        (other ? ` "${other.name}" (${other.integrations.join(', ') || 'added by you'}) stays.` : '') +
+        ` Future syncs won't add it back; undo in Settings → Physical devices only.`,
+      { confirmLabel: 'Exclude' }
+    );
+    if (!ok) return;
+    this.haApi.excludeDevice(device.id).subscribe(() => {
+      this.toast.success(`Excluded ${device.name}`);
+      this.load();
+      this.loadFacets();
     });
   }
 

@@ -5,6 +5,7 @@ import {
   AreaDto,
   AttachFromUrlDto,
   CreateSyncExclusionDto,
+  HaLocaleDto,
   SyncExclusionsDto,
   AutoLinkApplyResultDto,
   AutoLinkPlanDto,
@@ -285,6 +286,9 @@ export class HaApi {
   }
   status(): Observable<HaStatusDto> {
     return this.http.get<HaStatusDto>('api/ha/status');
+  }
+  locale(): Observable<HaLocaleDto> {
+    return this.http.get<HaLocaleDto>('api/ha/locale');
   }
   exclusions(): Observable<SyncExclusionsDto> {
     return this.http.get<SyncExclusionsDto>('api/ha/exclusions');

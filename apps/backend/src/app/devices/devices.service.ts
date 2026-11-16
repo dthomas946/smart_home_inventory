@@ -9,12 +9,15 @@ import {
   DeviceCategory,
   DeviceDetailDto,
   DeviceDto,
+  DuplicateHintDto,
   DeviceQueryDto,
   DeviceStatus,
   EntitySource,
   UpdateDeviceDto,
 } from '@smart-home-inventory/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { FALLBACK_CURRENCY, HaLocaleService } from '../ha/ha-locale.service';
+import { computeDuplicates } from './device-duplicates';
 import {
   toAttachmentDto,
   toConnectionDto,
@@ -47,7 +50,10 @@ const detailInclude = {
 type DeviceForList = Prisma.DeviceGetPayload<{ include: typeof listInclude }>;
 type DeviceForDetail = Prisma.DeviceGetPayload<{ include: typeof detailInclude }>;
 
-export function toDeviceDto(d: DeviceForList): DeviceDto {
+export function toDeviceDto(
+  d: DeviceForList,
+  duplicates: Map<string, DuplicateHintDto[]> = new Map()
+): DeviceDto {
   return {
     id: d.id,
     name: d.name,
@@ -71,14 +77,19 @@ export function toDeviceDto(d: DeviceForList): DeviceDto {
     primaryImageId: d.primaryImageId,
     capabilityKeys: d.capabilities.map((c) => c.capabilityType.key),
     manualCount: d._count.attachments,
+    integrations: d.haIntegrations ? d.haIntegrations.split(',').filter(Boolean) : [],
+    duplicates: duplicates.get(d.id) ?? [],
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
   };
 }
 
-function toDeviceDetailDto(d: DeviceForDetail): DeviceDetailDto {
+function toDeviceDetailDto(
+  d: DeviceForDetail,
+  duplicates: Map<string, DuplicateHintDto[]> = new Map()
+): DeviceDetailDto {
   return {
-    ...toDeviceDto(d),
+    ...toDeviceDto(d, duplicates),
     capabilities: d.capabilities.map(toDeviceCapabilityDto),
     attachments: d.attachments.map(toAttachmentDto),
     connections: [...d.connectionsFrom, ...d.connectionsTo].map(toConnectionDto),
@@ -87,7 +98,18 @@ function toDeviceDetailDto(d: DeviceForDetail): DeviceDetailDto {
 
 @Injectable()
 export class DevicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly locale: HaLocaleService
+  ) {}
+
+  /** Duplicate hints across the whole table — small enough to compute per request. */
+  private async duplicatesMap(): Promise<Map<string, DuplicateHintDto[]>> {
+    const all = await this.prisma.device.findMany({
+      select: { id: true, name: true, haIntegrations: true, haMacs: true, source: true },
+    });
+    return computeDuplicates(all);
+  }
 
   async list(query: DeviceQueryDto): Promise<DeviceDto[]> {
     const devices = await this.prisma.device.findMany({
@@ -96,6 +118,7 @@ export class DevicesService {
         ...(query.status ? { status: query.status } : {}),
         ...(query.category ? { category: query.category } : {}),
         ...(query.source ? { source: query.source } : {}),
+        ...(query.integration ? { haIntegrations: { contains: query.integration } } : {}),
         ...(query.capability
           ? { capabilities: { some: { capabilityType: { key: query.capability } } } }
           : {}),
@@ -114,7 +137,12 @@ export class DevicesService {
       include: listInclude,
       orderBy: { name: 'asc' },
     });
-    return devices.map(toDeviceDto);
+    const dupes = await this.duplicatesMap();
+    const integration = query.integration?.toLowerCase();
+    return devices
+      .map((d) => toDeviceDto(d, dupes))
+      .filter((d) => !integration || d.integrations.includes(integration))
+      .filter((d) => !query.duplicates || d.duplicates.length > 0);
   }
 
   async get(id: string): Promise<DeviceDetailDto> {
@@ -123,16 +151,17 @@ export class DevicesService {
       include: detailInclude,
     });
     if (!device) throw new NotFoundException(`Device ${id} not found`);
-    return toDeviceDetailDto(device);
+    return toDeviceDetailDto(device, await this.duplicatesMap());
   }
 
   async create(dto: CreateDeviceDto): Promise<DeviceDetailDto> {
     await this.validateAreaRef(dto.areaId);
+    const currency = dto.purchaseCurrency ?? (await this.locale.currency());
     const device = await this.prisma.device.create({
-      data: this.toWriteData(dto),
+      data: { ...this.toWriteData(dto), purchaseCurrency: currency },
       include: detailInclude,
     });
-    return toDeviceDetailDto(device);
+    return toDeviceDetailDto(device, await this.duplicatesMap());
   }
 
   async update(id: string, dto: UpdateDeviceDto): Promise<DeviceDetailDto> {
@@ -170,7 +199,7 @@ export class DevicesService {
       data,
       include: detailInclude,
     });
-    return toDeviceDetailDto(device);
+    return toDeviceDetailDto(device, await this.duplicatesMap());
   }
 
   async setPrimaryImage(id: string, attachmentId: string | null): Promise<DeviceDetailDto> {
@@ -193,7 +222,7 @@ export class DevicesService {
       data: { primaryImageId: attachmentId },
       include: detailInclude,
     });
-    return toDeviceDetailDto(device);
+    return toDeviceDetailDto(device, await this.duplicatesMap());
   }
 
   async remove(id: string): Promise<void> {
@@ -211,7 +240,7 @@ export class DevicesService {
       serialNumber: dto.serialNumber ?? null,
       purchaseDate: dto.purchaseDate ? new Date(dto.purchaseDate) : null,
       purchasePriceCents: dto.purchasePriceCents ?? null,
-      purchaseCurrency: dto.purchaseCurrency ?? 'EUR',
+      purchaseCurrency: dto.purchaseCurrency ?? FALLBACK_CURRENCY,
       purchasedFrom: dto.purchasedFrom ?? null,
       productUrl: dto.productUrl ?? null,
       notes: dto.notes ?? null,

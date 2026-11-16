@@ -40,6 +40,8 @@ export type DeviceMinAggregateOutputType = {
   category: $Enums.DeviceCategory | null
   manufacturer: string | null
   brand: string | null
+  haIntegrations: string | null
+  haMacs: string | null
   model: string | null
   serialNumber: string | null
   purchaseDate: Date | null
@@ -66,6 +68,8 @@ export type DeviceMaxAggregateOutputType = {
   category: $Enums.DeviceCategory | null
   manufacturer: string | null
   brand: string | null
+  haIntegrations: string | null
+  haMacs: string | null
   model: string | null
   serialNumber: string | null
   purchaseDate: Date | null
@@ -92,6 +96,8 @@ export type DeviceCountAggregateOutputType = {
   category: number
   manufacturer: number
   brand: number
+  haIntegrations: number
+  haMacs: number
   model: number
   serialNumber: number
   purchaseDate: number
@@ -128,6 +134,8 @@ export type DeviceMinAggregateInputType = {
   category?: true
   manufacturer?: true
   brand?: true
+  haIntegrations?: true
+  haMacs?: true
   model?: true
   serialNumber?: true
   purchaseDate?: true
@@ -154,6 +162,8 @@ export type DeviceMaxAggregateInputType = {
   category?: true
   manufacturer?: true
   brand?: true
+  haIntegrations?: true
+  haMacs?: true
   model?: true
   serialNumber?: true
   purchaseDate?: true
@@ -180,6 +190,8 @@ export type DeviceCountAggregateInputType = {
   category?: true
   manufacturer?: true
   brand?: true
+  haIntegrations?: true
+  haMacs?: true
   model?: true
   serialNumber?: true
   purchaseDate?: true
@@ -293,6 +305,8 @@ export type DeviceGroupByOutputType = {
   category: $Enums.DeviceCategory | null
   manufacturer: string | null
   brand: string | null
+  haIntegrations: string | null
+  haMacs: string | null
   model: string | null
   serialNumber: string | null
   purchaseDate: Date | null
@@ -342,6 +356,8 @@ export type DeviceWhereInput = {
   category?: Prisma.EnumDeviceCategoryNullableFilter<"Device"> | $Enums.DeviceCategory | null
   manufacturer?: Prisma.StringNullableFilter<"Device"> | string | null
   brand?: Prisma.StringNullableFilter<"Device"> | string | null
+  haIntegrations?: Prisma.StringNullableFilter<"Device"> | string | null
+  haMacs?: Prisma.StringNullableFilter<"Device"> | string | null
   model?: Prisma.StringNullableFilter<"Device"> | string | null
   serialNumber?: Prisma.StringNullableFilter<"Device"> | string | null
   purchaseDate?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
@@ -376,6 +392,8 @@ export type DeviceOrderByWithRelationInput = {
   category?: Prisma.SortOrderInput | Prisma.SortOrder
   manufacturer?: Prisma.SortOrderInput | Prisma.SortOrder
   brand?: Prisma.SortOrderInput | Prisma.SortOrder
+  haIntegrations?: Prisma.SortOrderInput | Prisma.SortOrder
+  haMacs?: Prisma.SortOrderInput | Prisma.SortOrder
   model?: Prisma.SortOrderInput | Prisma.SortOrder
   serialNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   purchaseDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -415,6 +433,8 @@ export type DeviceWhereUniqueInput = Prisma.AtLeast<{
   category?: Prisma.EnumDeviceCategoryNullableFilter<"Device"> | $Enums.DeviceCategory | null
   manufacturer?: Prisma.StringNullableFilter<"Device"> | string | null
   brand?: Prisma.StringNullableFilter<"Device"> | string | null
+  haIntegrations?: Prisma.StringNullableFilter<"Device"> | string | null
+  haMacs?: Prisma.StringNullableFilter<"Device"> | string | null
   model?: Prisma.StringNullableFilter<"Device"> | string | null
   serialNumber?: Prisma.StringNullableFilter<"Device"> | string | null
   purchaseDate?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
@@ -447,6 +467,8 @@ export type DeviceOrderByWithAggregationInput = {
   category?: Prisma.SortOrderInput | Prisma.SortOrder
   manufacturer?: Prisma.SortOrderInput | Prisma.SortOrder
   brand?: Prisma.SortOrderInput | Prisma.SortOrder
+  haIntegrations?: Prisma.SortOrderInput | Prisma.SortOrder
+  haMacs?: Prisma.SortOrderInput | Prisma.SortOrder
   model?: Prisma.SortOrderInput | Prisma.SortOrder
   serialNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   purchaseDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -481,6 +503,8 @@ export type DeviceScalarWhereWithAggregatesInput = {
   category?: Prisma.EnumDeviceCategoryNullableWithAggregatesFilter<"Device"> | $Enums.DeviceCategory | null
   manufacturer?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
   brand?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
+  haIntegrations?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
+  haMacs?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
   model?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
   serialNumber?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
   purchaseDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Device"> | Date | string | null
@@ -507,6 +531,8 @@ export type DeviceCreateInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -539,6 +565,8 @@ export type DeviceUncheckedCreateInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -571,6 +599,8 @@ export type DeviceUpdateInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -603,6 +633,8 @@ export type DeviceUncheckedUpdateInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -635,6 +667,8 @@ export type DeviceCreateManyInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -661,6 +695,8 @@ export type DeviceUpdateManyMutationInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -685,6 +721,8 @@ export type DeviceUncheckedUpdateManyInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -721,6 +759,8 @@ export type DeviceCountOrderByAggregateInput = {
   category?: Prisma.SortOrder
   manufacturer?: Prisma.SortOrder
   brand?: Prisma.SortOrder
+  haIntegrations?: Prisma.SortOrder
+  haMacs?: Prisma.SortOrder
   model?: Prisma.SortOrder
   serialNumber?: Prisma.SortOrder
   purchaseDate?: Prisma.SortOrder
@@ -751,6 +791,8 @@ export type DeviceMaxOrderByAggregateInput = {
   category?: Prisma.SortOrder
   manufacturer?: Prisma.SortOrder
   brand?: Prisma.SortOrder
+  haIntegrations?: Prisma.SortOrder
+  haMacs?: Prisma.SortOrder
   model?: Prisma.SortOrder
   serialNumber?: Prisma.SortOrder
   purchaseDate?: Prisma.SortOrder
@@ -777,6 +819,8 @@ export type DeviceMinOrderByAggregateInput = {
   category?: Prisma.SortOrder
   manufacturer?: Prisma.SortOrder
   brand?: Prisma.SortOrder
+  haIntegrations?: Prisma.SortOrder
+  haMacs?: Prisma.SortOrder
   model?: Prisma.SortOrder
   serialNumber?: Prisma.SortOrder
   purchaseDate?: Prisma.SortOrder
@@ -991,6 +1035,8 @@ export type DeviceCreateWithoutAreaInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1022,6 +1068,8 @@ export type DeviceUncheckedCreateWithoutAreaInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1081,6 +1129,8 @@ export type DeviceScalarWhereInput = {
   category?: Prisma.EnumDeviceCategoryNullableFilter<"Device"> | $Enums.DeviceCategory | null
   manufacturer?: Prisma.StringNullableFilter<"Device"> | string | null
   brand?: Prisma.StringNullableFilter<"Device"> | string | null
+  haIntegrations?: Prisma.StringNullableFilter<"Device"> | string | null
+  haMacs?: Prisma.StringNullableFilter<"Device"> | string | null
   model?: Prisma.StringNullableFilter<"Device"> | string | null
   serialNumber?: Prisma.StringNullableFilter<"Device"> | string | null
   purchaseDate?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
@@ -1107,6 +1157,8 @@ export type DeviceCreateWithoutAttachmentsInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1138,6 +1190,8 @@ export type DeviceUncheckedCreateWithoutAttachmentsInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1174,6 +1228,8 @@ export type DeviceCreateWithoutPrimaryImageInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1205,6 +1261,8 @@ export type DeviceUncheckedCreateWithoutPrimaryImageInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1252,6 +1310,8 @@ export type DeviceUpdateWithoutAttachmentsInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1283,6 +1343,8 @@ export type DeviceUncheckedUpdateWithoutAttachmentsInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1325,6 +1387,8 @@ export type DeviceUpdateWithoutPrimaryImageInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1356,6 +1420,8 @@ export type DeviceUncheckedUpdateWithoutPrimaryImageInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1387,6 +1453,8 @@ export type DeviceCreateWithoutCapabilitiesInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1418,6 +1486,8 @@ export type DeviceUncheckedCreateWithoutCapabilitiesInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1465,6 +1535,8 @@ export type DeviceUpdateWithoutCapabilitiesInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1496,6 +1568,8 @@ export type DeviceUncheckedUpdateWithoutCapabilitiesInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1527,6 +1601,8 @@ export type DeviceCreateWithoutConnectionsFromInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1558,6 +1634,8 @@ export type DeviceUncheckedCreateWithoutConnectionsFromInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1594,6 +1672,8 @@ export type DeviceCreateWithoutConnectionsToInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1625,6 +1705,8 @@ export type DeviceUncheckedCreateWithoutConnectionsToInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1672,6 +1754,8 @@ export type DeviceUpdateWithoutConnectionsFromInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1703,6 +1787,8 @@ export type DeviceUncheckedUpdateWithoutConnectionsFromInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1745,6 +1831,8 @@ export type DeviceUpdateWithoutConnectionsToInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1776,6 +1864,8 @@ export type DeviceUncheckedUpdateWithoutConnectionsToInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1807,6 +1897,8 @@ export type DeviceCreateWithoutAutoLinkRulesInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1838,6 +1930,8 @@ export type DeviceUncheckedCreateWithoutAutoLinkRulesInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1885,6 +1979,8 @@ export type DeviceUpdateWithoutAutoLinkRulesInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1916,6 +2012,8 @@ export type DeviceUncheckedUpdateWithoutAutoLinkRulesInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1947,6 +2045,8 @@ export type DeviceCreateWithoutDiagramsInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -1978,6 +2078,8 @@ export type DeviceUncheckedCreateWithoutDiagramsInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -2025,6 +2127,8 @@ export type DeviceUpdateWithoutDiagramsInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2056,6 +2160,8 @@ export type DeviceUncheckedUpdateWithoutDiagramsInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2087,6 +2193,8 @@ export type DeviceCreateManyAreaInput = {
   category?: $Enums.DeviceCategory | null
   manufacturer?: string | null
   brand?: string | null
+  haIntegrations?: string | null
+  haMacs?: string | null
   model?: string | null
   serialNumber?: string | null
   purchaseDate?: Date | string | null
@@ -2112,6 +2220,8 @@ export type DeviceUpdateWithoutAreaInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2143,6 +2253,8 @@ export type DeviceUncheckedUpdateWithoutAreaInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2174,6 +2286,8 @@ export type DeviceUncheckedUpdateManyWithoutAreaInput = {
   category?: Prisma.NullableEnumDeviceCategoryFieldUpdateOperationsInput | $Enums.DeviceCategory | null
   manufacturer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haIntegrations?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  haMacs?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serialNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchaseDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2275,6 +2389,8 @@ export type DeviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   category?: boolean
   manufacturer?: boolean
   brand?: boolean
+  haIntegrations?: boolean
+  haMacs?: boolean
   model?: boolean
   serialNumber?: boolean
   purchaseDate?: boolean
@@ -2310,6 +2426,8 @@ export type DeviceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   category?: boolean
   manufacturer?: boolean
   brand?: boolean
+  haIntegrations?: boolean
+  haMacs?: boolean
   model?: boolean
   serialNumber?: boolean
   purchaseDate?: boolean
@@ -2338,6 +2456,8 @@ export type DeviceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   category?: boolean
   manufacturer?: boolean
   brand?: boolean
+  haIntegrations?: boolean
+  haMacs?: boolean
   model?: boolean
   serialNumber?: boolean
   purchaseDate?: boolean
@@ -2366,6 +2486,8 @@ export type DeviceSelectScalar = {
   category?: boolean
   manufacturer?: boolean
   brand?: boolean
+  haIntegrations?: boolean
+  haMacs?: boolean
   model?: boolean
   serialNumber?: boolean
   purchaseDate?: boolean
@@ -2386,7 +2508,7 @@ export type DeviceSelectScalar = {
   updatedAt?: boolean
 }
 
-export type DeviceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "category" | "manufacturer" | "brand" | "model" | "serialNumber" | "purchaseDate" | "purchasePriceCents" | "purchaseCurrency" | "purchasedFrom" | "productUrl" | "notes" | "status" | "areaId" | "haDeviceId" | "haName" | "haAreaIdAtSync" | "haOrphaned" | "source" | "primaryImageId" | "createdAt" | "updatedAt", ExtArgs["result"]["device"]>
+export type DeviceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "category" | "manufacturer" | "brand" | "haIntegrations" | "haMacs" | "model" | "serialNumber" | "purchaseDate" | "purchasePriceCents" | "purchaseCurrency" | "purchasedFrom" | "productUrl" | "notes" | "status" | "areaId" | "haDeviceId" | "haName" | "haAreaIdAtSync" | "haOrphaned" | "source" | "primaryImageId" | "createdAt" | "updatedAt", ExtArgs["result"]["device"]>
 export type DeviceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   area?: boolean | Prisma.Device$areaArgs<ExtArgs>
   primaryImage?: boolean | Prisma.Device$primaryImageArgs<ExtArgs>
@@ -2429,6 +2551,14 @@ export type $DevicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
      *    * Consumer brand when it differs from the legal manufacturer (Frigidaire vs Electrolux).
      */
     brand: string | null
+    /**
+     * HA integration domains this device belongs to, comma-separated (zha,netgear). Sync-maintained.
+     */
+    haIntegrations: string | null
+    /**
+     * Lower-case MAC addresses from HA's device connections, comma-separated. Drives duplicate hints.
+     */
+    haMacs: string | null
     model: string | null
     serialNumber: string | null
     purchaseDate: Date | null
@@ -2883,6 +3013,8 @@ export interface DeviceFieldRefs {
   readonly category: Prisma.FieldRef<"Device", 'DeviceCategory'>
   readonly manufacturer: Prisma.FieldRef<"Device", 'String'>
   readonly brand: Prisma.FieldRef<"Device", 'String'>
+  readonly haIntegrations: Prisma.FieldRef<"Device", 'String'>
+  readonly haMacs: Prisma.FieldRef<"Device", 'String'>
   readonly model: Prisma.FieldRef<"Device", 'String'>
   readonly serialNumber: Prisma.FieldRef<"Device", 'String'>
   readonly purchaseDate: Prisma.FieldRef<"Device", 'DateTime'>

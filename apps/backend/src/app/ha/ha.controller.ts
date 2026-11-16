@@ -3,6 +3,7 @@ import { CreateSyncExclusionDto, CreateSyncExclusionSchema } from '@smart-home-i
 import { zodPipe } from '../common/zod-validation.pipe';
 import { HaCapabilitySuggestionsService } from './ha-capability-suggestions.service';
 import { HaExclusionsService } from './ha-exclusions.service';
+import { HaLocaleService } from './ha-locale.service';
 import { HaSyncService } from './ha-sync.service';
 
 @Controller('ha')
@@ -10,8 +11,15 @@ export class HaController {
   constructor(
     private readonly haSync: HaSyncService,
     private readonly haCapabilitySuggestions: HaCapabilitySuggestionsService,
-    private readonly exclusions: HaExclusionsService
+    private readonly exclusions: HaExclusionsService,
+    private readonly locale: HaLocaleService
   ) {}
+
+  /** Currency, country, units etc. from HA's general settings. */
+  @Get('locale')
+  getLocale() {
+    return this.locale.get();
+  }
 
   /** Rules, what they currently exclude, and pickers for adding more. */
   @Get('exclusions')

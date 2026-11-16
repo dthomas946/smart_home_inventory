@@ -3,6 +3,7 @@ import WebSocket from 'ws';
 import {
   HaArea,
   HaConfigEntry,
+  HaCoreConfig,
   HaDevice,
   HaEntity,
   HaFloor,
@@ -90,6 +91,22 @@ export class WsHaRegistryClient implements HaRegistryClient {
       identifiers: Array.isArray(d.identifiers) ? d.identifiers : [],
       connections: Array.isArray(d.connections) ? d.connections : [],
     }));
+  }
+
+  async getCoreConfig(): Promise<HaCoreConfig> {
+    const c = (await this.command('get_config')) as Record<string, unknown>;
+    const units = c['unit_system'] as Record<string, unknown> | undefined;
+    // unit_system is an object of units; identify US customary by its length unit
+    const unitSystem =
+      units && typeof units === 'object' ? (units['length'] === 'mi' ? 'us_customary' : 'metric') : null;
+    const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    return {
+      currency: str(c['currency']),
+      country: str(c['country']),
+      language: str(c['language']),
+      time_zone: str(c['time_zone']),
+      unit_system: unitSystem,
+    };
   }
 
   async listConfigEntries(): Promise<HaConfigEntry[]> {

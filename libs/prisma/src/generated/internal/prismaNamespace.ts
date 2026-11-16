@@ -1465,6 +1465,8 @@ export const DeviceScalarFieldEnum = {
   category: 'category',
   manufacturer: 'manufacturer',
   brand: 'brand',
+  haIntegrations: 'haIntegrations',
+  haMacs: 'haMacs',
   model: 'model',
   serialNumber: 'serialNumber',
   purchaseDate: 'purchaseDate',

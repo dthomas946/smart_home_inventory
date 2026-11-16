@@ -31,3 +31,17 @@ export interface HaStatusDto {
 export interface HaCapabilitySuggestionDto {
   suggestedCapabilities: Array<{ key: string; label: string }>;
 }
+
+/** App defaults taken from Home Assistant's own configuration (Settings →
+ *  System → General). Every field falls back when HA can't be reached. */
+export interface HaLocaleDto {
+  /** ISO 4217, e.g. "USD". */
+  currency: string;
+  /** ISO 3166-1 alpha-2, e.g. "US"; null when HA has none set. */
+  country: string | null;
+  language: string | null;
+  timeZone: string | null;
+  unitSystem: 'metric' | 'us_customary' | null;
+  /** True when the values came from HA, false when they're fallbacks. */
+  fromHa: boolean;
+}

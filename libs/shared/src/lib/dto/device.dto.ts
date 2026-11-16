@@ -11,6 +11,14 @@ import { AttachmentDto } from './attachment.dto';
 import { DeviceCapabilityDto } from './capability.dto';
 import { ConnectionDto } from './connection.dto';
 
+export interface DuplicateHintDto {
+  id: string;
+  name: string;
+  integrations: string[];
+  /** 'mac' = shares a MAC address (near-certain); 'name' = same name, different integration (likely). */
+  reason: 'mac' | 'name';
+}
+
 export interface DeviceDto {
   id: string;
   name: string;
@@ -36,6 +44,10 @@ export interface DeviceDto {
   capabilityKeys: string[];
   /** Number of attachments of kind `manual` — lets lists show "has docs" without loading attachments. */
   manualCount: number;
+  /** HA integration domains (zha, netgear, esphome…); empty for devices you added yourself. */
+  integrations: string[];
+  /** Other devices that look like the same hardware (shared MAC, or same name in another integration). */
+  duplicates: DuplicateHintDto[];
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +88,10 @@ export const DeviceQuerySchema = z.object({
   capability: z.string().optional(),
   /** `manual` = equipment you entered yourself; `ha` = synced from Home Assistant. */
   source: EntitySourceSchema.optional(),
+  /** Only devices from this HA integration domain. */
+  integration: z.string().max(100).optional(),
+  /** Only devices with a duplicate hint. */
+  duplicates: z.enum(['1', 'true']).optional(),
 });
 export type DeviceQueryDto = z.infer<typeof DeviceQuerySchema>;
 
