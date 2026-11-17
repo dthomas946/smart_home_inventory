@@ -17,8 +17,8 @@ import { AutoLinkService } from '../auto-link/auto-link.service';
 import { isManaged } from '../auto-link/auto-link.planner';
 
 const includeNames = {
-  fromDevice: { select: { name: true } },
-  toDevice: { select: { name: true } },
+  fromDevice: { select: { name: true, source: true } },
+  toDevice: { select: { name: true, source: true } },
 } as const;
 
 @Injectable()

@@ -209,6 +209,8 @@ export class ConnectionFormDialogComponent {
   readonly initialLabel = input('');
   /** Pre-fills the type, e.g. with the diagram edge/wire's own type. */
   readonly initialType = input<ConnectionType | ''>('');
+  /** Start with the fixed device as the upstream end (e.g. "controls"). */
+  readonly fixedAsSource = input(false);
   /** When set, the dialog edits this connection instead of creating one. */
   readonly editing = input<ConnectionDto | null>(null);
   readonly closed = output<void>();
@@ -253,7 +255,7 @@ export class ConnectionFormDialogComponent {
         if (!el.open) el.showModal();
       } else if (this.open()) {
         this.type = this.initialType() || this.connectionTypes.types()[0]?.key || '';
-        this.fixedIsSource = false;
+        this.fixedIsSource = this.fixedAsSource();
         this.label = this.initialLabel();
         this.notes = '';
         this.sourceDevice.set(null);

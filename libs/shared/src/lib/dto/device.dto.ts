@@ -92,6 +92,8 @@ export const DeviceQuerySchema = z.object({
   integration: z.string().max(100).optional(),
   /** Only devices with a duplicate hint. */
   duplicates: z.enum(['1', 'true']).optional(),
+  /** Only devices with at least one connection (either end) of this type. */
+  connectionType: z.string().max(100).optional(),
 });
 export type DeviceQueryDto = z.infer<typeof DeviceQuerySchema>;
 

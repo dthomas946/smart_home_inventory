@@ -477,13 +477,13 @@ export function plan(input: PlannerInput): PlannerOutput {
       });
       continue;
     }
-    // A hand-made network link on this device wins over anything we'd infer.
+    // A hand-made link *into* this device (it's the downstream end) means
+    // the user has placed it; that wins over anything we'd infer. Links
+    // going *out* of it (a plug that controls a lamp, a base station that
+    // feeds cameras) say nothing about its own upstream.
     const overrideTypes = input.overrideTypes ?? NETWORK_TYPES;
     const manualNetworkLink = input.existing.some(
-      (c) =>
-        !isManaged(c.metadata) &&
-        overrideTypes.has(c.type) &&
-        (c.toDeviceId === local.id || c.fromDeviceId === local.id)
+      (c) => !isManaged(c.metadata) && overrideTypes.has(c.type) && c.toDeviceId === local.id
     );
     if (manualNetworkLink) {
       skipped.push({

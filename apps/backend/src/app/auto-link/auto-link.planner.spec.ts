@@ -92,6 +92,16 @@ describe('auto-link planner', () => {
     expect(out.skipped.find((s) => s.deviceId === 'L-esp')?.reason).toBe('manual_override');
   });
 
+  it('only counts hand-drawn links INTO a device, not out of it', () => {
+    const input = base();
+    input.rules = { wifi: 'L-router' };
+    // the ESP proxy feeds something downstream by hand — its own Wi-Fi link stays automatic
+    input.existing = [
+      { id: 'c1', type: 'ethernet', fromDeviceId: 'L-esp', toDeviceId: 'L-fridge', metadata: null },
+    ];
+    expect(plan(input).create.some((c) => c.toDeviceId === 'L-esp')).toBe(true);
+  });
+
   it('does not treat a manual power link as a network override', () => {
     const input = base();
     input.existing = [

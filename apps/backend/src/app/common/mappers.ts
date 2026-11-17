@@ -43,8 +43,8 @@ export function toDeviceCapabilityDto(
 
 export function toConnectionDto(
   c: Connection & {
-    fromDevice: { name: string };
-    toDevice: { name: string };
+    fromDevice: { name: string; source?: string };
+    toDevice: { name: string; source?: string };
   }
 ): ConnectionDto {
   return {
@@ -54,6 +54,8 @@ export function toConnectionDto(
     fromDeviceName: c.fromDevice.name,
     toDeviceId: c.toDeviceId,
     toDeviceName: c.toDevice.name,
+    fromDeviceSource: c.fromDevice.source ?? 'manual',
+    toDeviceSource: c.toDevice.source ?? 'manual',
     label: c.label,
     metadata: (c.metadata as Record<string, unknown> | null) ?? null,
     notes: c.notes,

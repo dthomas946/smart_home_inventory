@@ -98,6 +98,14 @@ function readModePref(): NetworkLayoutMode {
             <span class="muted">{{ countFor(t.key) }}</span>
           </button>
         }
+        <span class="node-legend muted small">
+          <svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="var(--primary-color, #03a9f4)" /></svg>
+          controller
+          <svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" fill="var(--secondary-text-color, #9e9e9e)" /></svg>
+          smart device
+          <svg width="12" height="12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="2" fill="var(--accent-color, #ff9800)" /></svg>
+          non-smart / added by you
+        </span>
         <span class="muted small legend-note">
           {{ layout().nodes.length }} devices · {{ layout().edges.length }} links
           @if (layout().unlinked.length) {
@@ -149,7 +157,19 @@ function readModePref(): NetworkLayoutMode {
                   (pointerenter)="hovered.set(n.node.id)"
                   (pointerleave)="hovered.set(null)"
                 >
-                  <circle [attr.r]="radius(n)" [attr.fill]="fillOf(n)" />
+                  @if (n.node.source === 'manual') {
+                    <!-- non-smart / added by you: square -->
+                    <rect
+                      [attr.x]="-radius(n)"
+                      [attr.y]="-radius(n)"
+                      [attr.width]="radius(n) * 2"
+                      [attr.height]="radius(n) * 2"
+                      rx="2"
+                      [attr.fill]="fillOf(n)"
+                    />
+                  } @else {
+                    <circle [attr.r]="radius(n)" [attr.fill]="fillOf(n)" />
+                  }
                   @if (n.node.isController) {
                     <circle [attr.r]="radius(n) + 4" fill="none" [attr.stroke]="fillOf(n)" stroke-opacity="0.35" stroke-width="3" />
                   }
@@ -251,6 +271,15 @@ function readModePref(): NetworkLayoutMode {
       display: inline-flex;
       align-items: center;
       gap: 6px;
+    }
+    .node-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+    }
+    .node-legend svg {
+      margin-left: 6px;
     }
     .legend-note {
       margin-left: auto;

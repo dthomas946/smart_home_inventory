@@ -35,14 +35,14 @@ const detailInclude = {
   attachments: { orderBy: { createdAt: 'desc' as const } },
   connectionsFrom: {
     include: {
-      fromDevice: { select: { name: true } },
-      toDevice: { select: { name: true } },
+      fromDevice: { select: { name: true, source: true } },
+      toDevice: { select: { name: true, source: true } },
     },
   },
   connectionsTo: {
     include: {
-      fromDevice: { select: { name: true } },
-      toDevice: { select: { name: true } },
+      fromDevice: { select: { name: true, source: true } },
+      toDevice: { select: { name: true, source: true } },
     },
   },
 } satisfies Prisma.DeviceInclude;
@@ -119,6 +119,18 @@ export class DevicesService {
         ...(query.category ? { category: query.category } : {}),
         ...(query.source ? { source: query.source } : {}),
         ...(query.integration ? { haIntegrations: { contains: query.integration } } : {}),
+        ...(query.connectionType
+          ? {
+              AND: [
+                {
+                  OR: [
+                    { connectionsFrom: { some: { type: query.connectionType } } },
+                    { connectionsTo: { some: { type: query.connectionType } } },
+                  ],
+                },
+              ],
+            }
+          : {}),
         ...(query.capability
           ? { capabilities: { some: { capabilityType: { key: query.capability } } } }
           : {}),

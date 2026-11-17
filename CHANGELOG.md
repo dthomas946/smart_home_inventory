@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.0
+
+- **Devices tab "Connected via" filter** replaces the capability chips (which
+  looked like connection types but weren't tied to connections): chips for
+  each connection type in use, with device counts, filtering devices that
+  have that kind of connection — same as the Connections tab
+- **Sortable columns** on Devices and Connections (click a header; again to
+  reverse). Blanks always sort last
+- **Controls (non-smart)** connection type (orange, dashed) plus a
+  **Controlled device** button on each device page: link a smart plug,
+  relay or control board to the lamp / pump / AccuClean it drives (create
+  the non-smart device right from the picker). Non-smart devices are drawn
+  as squares on the Network map, with a node legend
+- **End-of-row actions**: Devices — Exclude (synced devices) or Delete (yours);
+  Connections — Exclude the downstream device
+- **Filters are kept**: Connections type filter, new search box and sort live
+  in the URL. Open a device from a filtered Devices or Connections list and
+  Save / Cancel / Delete / Exclude return you to that exact list; the device
+  page shows "← Back to …"
+- Auto-link only treats hand-drawn links *into* a device as an override, so
+  "controls" links out of a smart plug don't stop its own network link
+
 ## 0.5.0
 
 - **Home Assistant defaults**: currency (and country, units, time zone,

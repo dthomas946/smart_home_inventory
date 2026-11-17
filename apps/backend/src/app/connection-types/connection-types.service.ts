@@ -47,6 +47,16 @@ const SYSTEM_CONNECTION_TYPES: Array<{
   { key: 'refrigerant_line', label: 'Refrigerant line', group: 'plumbing', color: '#00acc1', dash: SOLID },
   { key: 'vent_supply', label: 'Supply air', group: 'ventilation', color: '#26a69a', dash: SOLID },
   { key: 'vent_extract', label: 'Extract air', group: 'ventilation', color: '#78909c', dash: SOLID },
+  // A smart device that switches/drives a non-smart one: smart plug → lamp,
+  // relay → pump, HVAC control board → AccuClean. Pulls the non-smart device
+  // onto the Network map under its controller.
+  {
+    key: 'controls',
+    label: 'Controls (non-smart)',
+    group: 'other',
+    color: '#ff7043',
+    dash: 'dashed',
+  },
   { key: 'other', label: 'Other', group: 'other', color: '#757575', dash: SOLID },
 ];
 

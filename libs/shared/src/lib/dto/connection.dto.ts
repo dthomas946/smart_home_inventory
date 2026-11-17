@@ -8,6 +8,9 @@ export interface ConnectionDto {
   fromDeviceName: string;
   toDeviceId: string;
   toDeviceName: string;
+  /** 'ha' = synced from Home Assistant (can be excluded), 'manual' = added by you. */
+  fromDeviceSource: string;
+  toDeviceSource: string;
   label: string | null;
   metadata: Record<string, unknown> | null;
   notes: string | null;

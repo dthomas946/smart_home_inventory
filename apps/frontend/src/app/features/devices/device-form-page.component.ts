@@ -29,6 +29,7 @@ import {
 } from '../../core/api/api.services';
 import { ToastService } from '../../core/toast/toast.service';
 import { LocaleStore } from '../../core/locale/locale.store';
+import { NEW_DEVICE, ReturnStore } from '../../core/navigation/return.store';
 import { IconComponent } from '../../shared/ui/icon.component';
 
 /** Re-encode an image so its longest edge is at most `maxEdge` px (JPEG).
@@ -340,6 +341,7 @@ export class DeviceFormPageComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   protected readonly localeStore = inject(LocaleStore);
+  private readonly returnStore = inject(ReturnStore);
   /** Existing device's currency; null for new devices → Home Assistant's currency. */
   protected currency: string | null = null;
 
@@ -541,6 +543,14 @@ export class DeviceFormPageComponent implements OnInit {
         await this.attachLabelPhoto(device.id);
         this.saving.set(false);
         this.toast.success(id ? 'Device updated' : 'Device created');
+        // Opened from a filtered list (Devices or Connections)? Go back to
+        // exactly that list — filters, search and sort intact.
+        if (!id) this.returnStore.adopt(NEW_DEVICE, device.id);
+        const back = this.returnStore.for(device.id);
+        if (back) {
+          this.router.navigateByUrl(back.url, { replaceUrl: true });
+          return;
+        }
         // replaceUrl: the form itself isn't a page worth keeping in history —
         // otherwise "back" from the device would land back on the form
         // instead of wherever the user opened it from (e.g. an area page).
@@ -566,6 +576,13 @@ export class DeviceFormPageComponent implements OnInit {
 
   protected cancel(): void {
     const id = this.deviceId();
+    if (!id) {
+      const back = this.returnStore.for(NEW_DEVICE);
+      if (back) {
+        this.router.navigateByUrl(back.url, { replaceUrl: true });
+        return;
+      }
+    }
     this.router.navigate(id ? ['/devices', id] : ['/devices'], { replaceUrl: true });
   }
 }

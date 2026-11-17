@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
   signal,
@@ -8,7 +9,6 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AreaDto,
-  CapabilityTypeDto,
   DEVICE_CATEGORIES,
   DEVICE_STATUSES,
   DeviceCategory,
@@ -17,13 +17,11 @@ import {
   DeviceStatus,
   EntitySource,
 } from '@smart-home-inventory/shared';
-import { mdiBookOpenVariant, mdiDevices, mdiPlus } from '@mdi/js';
-import {
-  AreasApi,
-  CapabilitiesApi,
-  DevicesApi,
-  HaApi,
-} from '../../core/api/api.services';
+import { mdiBookOpenVariant, mdiDelete, mdiDevices, mdiPlus } from '@mdi/js';
+import { AreasApi, ConnectionsApi, DevicesApi, HaApi } from '../../core/api/api.services';
+import { ConnectionTypesStore } from '../../core/connection-types/connection-types.store';
+import { NEW_DEVICE, ReturnStore, SortDir, sortRows } from '../../core/navigation/return.store';
+import { SortHeaderComponent } from '../../shared/ui/sort-header.component';
 import { ConfirmService } from '../../core/confirm/confirm.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { IconComponent } from '../../shared/ui/icon.component';
@@ -58,12 +56,13 @@ function writeSourcePref(v: SourceFilter): void {
     EmptyStateComponent,
     DeviceThumbComponent,
     SourceBadgeComponent,
+    SortHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="header">
       <h1>Devices</h1>
-      <a class="btn" routerLink="/devices/new">
+      <a class="btn" routerLink="/devices/new" (click)="rememberNew()">
         <app-icon [path]="icons.plus" [size]="18" /> New device
       </a>
     </div>
@@ -125,38 +124,46 @@ function writeSourcePref(v: SourceFilter): void {
           <option [value]="status">{{ status }}</option>
         }
       </select>
-      <div class="chips">
-        @for (cap of capabilities(); track cap.id) {
-          <button
-            class="chip"
-            [class.active]="query().capability === cap.key"
-            (click)="toggleCapability(cap.key)"
-          >
-            {{ cap.label }}
-          </button>
-        }
-      </div>
-    </div>
+      @if (connectionTypeOptions().length) {
+        <div class="chips via">
+          <span class="chip-group-label">Connected via</span>
+          @for (t of connectionTypeOptions(); track t.key) {
+            <button
+              type="button"
+              class="chip"
+              [class.active]="query().connectionType === t.key"
+              (click)="setFilter('connectionType', query().connectionType === t.key ? '' : t.key)"
+              [title]="t.count + ' device' + (t.count === 1 ? '' : 's') + ' with a ' + t.label + ' connection'"
+            >
+              <span class="type-dot" [style.background]="t.color"></span>
+              {{ t.label }} <span class="muted">{{ t.count }}</span>
+            </button>
+          }
+        </div>
+      }
 
     @if (devices().length > 0) {
       <table class="data card devices">
         <thead>
           <tr>
             <th></th>
-            <th>Name</th>
-            <th>Area</th>
-            <th>Model</th>
-            <th>Integration</th>
-            <th>Serial</th>
-            <th>Docs</th>
+            @for (col of columns; track col.key) {
+              <th>
+                <app-sort-header
+                  [key]="col.key"
+                  [label]="col.label"
+                  [sort]="sortKey()"
+                  [dir]="sortDir()"
+                  (sortChange)="sortBy($event)"
+                />
+              </th>
+            }
             <th>Capabilities</th>
-            <th>Status</th>
-            <th>Source</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          @for (device of devices(); track device.id) {
+          @for (device of sortedDevices(); track device.id) {
             <tr class="clickable" (click)="open(device)">
               <td class="thumb-cell">
                 <app-device-thumb [imageId]="device.primaryImageId" [size]="36" />
@@ -198,23 +205,27 @@ function writeSourcePref(v: SourceFilter): void {
                   <span class="doc-badge none" title="No manual attached yet">—</span>
                 }
               </td>
+              <td class="muted">{{ device.status }}</td>
+              <td class="source-cell">
+                <app-source-badge [source]="device.source" />
+              </td>
               <td>
                 @for (key of device.capabilityKeys; track key) {
                   <span class="chip">{{ key }}</span>
                 }
               </td>
-              <td class="muted">{{ device.status }}</td>
-              <td class="source-cell">
-                <app-source-badge [source]="device.source" />
-              </td>
               <td class="row-actions">
-                @if (device.haDeviceId && device.duplicates.length) {
+                @if (device.haDeviceId) {
                   <button
                     class="btn secondary small-btn"
-                    title="Not the copy you want — remove it and keep future syncs from adding it back"
+                    title="Remove from the inventory and keep future Home Assistant syncs from adding it back"
                     (click)="exclude(device, $event)"
                   >
                     Exclude
+                  </button>
+                } @else {
+                  <button class="btn icon-only" title="Delete this device" (click)="remove(device, $event)">
+                    <app-icon [path]="icons.delete" [size]="18" />
                   </button>
                 }
               </td>
@@ -326,6 +337,25 @@ function writeSourcePref(v: SourceFilter): void {
       background: color-mix(in srgb, var(--warning-color, #f9a825) 22%, transparent);
       color: var(--primary-text-color);
     }
+    .chips.via {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      width: 100%;
+    }
+    .chip-group-label {
+      font-size: 0.8em;
+      color: var(--secondary-text-color);
+      margin-right: 4px;
+    }
+    .type-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 3px;
+    }
     .int-cell {
       white-space: nowrap;
     }
@@ -380,7 +410,9 @@ function writeSourcePref(v: SourceFilter): void {
 export class DeviceListPageComponent implements OnInit {
   private readonly devicesApi = inject(DevicesApi);
   private readonly areasApi = inject(AreasApi);
-  private readonly capabilitiesApi = inject(CapabilitiesApi);
+  private readonly connectionsApi = inject(ConnectionsApi);
+  private readonly connectionTypes = inject(ConnectionTypesStore);
+  private readonly returnStore = inject(ReturnStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly haApi = inject(HaApi);
@@ -389,12 +421,45 @@ export class DeviceListPageComponent implements OnInit {
 
   protected readonly devices = signal<DeviceDto[]>([]);
   protected readonly areas = signal<AreaDto[]>([]);
-  protected readonly capabilities = signal<CapabilityTypeDto[]>([]);
+  protected readonly connectionTypeOptions = signal<
+    Array<{ key: string; label: string; color: string; count: number }>
+  >([]);
+
+  protected readonly columns: Array<{ key: string; label: string }> = [
+    { key: 'name', label: 'Name' },
+    { key: 'area', label: 'Area' },
+    { key: 'model', label: 'Model' },
+    { key: 'integration', label: 'Integration' },
+    { key: 'serial', label: 'Serial' },
+    { key: 'docs', label: 'Docs' },
+    { key: 'status', label: 'Status' },
+    { key: 'source', label: 'Source' },
+  ];
+  protected readonly sortKey = signal<string | null>(null);
+  protected readonly sortDir = signal<SortDir>('asc');
+  private readonly sortGetters: Record<string, (d: DeviceDto) => unknown> = {
+    name: (d) => d.name,
+    area: (d) => d.areaName,
+    model: (d) => [d.brand ?? d.manufacturer, d.model].filter(Boolean).join(' '),
+    integration: (d) => d.integrations.join(','),
+    serial: (d) => d.serialNumber,
+    docs: (d) => d.manualCount || null,
+    status: (d) => d.status,
+    source: (d) => d.source,
+  };
+  protected readonly sortedDevices = computed(() =>
+    sortRows(this.devices(), this.sortKey(), this.sortDir(), this.sortGetters)
+  );
   protected readonly query = signal<DeviceQueryDto>({});
   protected readonly loaded = signal(false);
   protected readonly statuses = DEVICE_STATUSES;
   protected readonly categories = DEVICE_CATEGORIES;
-  protected readonly icons = { plus: mdiPlus, devices: mdiDevices, manual: mdiBookOpenVariant };
+  protected readonly icons = {
+    plus: mdiPlus,
+    devices: mdiDevices,
+    manual: mdiBookOpenVariant,
+    delete: mdiDelete,
+  };
 
   /** Which population the list shows. `manual` is the gear you entered
    *  yourself (appliances, HVAC, …); `ha` is everything synced from Home
@@ -414,7 +479,6 @@ export class DeviceListPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.areasApi.list().subscribe((areas) => this.areas.set(areas));
-    this.capabilitiesApi.listTypes().subscribe((caps) => this.capabilities.set(caps));
     // Filters live in query params so list state survives back-navigation.
     this.route.queryParamMap.subscribe((params) => {
       // No ?source in the URL means "whatever I picked last time", defaulting
@@ -430,7 +494,10 @@ export class DeviceListPageComponent implements OnInit {
         source: source === 'all' ? undefined : (source as EntitySource),
         integration: params.get('integration') ?? undefined,
         duplicates: params.get('duplicates') ? '1' : undefined,
+        connectionType: params.get('connectionType') ?? undefined,
       });
+      this.sortKey.set(params.get('sort'));
+      this.sortDir.set(params.get('dir') === 'desc' ? 'desc' : 'asc');
       this.load();
     });
     this.loadFacets();
@@ -446,6 +513,55 @@ export class DeviceListPageComponent implements OnInit {
         [...counts.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => a.key.localeCompare(b.key))
       );
       this.duplicateTotal.set(all.filter((d) => d.duplicates.length > 0).length);
+    });
+    // "Connected via" chips: connection types actually in use, counted by
+    // distinct devices touching them.
+    this.connectionsApi.list().subscribe((conns) => {
+      const devicesByType = new Map<string, Set<string>>();
+      for (const c of conns) {
+        const set = devicesByType.get(c.type) ?? new Set<string>();
+        set.add(c.fromDeviceId);
+        set.add(c.toDeviceId);
+        devicesByType.set(c.type, set);
+      }
+      this.connectionTypeOptions.set(
+        [...devicesByType.entries()]
+          .map(([key, set]) => ({
+            key,
+            label: this.connectionTypes.label(key),
+            color: this.connectionTypes.color(key) ?? '#757575',
+            count: set.size,
+          }))
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+      );
+    });
+  }
+
+  protected sortBy(key: string): void {
+    const same = this.sortKey() === key;
+    const dir: SortDir = same && this.sortDir() === 'asc' ? 'desc' : 'asc';
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { sort: key, dir },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  protected rememberNew(): void {
+    this.returnStore.remember(NEW_DEVICE, this.router.url, 'Devices');
+  }
+
+  protected async remove(device: DeviceDto, event: Event): Promise<void> {
+    event.stopPropagation();
+    const ok = await this.confirm.ask(
+      `Delete "${device.name}"? Its attachments and connections are deleted too.`,
+      { confirmLabel: 'Delete' }
+    );
+    if (!ok) return;
+    this.devicesApi.remove(device.id).subscribe(() => {
+      this.toast.success(`Deleted ${device.name}`);
+      this.load();
+      this.loadFacets();
     });
   }
 
@@ -498,11 +614,9 @@ export class DeviceListPageComponent implements OnInit {
     this.setFilter('source', value);
   }
 
-  protected toggleCapability(key: string): void {
-    this.setFilter('capability', this.query().capability === key ? '' : key);
-  }
 
   protected open(device: DeviceDto): void {
+    this.returnStore.remember(device.id, this.router.url, 'Devices');
     this.router.navigate(['/devices', device.id]);
   }
 }

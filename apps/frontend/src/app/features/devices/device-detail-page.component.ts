@@ -13,6 +13,7 @@ import { Router, RouterLink } from '@angular/router';
 import {
   buildResourceLinks,
   ConnectionDto,
+  ConnectionType,
   DeviceDetailDto,
   DiagramDto,
   HaCapabilitySuggestionDto,
@@ -45,6 +46,7 @@ import {
 import { ConfirmService } from '../../core/confirm/confirm.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { LocaleStore } from '../../core/locale/locale.store';
+import { ReturnStore } from '../../core/navigation/return.store';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { SourceBadgeComponent } from '../../shared/ui/source-badge.component';
 import { OwnerItemsComponent } from '../attachments/owner-items.component';
@@ -64,6 +66,11 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (device(); as d) {
+      @if (returnTo(); as back) {
+        <a class="back-link" [routerLink]="backPath(back.url)" [queryParams]="backQuery(back.url)">
+          ← Back to {{ back.label }}
+        </a>
+      }
       <div class="header">
         <div class="title-block">
           @if (d.primaryImageId) {
@@ -295,9 +302,18 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
       <div class="card section">
         <div class="section-head">
           <h3>Connections ({{ d.connections.length }})</h3>
-          <button class="btn secondary" (click)="editingConnection.set(null); connectionDialogOpen.set(true)">
-            <app-icon [path]="icons.plus" [size]="18" /> Add
-          </button>
+          <div class="section-actions">
+            <button
+              class="btn secondary"
+              title="A non-smart device this one switches or drives (lamp on a smart plug, pump on a relay, AccuClean on the HVAC board)"
+              (click)="openControls()"
+            >
+              <app-icon [path]="icons.plus" [size]="18" /> Controlled device
+            </button>
+            <button class="btn secondary" (click)="openConnection()">
+              <app-icon [path]="icons.plus" [size]="18" /> Add
+            </button>
+          </div>
         </div>
         @if (d.connections.length > 0) {
           <table class="data">
@@ -358,6 +374,8 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
       <app-connection-form-dialog
         [open]="connectionDialogOpen()"
         [fixedDevice]="d"
+        [initialType]="connectionInitialType()"
+        [fixedAsSource]="connectionInitialType() === 'controls'"
         [editing]="editingConnection()"
         (closed)="connectionDialogOpen.set(false); editingConnection.set(null)"
         (saved)="connectionDialogOpen.set(false); editingConnection.set(null); load()"
@@ -473,6 +491,16 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
     .row-actions {
       text-align: right;
     }
+    .section-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+    }
     .int-chip {
       display: inline-block;
       font-size: 11px;
@@ -518,6 +546,24 @@ export class DeviceDetailPageComponent implements OnInit {
   private readonly zigbeeCatalogApi = inject(ZigbeeCatalogApi);
   private readonly haApi = inject(HaApi);
   protected readonly localeStore = inject(LocaleStore);
+  private readonly returnStore = inject(ReturnStore);
+  protected readonly returnTo = computed(() => this.returnStore.for(this.device()?.id));
+
+  protected backPath(url: string): string {
+    return url.split('?')[0] || '/devices';
+  }
+  protected backQuery(url: string): Record<string, string> {
+    const q = url.split('?')[1];
+    const out: Record<string, string> = {};
+    if (q) new URLSearchParams(q).forEach((v, k) => (out[k] = v));
+    return out;
+  }
+  /** After delete/exclude: back to the list it was opened from, else Devices. */
+  private leave(deviceId: string): void {
+    const back = this.returnStore.for(deviceId);
+    if (back) this.router.navigateByUrl(back.url);
+    else this.router.navigate(['/devices']);
+  }
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -528,6 +574,20 @@ export class DeviceDetailPageComponent implements OnInit {
   protected readonly diagrams = signal<DiagramDto[]>([]);
   protected readonly connectionDialogOpen = signal(false);
   protected readonly editingConnection = signal<ConnectionDto | null>(null);
+  protected readonly connectionInitialType = signal<ConnectionType | ''>('');
+
+  protected openConnection(): void {
+    this.editingConnection.set(null);
+    this.connectionInitialType.set('');
+    this.connectionDialogOpen.set(true);
+  }
+
+  /** "Controlled device": this device → a non-smart one, type 'controls'. */
+  protected openControls(): void {
+    this.editingConnection.set(null);
+    this.connectionInitialType.set('controls' as ConnectionType);
+    this.connectionDialogOpen.set(true);
+  }
   protected readonly zigbeeMatch = signal<ZigbeeCatalogMatchDto | null>(null);
   protected readonly haSuggestion = signal<HaCapabilitySuggestionDto | null>(null);
   protected readonly applyingImage = signal(false);
@@ -681,7 +741,7 @@ export class DeviceDetailPageComponent implements OnInit {
     if (!confirmed) return;
     this.haApi.excludeDevice(device.id).subscribe(() => {
       this.toast.success(`Excluded ${device.name}`);
-      this.router.navigate(['/devices']);
+      this.leave(device.id);
     });
   }
 
@@ -695,7 +755,7 @@ export class DeviceDetailPageComponent implements OnInit {
     if (!confirmed) return;
     this.devicesApi.remove(device.id).subscribe(() => {
       this.toast.success('Device deleted');
-      this.router.navigate(['/devices']);
+      this.leave(device.id);
     });
   }
 }
