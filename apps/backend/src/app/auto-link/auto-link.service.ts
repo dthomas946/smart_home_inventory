@@ -188,15 +188,19 @@ export class AutoLinkService {
   }
 
   async saveLayout(mode: string, positions: NetworkPositions): Promise<NetworkLayoutDto> {
-    // Drop positions for devices that no longer exist so the blob can't grow forever.
+    // Drop positions for devices that no longer exist so the blob can't grow
+    // forever. Per-type branch nodes ("branch:<deviceId>:<type>") are kept
+    // while their device exists.
     const ids = Object.keys(positions);
+    const deviceIdOf = (id: string) => (id.startsWith('branch:') ? id.split(':')[1] ?? '' : id);
+    const lookup = [...new Set(ids.map(deviceIdOf))];
     const existing = new Set(
-      (await this.prisma.device.findMany({ where: { id: { in: ids } }, select: { id: true } })).map(
+      (await this.prisma.device.findMany({ where: { id: { in: lookup } }, select: { id: true } })).map(
         (d) => d.id
       )
     );
     const clean: NetworkPositions = {};
-    for (const id of ids) if (existing.has(id)) clean[id] = positions[id];
+    for (const id of ids) if (existing.has(deviceIdOf(id))) clean[id] = positions[id];
     const row = await this.prisma.networkLayout.upsert({
       where: { mode },
       create: { mode, positions: clean as Prisma.InputJsonValue },

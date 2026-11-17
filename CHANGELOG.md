@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.5
+
+- **Fix:** dragged branch labels (Ethernet, Wi-Fi, …) on the Network map kept their spot only until you left the page. The server now saves them alongside the devices.
+
 ## 0.8.4
 
 - **Fix: Wrap at now re-wraps dragged trees.** Changing it (for the whole map or for a selected parent) keeps the top dragged device of each tree where you placed it and re-lays out everything below it, branch lines and devices, at the new width. Before, devices with saved positions stayed put and only the branch line moved. Undo restores the previous layout.
