@@ -27,10 +27,12 @@ import { ConnectionTypesStore } from '../../core/connection-types/connection-typ
 import { ToastService } from '../../core/toast/toast.service';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { SyncExclusionsComponent } from './sync-exclusions.component';
+import { AiSettingsComponent } from './ai-settings.component';
+import { RegionSettingsComponent } from './region-settings.component';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, IconComponent, SyncExclusionsComponent],
+  imports: [FormsModule, IconComponent, SyncExclusionsComponent, AiSettingsComponent, RegionSettingsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1>Settings</h1>
@@ -106,6 +108,10 @@ import { SyncExclusionsComponent } from './sync-exclusions.component';
     </div>
 
     <app-sync-exclusions />
+
+    <app-ai-settings />
+
+    <app-region-settings />
 
     <div class="card section">
       <h3>Capability types</h3>

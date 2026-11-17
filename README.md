@@ -77,15 +77,42 @@ floor plans, manuals, or invoices.
 
 ```yaml
 read_only: true
-ollama_url: "http://192.168.5.11:11434"
-ollama_model: "qwen3-vl:4b-instruct"
+sync_interval_minutes: 0
+upload_max_mb: 50
 ```
 
-| Option         | Default | Description                                                                     |
-| -------------- | ------- | -------------------------------------------------------------------------------- |
-| `read_only`    | `true`  | Blocks any non-read Home Assistant command from the sync client. Turn off only if you intend to let the add-on write back to HA (not currently used by any feature). |
-| `ollama_url`   | —       | Base URL of an Ollama server for **Scan label**. Leave empty to hide the feature. |
-| `ollama_model` | —       | A vision-capable model pulled on that server (e.g. `qwen3-vl:4b-instruct`, `llava`, `minicpm-v`). |
+| Option                  | Default | Description |
+| ----------------------- | ------- | ----------- |
+| `read_only`             | `true`  | Blocks any non-read Home Assistant command from the sync client. Turn off only if you intend to let the add-on write back to HA (not currently used by any feature). |
+| `sync_interval_minutes` | `0`     | Re-sync areas and devices from Home Assistant every N minutes. `0` = only when you press **Sync** in Settings. |
+| `upload_max_mb`         | `50`    | Largest attachment (photo, PDF manual…) you can upload. |
+| `ollama_url` / `ollama_model` | — | *Legacy.* Seed the AI settings below the first time; after that, use the app's Settings. |
+
+### In-app settings (Settings page)
+
+Everything that differs between homes and that you may want to change later
+lives in the app, not the add-on options:
+
+- **AI for Scan label** — which AI reads rating-plate photos:
+  - *Off* (the Scan label button is hidden),
+  - *Ollama (local)* — server URL, vision model, context window, timeout,
+  - *OpenAI-compatible API* — OpenAI, OpenRouter, Google Gemini, LM Studio,
+    LocalAI, vLLM…; base URL, model, API key (stored in the add-on, never
+    shown again),
+  - *Home Assistant AI Task* — use any AI integration you've already set up
+    in Home Assistant (OpenAI, Gemini, Anthropic, Ollama…) by picking its
+    `ai_task.*` entity. No keys in this add-on.
+
+  **Test connection** checks the server and model before you save. Photos
+  are shrunk to a configurable size before sending.
+- **Region** — wire colours on diagrams (North American NEC or IEC/European)
+  and which parts/recall links devices show (US retailers + CPSC, or generic
+  web searches). Both default from Home Assistant's country.
+- **Sync exclusions**, **capability types** and **connection types** — as before.
+
+Defaults taken from Home Assistant's general settings: currency, country
+(region above), and in North America the 120V / 240V / 24V AC power
+connection types are added on first sync.
 
 ## Known issues and limitations
 

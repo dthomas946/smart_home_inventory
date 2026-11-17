@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0
+
+- **Choose your AI for Scan label** (Settings → AI for Scan label):
+  - Providers: Off, Ollama (local), any OpenAI-compatible API (OpenAI, OpenRouter, Gemini, LM Studio, LocalAI, vLLM), or **Home Assistant AI Task**, which uses whichever AI integration you've set up in HA.
+  - **Test connection** checks the server and model first. API keys are write-only.
+  - Model, context window, timeout and photo size are all adjustable.
+  - Existing `ollama_url` / `ollama_model` options seed the card once.
+- **Region settings**:
+  - North American (NEC) or IEC wire colours, and US or generic parts/recall links.
+  - Both default from Home Assistant's country.
+  - North American installs get 120V / 240V / 24V AC connection types automatically.
+- **Network map "Wrap at"** picker (2–6 side by side), remembered per browser.
+- New add-on options `sync_interval_minutes` and `upload_max_mb` (previously env-only).
+- Add-on maps `/media` (used only to hand photos to HA AI Task).
+- Removed the maintainer's personal Ollama address from the default options.
+
 ## 0.6.0
 
 - **Devices tab "Connected via" filter** replaces the capability chips (which

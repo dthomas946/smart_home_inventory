@@ -1,5 +1,5 @@
 import { WireOrCableType, WireType } from './diagram-content';
-import { WIRE_TYPE_COLORS } from './wire-colors';
+import { WIRE_TYPE_COLORS, wireTypeColors } from './wire-colors';
 import { DASH_STYLES, DashStyle } from './dash-style';
 
 function isWireType(type: WireOrCableType): type is WireType {
@@ -22,7 +22,7 @@ export function wireOrCableColor(
   connectionTypes: ConnectionTypeLookup
 ): string | null {
   if (!type) return null;
-  return isWireType(type) ? WIRE_TYPE_COLORS[type] : connectionTypes.color(type);
+  return isWireType(type) ? wireTypeColors()[type] : connectionTypes.color(type);
 }
 
 /** Standard DashStyle for a NodePort/EdgeData `type` value — individual

@@ -5,11 +5,16 @@
  */
 
 export interface LabelScanStatusDto {
-  /** False when no Ollama URL/model is configured; the UI hides the button. */
+  /** False when no AI provider is configured; the UI hides the buttons. */
   enabled: boolean;
+  /** Which provider will read the label (Settings → AI). */
+  provider: string;
   /** Host:port only — never leaks a path or credentials into the UI. */
   host: string | null;
+  /** Model or HA entity doing the reading, for the progress message. */
   model: string | null;
+  /** Shrink photos to this longest edge before sending. */
+  maxImageEdge: number;
 }
 
 export interface LabelScanElectrical {

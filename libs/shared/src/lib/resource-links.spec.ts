@@ -52,6 +52,20 @@ describe('buildResourceLinks', () => {
     expect(links.some((l) => /electrolux/i.test(l.url))).toBe(false);
   });
 
+  it('uses generic parts searches and no CPSC outside the US', () => {
+    const links = buildResourceLinks({
+      manufacturer: 'Bosch',
+      model: 'SMS46KI01E',
+      category: 'appliance',
+      region: 'generic',
+    });
+    expect(links.some((l) => /repairclinic|partselect|cpsc/i.test(l.url))).toBe(false);
+    expect(links.filter((l) => l.group === 'parts').map((l) => l.label)).toEqual([
+      'Web search: spare parts',
+      'Web search: parts diagram',
+    ]);
+  });
+
   it('URL-encodes manufacturer and model', () => {
     const links = buildResourceLinks({ manufacturer: 'A&B Co', model: 'X/1 2' });
     for (const link of links) {

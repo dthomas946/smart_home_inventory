@@ -206,7 +206,8 @@ const H_COL = 140; // px per node column (room for a ~20-char label)
 const H_ROW_GAP = 64; // px between stacked rows (leaf rows; subtree rows add their height)
 const H_TREE_GAP_X = 60; // px between top-level trees in a row
 const H_TREE_GAP_Y = 90; // px between rows of top-level trees
-export const H_WRAP = 3; // max children (and top-level trees) side by side
+/** Default max children (and top-level trees) side by side; the map lets you pick 2–6. */
+export const H_WRAP = 3;
 
 /**
  * Top-down tidy tree, never more than H_WRAP wide at any level: each
@@ -215,7 +216,12 @@ export const H_WRAP = 3; // max children (and top-level trees) side by side
  * packed the same way. Wide hubs like a router with 100+ clients become a
  * compact block instead of an endless line.
  */
-export function layoutHierarchy(graph: NetworkGraphDto, visibleTypes: Set<string>): Layout {
+export function layoutHierarchy(
+  graph: NetworkGraphDto,
+  visibleTypes: Set<string>,
+  wrap: number = H_WRAP
+): Layout {
+  const W = Math.max(1, Math.round(wrap));
   const { nodesById, edges, children, roots, linked } = buildForest(graph, visibleTypes);
 
   interface Box {
@@ -233,8 +239,8 @@ export function layoutHierarchy(graph: NetworkGraphDto, visibleTypes: Set<string
 
   const chunk = (ids: string[]): Row[] => {
     const rows: Row[] = [];
-    for (let i = 0; i < ids.length; i += H_WRAP) {
-      const slice = ids.slice(i, i + H_WRAP);
+    for (let i = 0; i < ids.length; i += W) {
+      const slice = ids.slice(i, i + W);
       rows.push({
         ids: slice,
         w: slice.reduce((sum, id) => sum + (box.get(id)?.w ?? H_COL), 0),
@@ -305,8 +311,8 @@ export function layoutHierarchy(graph: NetworkGraphDto, visibleTypes: Set<string
   }
   let y = 40;
   let width = 0;
-  for (let i = 0; i < treeRoots.length; i += H_WRAP) {
-    const rowIds = treeRoots.slice(i, i + H_WRAP);
+  for (let i = 0; i < treeRoots.length; i += W) {
+    const rowIds = treeRoots.slice(i, i + W);
     let x = 0;
     let rowH = 0;
     for (const rootId of rowIds) {

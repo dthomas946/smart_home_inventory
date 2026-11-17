@@ -21,3 +21,34 @@ export const WIRE_TYPE_COLORS: Record<WireType, string> = {
   'DC+': '#c62828',
   'DC-': '#1a1a1a',
 };
+
+/**
+ * North American (NEC / CEC) building-wire convention: hots black, red,
+ * blue; neutral white (drawn light grey so it's visible on a light canvas);
+ * ground green. DC unchanged.
+ */
+export const WIRE_TYPE_COLORS_NEC: Record<WireType, string> = {
+  L1: '#1a1a1a',
+  L2: '#c62828',
+  L3: '#1565c0',
+  N: '#d0d0d0',
+  PE: '#2e7d32',
+  'DC+': '#c62828',
+  'DC-': '#1a1a1a',
+};
+
+let activeStandard: 'iec' | 'nec' = 'iec';
+
+/** Choose which convention new wires are coloured with (from HA's country,
+ *  or the Settings override). Existing wires keep the colour they were given. */
+export function setWiringStandard(standard: 'iec' | 'nec'): void {
+  activeStandard = standard;
+}
+
+export function wiringStandard(): 'iec' | 'nec' {
+  return activeStandard;
+}
+
+export function wireTypeColors(): Record<WireType, string> {
+  return activeStandard === 'nec' ? WIRE_TYPE_COLORS_NEC : WIRE_TYPE_COLORS;
+}

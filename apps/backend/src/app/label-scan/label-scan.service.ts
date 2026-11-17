@@ -12,14 +12,9 @@ import {
   LabelScanResultDto,
   LabelScanStatusDto,
 } from '@smart-home-inventory/shared';
-import { AppConfig } from '../config/app-config';
+import { AiSettingsService } from '../settings/ai-settings.service';
+import { VisionError } from './vision-providers';
 
-/** Small vision models on a 4 GB GPU take a minute or two per image. */
-const OLLAMA_TIMEOUT_MS = 300_000;
-/** Ollama defaults to a 4096-token context; one photo plus the prompt and
- *  schema already exceeds that. Request more per call rather than requiring
- *  OLLAMA_CONTEXT_LENGTH on the server. */
-const OLLAMA_NUM_CTX = 8192;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
 /** JSON schema handed to Ollama's `format` so the model can't free-wheel. */
@@ -160,27 +155,52 @@ export function buildNotes(f: LabelScanFields): string {
   return lines.length ? `From rating label:\n${lines.join('\n')}` : '';
 }
 
+/** Plain-text JSON contract for providers that can't take a JSON schema. */
+export const JSON_SHAPE_HINT = `Respond with ONLY a JSON object (no prose, no code fences) with exactly these keys:
+{"manufacturer": string|null, "brand": string|null, "model": string|null, "serialNumber": string|null,
+ "productType": string|null, "manufactureDate": string|null,
+ "electrical": {"voltage": string|null, "amps": string|null, "watts": string|null, "hz": string|null, "phase": string|null},
+ "extra": [{"key": string, "value": string}]}`;
+
+/** Pull the JSON object out of a model reply that may include prose or fences. */
+export function parseModelJson(content: string): unknown {
+  try {
+    return JSON.parse(content);
+  } catch {
+    const m = /\{[\s\S]*\}/.exec(content);
+    if (!m) throw new BadGatewayException('The AI did not return JSON');
+    try {
+      return JSON.parse(m[0]);
+    } catch {
+      throw new BadGatewayException('The AI returned malformed JSON');
+    }
+  }
+}
+
 @Injectable()
 export class LabelScanService {
   private readonly logger = new Logger(LabelScanService.name);
 
-  constructor(private readonly config: AppConfig) {}
+  constructor(private readonly ai: AiSettingsService) {}
 
-  status(): LabelScanStatusDto {
-    if (!this.config.labelScanEnabled) return { enabled: false, host: null, model: null };
-    let host: string | null = null;
-    try {
-      host = new URL(this.config.ollamaUrl as string).host;
-    } catch {
-      host = null;
-    }
-    return { enabled: true, host, model: this.config.ollamaModel ?? null };
+  async status(): Promise<LabelScanStatusDto> {
+    const s = await this.ai.get();
+    const provider = this.ai.provider(s);
+    return {
+      enabled: !!provider,
+      provider: s.provider,
+      host: provider?.host ?? null,
+      model: provider?.label ?? null,
+      maxImageEdge: s.scan.maxImageEdge,
+    };
   }
 
   async scan(image: Buffer, mimeType: string): Promise<LabelScanResultDto> {
-    if (!this.config.labelScanEnabled) {
+    const settings = await this.ai.get();
+    const provider = this.ai.provider(settings);
+    if (!provider) {
       throw new ServiceUnavailableException(
-        'Label scanning is not configured — set ollama_url and ollama_model in the add-on options.'
+        'Scan label needs an AI provider — choose one in Settings → AI.'
       );
     }
     if (!/^image\/(jpeg|png|webp|heic|heif)$/i.test(mimeType)) {
@@ -191,50 +211,23 @@ export class LabelScanService {
     }
 
     const started = Date.now();
-    const model = this.config.ollamaModel as string;
-    let res: Response;
+    let content: string;
     try {
-      res = await fetch(`${this.config.ollamaUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          stream: false,
-          format: RESPONSE_SCHEMA,
-          options: { temperature: 0, num_ctx: OLLAMA_NUM_CTX },
-          messages: [{ role: 'user', content: PROMPT, images: [image.toString('base64')] }],
-        }),
-        signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
+      content = await provider.read({
+        image,
+        mimeType,
+        prompt: PROMPT,
+        jsonSchema: RESPONSE_SCHEMA,
+        jsonShapeHint: JSON_SHAPE_HINT,
       });
     } catch (err) {
-      const msg = (err as Error).name === 'TimeoutError' ? 'timed out' : (err as Error).message;
-      throw new BadGatewayException(`Ollama request ${msg}`);
+      if (err instanceof VisionError) throw new BadGatewayException(`${provider.label}: ${err.message}`);
+      throw err;
     }
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new BadGatewayException(`Ollama answered ${res.status}: ${text.slice(0, 200)}`);
-    }
-
-    const body = (await res.json()) as { message?: { content?: string } };
-    const content = body.message?.content ?? '';
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      // Some models wrap JSON in prose or code fences despite `format`.
-      const m = /\{[\s\S]*\}/.exec(content);
-      if (!m) throw new BadGatewayException('Model did not return JSON');
-      try {
-        parsed = JSON.parse(m[0]);
-      } catch {
-        throw new BadGatewayException('Model returned malformed JSON');
-      }
-    }
-
-    const fields = normalizeFields(parsed);
+    const fields = normalizeFields(parseModelJson(content));
     const durationMs = Date.now() - started;
     this.logger.log(
-      `Label scan via ${model} in ${durationMs} ms: ` +
+      `Label scan via ${settings.provider}/${provider.label} in ${durationMs} ms: ` +
         `${fields.brand ?? fields.manufacturer ?? '?'} / ${fields.model ?? '?'}`
     );
     const categorySuggestion = guessCategory(fields.productType);
@@ -245,7 +238,7 @@ export class LabelScanService {
         categorySuggestion && (DEVICE_CATEGORIES as readonly string[]).includes(categorySuggestion)
           ? categorySuggestion
           : null,
-      model,
+      model: provider.label,
       durationMs,
     };
   }

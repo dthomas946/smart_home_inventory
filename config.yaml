@@ -1,5 +1,5 @@
 name: "Smart Home Inventory"
-version: "0.6.0"
+version: "0.7.0"
 slug: "smart_home_inventory"
 description: "Document areas, devices, capabilities, connections, and infrastructure"
 url: "https://github.com/dthomas946/smart_home_inventory"
@@ -14,11 +14,20 @@ panel_icon: mdi:floor-plan
 panel_title: "Inventory"
 homeassistant_api: true
 hassio_api: true
+# media: lets Scan label hand a photo to Home Assistant's AI Task (written to
+# /media/smart_home_inventory and deleted right after).
+map:
+  - media:rw
 options:
   read_only: true
-  ollama_url: "http://192.168.5.11:11434"
-  ollama_model: "qwen3-vl:4b-instruct"
+  sync_interval_minutes: 0
+  upload_max_mb: 50
 schema:
   read_only: bool
+  # 0 = sync only when you press "Sync" in Settings.
+  sync_interval_minutes: "int(0,1440)"
+  upload_max_mb: "int(1,500)"
+  # Legacy: choose the AI in the app's Settings → "AI for Scan label".
+  # If set, these seed that card the first time.
   ollama_url: "str?"
   ollama_model: "str?"

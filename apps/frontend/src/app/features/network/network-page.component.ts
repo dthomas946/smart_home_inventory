@@ -26,9 +26,19 @@ import {
 import { AutoLinkApi } from '../../core/api/api.services';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { LaidOutNode, layoutGraph, layoutHierarchy } from './network-layout';
+import { H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy } from './network-layout';
 
 const MODE_PREF_KEY = 'shi.network.mode';
+const WRAP_PREF_KEY = 'shi.network.wrap';
+const WRAP_CHOICES = [2, 3, 4, 5, 6];
+function readWrapPref(): number {
+  try {
+    const n = Number(localStorage.getItem(WRAP_PREF_KEY));
+    return WRAP_CHOICES.includes(n) ? n : H_WRAP;
+  } catch {
+    return H_WRAP;
+  }
+}
 function readModePref(): NetworkLayoutMode {
   try {
     return localStorage.getItem(MODE_PREF_KEY) === 'radial' ? 'radial' : 'hierarchy';
@@ -59,6 +69,16 @@ function readModePref(): NetworkLayoutMode {
             <app-icon [path]="icons.graph" [size]="16" /> Radial
           </button>
         </div>
+        @if (mode() === 'hierarchy') {
+          <label class="wrap-pick" title="Most devices side by side before wrapping to a new row">
+            Wrap at
+            <select class="text" [value]="wrap()" (change)="setWrap(+$any($event.target).value)">
+              @for (n of wrapChoices; track n) {
+                <option [value]="n">{{ n }}</option>
+              }
+            </select>
+          </label>
+        }
         @if (hasOverrides()) {
           <button class="btn secondary" (click)="resetPositions()" title="Forget dragged positions for this layout">
             <app-icon [path]="icons.reset" [size]="18" />
@@ -212,6 +232,8 @@ function readModePref(): NetworkLayoutMode {
     }
   `,
   styles: `
+    .wrap-pick { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
+    .wrap-pick select { width: auto; padding: 4px 6px; }
     .header {
       display: flex;
       justify-content: space-between;
@@ -361,6 +383,8 @@ export class NetworkPageComponent implements OnInit {
   };
 
   protected readonly mode = signal<NetworkLayoutMode>(readModePref());
+  protected readonly wrap = signal(readWrapPref());
+  protected readonly wrapChoices = WRAP_CHOICES;
   /** Hand-placed positions for the current mode (deviceId → x,y). */
   protected readonly overrides = signal<NetworkPositions>({});
   protected readonly hasOverrides = computed(() => Object.keys(this.overrides()).length > 0);
@@ -383,7 +407,7 @@ export class NetworkPageComponent implements OnInit {
     const g = this.graph();
     if (!g) return { nodes: [], edges: [], width: 1, height: 1, unlinked: [] };
     return this.mode() === 'hierarchy'
-      ? layoutHierarchy(g, this.visibleTypes())
+      ? layoutHierarchy(g, this.visibleTypes(), this.wrap())
       : layoutGraph(g, this.visibleTypes());
   });
 
@@ -415,6 +439,16 @@ export class NetworkPageComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.loadPositions();
+  }
+
+  protected setWrap(n: number): void {
+    if (!WRAP_CHOICES.includes(n)) return;
+    this.wrap.set(n);
+    try {
+      localStorage.setItem(WRAP_PREF_KEY, String(n));
+    } catch {
+      /* per-browser convenience only */
+    }
   }
 
   protected setMode(mode: NetworkLayoutMode): void {

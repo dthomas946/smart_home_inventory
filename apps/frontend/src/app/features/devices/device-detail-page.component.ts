@@ -1,3 +1,4 @@
+import { RegionStore } from '../../core/region/region.store';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -538,6 +539,7 @@ import { ManualLookupDialogComponent } from './manual-lookup-dialog.component';
   `,
 })
 export class DeviceDetailPageComponent implements OnInit {
+  private readonly region = inject(RegionStore);
   private readonly devicesApi = inject(DevicesApi);
   private readonly connectionsApi = inject(ConnectionsApi);
   private readonly diagramsApi = inject(DiagramsApi);
@@ -621,6 +623,7 @@ export class DeviceDetailPageComponent implements OnInit {
       brand: d.brand,
       model: d.model,
       category: d.category,
+      region: this.region.links(),
     });
     const order: ResourceLinkGroup[] = ['docs', 'parts', 'support'];
     return order

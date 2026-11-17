@@ -85,6 +85,12 @@ export type NetworkLayout = Prisma.NetworkLayoutModel
  */
 export type SyncExclusion = Prisma.SyncExclusionModel
 /**
+ * Model AppSetting
+ * App-wide settings edited in the UI (AI provider, regional overrides…).
+ * One row per settings group; value is that group's JSON.
+ */
+export type AppSetting = Prisma.AppSettingModel
+/**
  * Model Diagram
  * 
  */

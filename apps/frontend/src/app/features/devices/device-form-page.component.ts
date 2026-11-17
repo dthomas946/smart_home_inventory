@@ -99,7 +99,7 @@ async function downscaleImage(file: File, maxEdge: number): Promise<File> {
     @if (scanning()) {
       <div class="card scan-banner">
         <span class="spinner"></span>
-        Reading the label with {{ scanModel() }} — this takes a minute or two on a small GPU.
+        Reading the label with {{ scanModel() }} — on a local GPU this can take a minute or two.
       </div>
     }
     @if (scanResult(); as r) {
@@ -359,6 +359,7 @@ export class DeviceFormPageComponent implements OnInit {
 
   protected readonly scanEnabled = signal(false);
   protected readonly scanModel = signal('');
+  private scanMaxEdge = 1280;
   protected readonly scanning = signal(false);
   protected readonly scanResult = signal<LabelScanResultDto | null>(null);
   protected readonly scanChips = signal<string[]>([]);
@@ -391,7 +392,8 @@ export class DeviceFormPageComponent implements OnInit {
     this.labelScanApi.status().subscribe({
       next: (s) => {
         this.scanEnabled.set(s.enabled);
-        this.scanModel.set(s.model ?? '');
+        this.scanModel.set(s.model ?? s.provider);
+        this.scanMaxEdge = s.maxImageEdge || 1280;
       },
       error: () => this.scanEnabled.set(false),
     });
@@ -438,7 +440,7 @@ export class DeviceFormPageComponent implements OnInit {
     // The model only needs enough pixels to read the text; a full-size phone
     // photo blows the context window and is slower to process. The original
     // is still what gets attached to the device.
-    const forModel = await downscaleImage(file, 1280).catch(() => file);
+    const forModel = await downscaleImage(file, this.scanMaxEdge).catch(() => file);
     this.labelScanApi.scan(forModel).subscribe({
       next: (result) => {
         this.scanning.set(false);

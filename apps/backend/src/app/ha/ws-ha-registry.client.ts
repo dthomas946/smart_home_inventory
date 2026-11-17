@@ -93,6 +93,16 @@ export class WsHaRegistryClient implements HaRegistryClient {
     }));
   }
 
+  async listStatesByDomain(domain: string): Promise<Array<{ entity_id: string; name: string | null }>> {
+    const states = (await this.command('get_states')) as Array<{
+      entity_id: string;
+      attributes?: { friendly_name?: string };
+    }>;
+    return states
+      .filter((s) => s.entity_id.startsWith(`${domain}.`))
+      .map((s) => ({ entity_id: s.entity_id, name: s.attributes?.friendly_name ?? null }));
+  }
+
   async getCoreConfig(): Promise<HaCoreConfig> {
     const c = (await this.command('get_config')) as Record<string, unknown>;
     const units = c['unit_system'] as Record<string, unknown> | undefined;

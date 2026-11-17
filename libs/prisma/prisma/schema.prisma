@@ -289,6 +289,14 @@ model SyncExclusion {
   @@unique([kind, value])
 }
 
+/// App-wide settings edited in the UI (AI provider, regional overrides…).
+/// One row per settings group; value is that group's JSON.
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
 model Diagram {
   id        String   @id @default(cuid())
   title     String

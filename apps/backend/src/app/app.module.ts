@@ -17,6 +17,7 @@ import { ZigbeeCatalogModule } from './zigbee-catalog/zigbee-catalog.module';
 import { ManualLookupModule } from './manual-lookup/manual-lookup.module';
 import { LabelScanModule } from './label-scan/label-scan.module';
 import { AutoLinkModule } from './auto-link/auto-link.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AutoLinkModule } from './auto-link/auto-link.module';
     ManualLookupModule,
     LabelScanModule,
     AutoLinkModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

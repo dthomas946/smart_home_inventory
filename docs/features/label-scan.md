@@ -1,4 +1,8 @@
-# Label scan (Ollama vision)
+# Label scan (vision AI)
+
+> Since 0.7.0 the AI is chosen in Settings (Ollama, any OpenAI-compatible
+> API, or Home Assistant AI Task) — see [ai-settings.md](ai-settings.md).
+> The Ollama notes below still describe the default local setup.
 
 ## Intention
 

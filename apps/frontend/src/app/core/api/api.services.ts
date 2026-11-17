@@ -2,6 +2,12 @@ import { HttpClient, HttpEvent, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  AiSettingsDto,
+  AiSettingsViewDto,
+  AiTestResultDto,
+  EffectiveRegionDto,
+  HaAiTaskEntityDto,
+  RegionSettingsDto,
   AreaDto,
   AttachFromUrlDto,
   CreateSyncExclusionDto,
@@ -346,7 +352,7 @@ export class LabelScanApi {
   status(): Observable<LabelScanStatusDto> {
     return this.http.get<LabelScanStatusDto>('api/label-scan/status');
   }
-  /** Sends the photo to the configured Ollama vision model; nothing is stored. */
+  /** Sends the photo to the AI provider chosen in Settings; nothing is stored. */
   scan(image: File): Observable<LabelScanResultDto> {
     const form = new FormData();
     form.append('image', image);
@@ -388,5 +394,30 @@ export class AutoLinkApi {
   }
   resetLayout(mode: NetworkLayoutMode): Observable<void> {
     return this.http.delete<void>(`api/auto-link/layout/${mode}`);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class SettingsApi {
+  private readonly http = inject(HttpClient);
+
+  ai(): Observable<AiSettingsViewDto> {
+    return this.http.get<AiSettingsViewDto>('api/settings/ai');
+  }
+  /** apiKey: null keeps the stored key, '' clears it, a value replaces it. */
+  saveAi(dto: AiSettingsDto): Observable<AiSettingsViewDto> {
+    return this.http.put<AiSettingsViewDto>('api/settings/ai', dto);
+  }
+  testAi(dto: AiSettingsDto): Observable<AiTestResultDto> {
+    return this.http.post<AiTestResultDto>('api/settings/ai/test', dto);
+  }
+  aiTaskEntities(): Observable<HaAiTaskEntityDto[]> {
+    return this.http.get<HaAiTaskEntityDto[]>('api/settings/ai/ha-entities');
+  }
+  region(): Observable<EffectiveRegionDto> {
+    return this.http.get<EffectiveRegionDto>('api/settings/region');
+  }
+  saveRegion(dto: RegionSettingsDto): Observable<EffectiveRegionDto> {
+    return this.http.put<EffectiveRegionDto>('api/settings/region', dto);
   }
 }

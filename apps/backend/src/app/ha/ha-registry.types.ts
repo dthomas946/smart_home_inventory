@@ -73,6 +73,8 @@ export interface HaRegistryClient {
   listConfigEntries?(): Promise<HaConfigEntry[]>;
   /** Optional: HA core config (currency, country, units…). */
   getCoreConfig?(): Promise<HaCoreConfig>;
+  /** Optional: current entities of one domain (e.g. ai_task) with friendly names. */
+  listStatesByDomain?(domain: string): Promise<Array<{ entity_id: string; name: string | null }>>;
   ping(): Promise<boolean>;
 }
 

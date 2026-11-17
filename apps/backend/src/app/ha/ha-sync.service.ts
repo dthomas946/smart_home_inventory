@@ -13,6 +13,7 @@ import { HA_REGISTRY_CLIENT, HaRegistryClient } from './ha-registry.types';
 import { mergeRegistry } from './ha-sync.merge';
 import { HaExclusionsService } from './ha-exclusions.service';
 import { HaLocaleService } from './ha-locale.service';
+import { ConnectionTypeGroup, isNorthAmerica } from '@smart-home-inventory/shared';
 import { integrationsOf } from './device-exclusion';
 import { HaConfigEntry, HaDevice } from './ha-registry.types';
 
@@ -97,6 +98,7 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
    *  user typed is left exactly as entered. */
   private async applyLocaleDefaults(): Promise<void> {
     const locale = await this.locale.get(true);
+    if (locale.fromHa && isNorthAmerica(locale.country)) await this.ensureNorthAmericanPowerTypes();
     if (!locale.fromHa || locale.currency === 'EUR') return;
     const { count } = await this.prisma.device.updateMany({
       where: {
@@ -106,6 +108,25 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
       data: { purchaseCurrency: locale.currency },
     });
     if (count) this.logger.log(`Set currency to ${locale.currency} (from HA) on ${count} devices`);
+  }
+
+  /** The built-in power type is Europe's 230 V; in the US/CA/MX add the
+   *  local ones (once — renaming or recolouring them afterwards sticks). */
+  private async ensureNorthAmericanPowerTypes(): Promise<void> {
+    const wanted = [
+      { key: 'mains_120v', label: '120V', group: 'wired', color: '#fbc02d', dash: 'solid' },
+      { key: 'mains_240v', label: '240V', group: 'wired', color: '#6a1b9a', dash: 'solid' },
+      { key: 'ac_24v', label: '24V AC (HVAC control)', group: 'wired', color: '#2e7d32', dash: 'dashed' },
+    ];
+    for (const t of wanted) {
+      const exists = await this.prisma.connectionType.findUnique({ where: { key: t.key } });
+      if (!exists) {
+        await this.prisma.connectionType.create({
+          data: { ...t, group: t.group as ConnectionTypeGroup, isSystem: false },
+        });
+        this.logger.log(`Added ${t.label} connection type (North America)`);
+      }
+    }
   }
 
   async status(): Promise<HaStatusDto> {

@@ -123,6 +123,24 @@ describe('layoutHierarchy', () => {
     expect(keys.size).toBe(l.nodes.length);
   });
 
+  it('honours a custom wrap width', () => {
+    const kids = Array.from({ length: 10 }, (_, i) => node(`k${i}`));
+    const g: NetworkGraphDto = {
+      nodes: [node('hub', true), ...kids],
+      edges: kids.map((k) => edge('hub', k.id)),
+      types: [],
+    };
+    const perRow = (wrap: number) => {
+      const rows = new Map<number, number>();
+      for (const n of layoutHierarchy(g, new Set(['zigbee_network']), wrap).nodes) {
+        if (n.id !== 'hub') rows.set(n.y, (rows.get(n.y) ?? 0) + 1);
+      }
+      return Math.max(...rows.values());
+    };
+    expect(perRow(5)).toBe(5);
+    expect(perRow(2)).toBe(2);
+  });
+
   it('packs many separate trees H_WRAP per row', () => {
     const nodes = Array.from({ length: 12 }, (_, i) => [node(`r${i}`, true), node(`c${i}`)]).flat();
     const g: NetworkGraphDto = {

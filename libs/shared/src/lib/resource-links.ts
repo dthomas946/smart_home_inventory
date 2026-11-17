@@ -26,6 +26,9 @@ export interface ResourceLinkInput {
   /** Preferred over manufacturer for every link: parts houses and manual
    *  sites index by brand (Frigidaire), not the legal maker (Electrolux). */
   brand?: string | null;
+  /** 'us' = US/Canada parts retailers + CPSC recalls; 'generic' (default for
+   *  everywhere else) = web searches that work in any country. */
+  region?: 'us' | 'generic';
   model?: string | null;
   category?: DeviceCategory | null;
 }
@@ -102,7 +105,22 @@ export function buildResourceLinks(input: ResourceLinkInput): ResourceLink[] {
 
   // --- Parts ---------------------------------------------------------------
   const partsRelevant = !input.category || PARTS_CATEGORIES.has(input.category);
-  if (model && partsRelevant) {
+  const us = (input.region ?? 'us') === 'us';
+  if (model && partsRelevant && !us) {
+    links.push(
+      {
+        group: 'parts',
+        label: 'Web search: spare parts',
+        url: `https://duckduckgo.com/?q=${q(mm, 'spare parts')}`,
+      },
+      {
+        group: 'parts',
+        label: 'Web search: parts diagram',
+        url: `https://duckduckgo.com/?q=${q(mm, 'parts diagram OR exploded view')}`,
+      }
+    );
+  }
+  if (model && partsRelevant && us) {
     links.push(
       {
         group: 'parts',
@@ -134,7 +152,7 @@ export function buildResourceLinks(input: ResourceLinkInput): ResourceLink[] {
       label: `${manufacturer} support`,
       url: `https://duckduckgo.com/?q=${q(manufacturer, 'support', model)}`,
     });
-    if (model) {
+    if (model && us) {
       links.push({
         group: 'support',
         label: 'Recalls (CPSC)',

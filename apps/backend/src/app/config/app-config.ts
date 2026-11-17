@@ -46,6 +46,19 @@ function resolveOptional(
   return typeof fromOptions === 'string' && fromOptions.trim() ? fromOptions.trim() : undefined;
 }
 
+/** Env var (if set) wins; else a numeric add-on option; else the fallback. */
+function resolveNumber(
+  envRaw: string | undefined,
+  envParsed: number,
+  options: Record<string, unknown>,
+  key: string,
+  fallback: number
+): number {
+  if (envRaw !== undefined && envRaw.trim() !== '') return envParsed;
+  const v = options[key];
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback;
+}
+
 /**
  * Read-only guard for the Home Assistant connection. Defaults to true — the
  * app never writes to HA unless the user explicitly opts out. Resolution
@@ -80,7 +93,7 @@ export class AppConfig {
   readonly haReadOnly: boolean;
   readonly haSyncIntervalMinutes: number;
   readonly uploadMaxBytes: number;
-  /** Ollama endpoint for the label-scan feature (e.g. http://192.168.5.11:11434); unset disables it. */
+  /** Ollama endpoint for the label-scan feature (e.g. http://192.168.1.50:11434); unset disables it. */
   readonly ollamaUrl: string | undefined;
   /** Vision-capable Ollama model used for label scanning. */
   readonly ollamaModel: string | undefined;
@@ -103,9 +116,13 @@ export class AppConfig {
     this.haToken = e.HA_TOKEN;
     this.haMock = e.HA_MOCK;
     this.haReadOnly = resolveHaReadOnly(e.HA_READ_ONLY, this.dataDir);
-    this.haSyncIntervalMinutes = e.HA_SYNC_INTERVAL_MINUTES;
-    this.uploadMaxBytes = e.UPLOAD_MAX_BYTES;
     const options = readAddonOptions(this.dataDir);
+    this.haSyncIntervalMinutes = resolveNumber(
+      env.HA_SYNC_INTERVAL_MINUTES, e.HA_SYNC_INTERVAL_MINUTES, options, 'sync_interval_minutes', 0
+    );
+    const uploadMb = resolveNumber(undefined, 0, options, 'upload_max_mb', 0);
+    this.uploadMaxBytes =
+      env.UPLOAD_MAX_BYTES?.trim() || !uploadMb ? e.UPLOAD_MAX_BYTES : Math.round(uploadMb * 1024 * 1024);
     this.ollamaUrl = resolveOptional(e.OLLAMA_URL, options, 'ollama_url')?.replace(/\/+$/, '');
     this.ollamaModel = resolveOptional(e.OLLAMA_MODEL, options, 'ollama_model');
   }

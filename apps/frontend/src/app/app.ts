@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RegionStore } from './core/region/region.store';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   mdiCog,
@@ -116,6 +117,10 @@ import { ConfirmDialogComponent } from './core/confirm/confirm-dialog.component'
   `,
 })
 export class App {
+  constructor() {
+    inject(RegionStore).ensureLoaded();
+  }
+
   protected readonly icons = {
     areas: mdiFloorPlan,
     devices: mdiDevices,
