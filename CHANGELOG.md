@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2
+
+- Network map **Move: Device / Device & tree** toggle. Dragging moves just the device by default; "Device & tree" also moves everything below it. Holding Shift while dragging swaps for that one drag. The choice is remembered per browser.
+
 ## 0.8.1
 
 - **Network map: one branch per connection type.** A device that feeds others over more than one type (a router with Ethernet, Wi-Fi and USB clients; a panel with 120V and 240V circuits) gets a labelled branch for each type, with its devices underneath, instead of one shared channel. Drag a branch to move it with its devices; dragging the parent moves everything.

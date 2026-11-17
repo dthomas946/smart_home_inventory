@@ -41,6 +41,15 @@ const MODE_PREF_KEY = 'shi.network.mode';
 const WRAP_PREF_KEY = 'shi.network.wrap';
 const WRAP_CHOICES = [2, 3, 4, 5, 6];
 const SNAP_PREF_KEY = 'shi.network.snap';
+const MOVE_PREF_KEY = 'shi.network.move';
+type MoveMode = 'device' | 'tree';
+function readMovePref(): MoveMode {
+  try {
+    return localStorage.getItem(MOVE_PREF_KEY) === 'tree' ? 'tree' : 'device';
+  } catch {
+    return 'device';
+  }
+}
 const UNDO_LIMIT = 5;
 function readSnapPref(): boolean {
   try {
@@ -106,6 +115,15 @@ function readModePref(): NetworkLayoutMode {
             </select>
           </label>
         }
+        <div class="seg" role="group" aria-label="What dragging moves" title="Hold Shift while dragging to use the other one">
+          <span class="seg-label">Move</span>
+          <button type="button" class="btn secondary" [class.on]="moveMode() === 'device'" [attr.aria-pressed]="moveMode() === 'device'" (click)="setMoveMode('device')">
+            Device
+          </button>
+          <button type="button" class="btn secondary" [class.on]="moveMode() === 'tree'" [attr.aria-pressed]="moveMode() === 'tree'" (click)="setMoveMode('tree')">
+            Device &amp; tree
+          </button>
+        </div>
         <button
           class="btn secondary"
           [class.on]="snap()"
@@ -294,7 +312,7 @@ function readModePref(): NetworkLayoutMode {
           </svg>
         </div>
         <p class="muted small hint">
-          Drag a device to move it with everything below it (saved) · drag the background to pan ·
+          Drag a device to move it — or it and everything below it with "Device &amp; tree" (Shift-drag swaps) · positions are saved · drag the background to pan ·
           scroll or pinch to zoom · tap a device to open it. Faded lines were created by auto-link.
           @if (mapKind() === 'electrical') {
             Breaker, amps and area served come from each circuit's connection (edit it on the Connections page).
@@ -323,6 +341,11 @@ function readModePref(): NetworkLayoutMode {
   `,
   styles: `
     .wrap-pick { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
+    .seg { display: inline-flex; align-items: center; gap: 0; }
+    .seg-label { font-size: 0.9em; margin-right: 6px; }
+    .seg .btn { border-radius: 0; padding: 4px 10px; }
+    .seg .btn:first-of-type { border-radius: 6px 0 0 6px; }
+    .seg .btn:last-of-type { border-radius: 0 6px 6px 0; }
     .btn.on { background: color-mix(in srgb, var(--primary-color) 22%, transparent); }
     .undo-count { font-size: 0.75em; margin-left: 2px; }
     .branch-pill {
@@ -504,6 +527,17 @@ export class NetworkPageComponent implements OnInit {
   /** null = every connection; otherwise one utility's map. */
   protected readonly mapKind = signal<UtilityKind | null>(null);
   protected readonly snap = signal(readSnapPref());
+  /** What a drag moves: just the device, or the device and everything below it. */
+  protected readonly moveMode = signal<MoveMode>(readMovePref());
+
+  protected setMoveMode(m: MoveMode): void {
+    this.moveMode.set(m);
+    try {
+      localStorage.setItem(MOVE_PREF_KEY, m);
+    } catch {
+      /* per-browser convenience only */
+    }
+  }
   /** Positions before each of the last few moves; cleared when you leave. */
   protected readonly undoStack = signal<NetworkPositions[]>([]);
   private areaNames = new Map<string, string>();
@@ -833,10 +867,13 @@ export class NetworkPageComponent implements OnInit {
     this.dragged = false;
     this.dragOffset = { x: p.x - n.x, y: p.y - n.y };
     const l = this.layout();
-    const below = downstreamOf(
-      l.edges.map((e) => ({ fromId: e.from.node.id, toId: e.to.node.id })),
-      n.node.id
-    );
+    const tree = (this.moveMode() === 'tree') !== ev.shiftKey; // Shift swaps for this drag
+    const below = tree
+      ? downstreamOf(
+          l.edges.map((e) => ({ fromId: e.from.node.id, toId: e.to.node.id })),
+          n.node.id
+        )
+      : [];
     const pos = new Map(l.nodes.map((x) => [x.node.id, { x: x.x, y: x.y }]));
     this.dragGroup = new Map(
       [n.node.id, ...below].filter((id) => pos.has(id)).map((id) => [id, pos.get(id) as { x: number; y: number }])

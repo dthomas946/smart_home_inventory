@@ -57,8 +57,8 @@ On top of the original (see [CHANGELOG.md](CHANGELOG.md) for detail):
   vision AI: Ollama, OpenAI-compatible, or Home Assistant AI Task)
 - Brand vs. manufacturer, Equipment / Smart home filters, sortable columns
 - **Auto-link** smart devices to their coordinators from HA's registry, and a
-  **Network map** (hierarchy or radial, drag a device with everything below
-  it, snap-to-grid, undo)
+  **Network map** (hierarchy or radial, drag a device alone or with everything
+  below it, snap-to-grid, undo)
 - **Utilities**: Electrical, Gas, Water, Phone, Internet and Solar — each
   with its own map, hand-drawn plans and service-provider contacts; breaker,
   amps and area served on electrical circuits
