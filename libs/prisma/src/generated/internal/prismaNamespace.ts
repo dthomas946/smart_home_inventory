@@ -410,7 +410,8 @@ export const ModelName = {
   NetworkLayout: 'NetworkLayout',
   SyncExclusion: 'SyncExclusion',
   AppSetting: 'AppSetting',
-  Diagram: 'Diagram'
+  Diagram: 'Diagram',
+  UtilityProvider: 'UtilityProvider'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -426,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "networkLayout" | "syncExclusion" | "appSetting" | "diagram"
+    modelProps: "floor" | "area" | "device" | "attachment" | "capabilityType" | "deviceCapability" | "connectionType" | "connection" | "autoLinkRule" | "autoLinkSuppression" | "networkLayout" | "syncExclusion" | "appSetting" | "diagram" | "utilityProvider"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1466,6 +1467,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UtilityProvider: {
+      payload: Prisma.$UtilityProviderPayload<ExtArgs>
+      fields: Prisma.UtilityProviderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UtilityProviderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UtilityProviderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>
+        }
+        findFirst: {
+          args: Prisma.UtilityProviderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UtilityProviderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>
+        }
+        findMany: {
+          args: Prisma.UtilityProviderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>[]
+        }
+        create: {
+          args: Prisma.UtilityProviderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>
+        }
+        createMany: {
+          args: Prisma.UtilityProviderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UtilityProviderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>[]
+        }
+        delete: {
+          args: Prisma.UtilityProviderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>
+        }
+        update: {
+          args: Prisma.UtilityProviderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>
+        }
+        deleteMany: {
+          args: Prisma.UtilityProviderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UtilityProviderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UtilityProviderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>[]
+        }
+        upsert: {
+          args: Prisma.UtilityProviderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UtilityProviderPayload>
+        }
+        aggregate: {
+          args: Prisma.UtilityProviderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUtilityProvider>
+        }
+        groupBy: {
+          args: Prisma.UtilityProviderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UtilityProviderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UtilityProviderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UtilityProviderCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1611,6 +1686,7 @@ export const ConnectionTypeScalarFieldEnum = {
   group: 'group',
   color: 'color',
   dash: 'dash',
+  utility: 'utility',
   isSystem: 'isSystem'
 } as const
 
@@ -1686,12 +1762,31 @@ export const DiagramScalarFieldEnum = {
   version: 'version',
   deviceId: 'deviceId',
   areaId: 'areaId',
+  utility: 'utility',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   previewAttachmentId: 'previewAttachmentId'
 } as const
 
 export type DiagramScalarFieldEnum = (typeof DiagramScalarFieldEnum)[keyof typeof DiagramScalarFieldEnum]
+
+
+export const UtilityProviderScalarFieldEnum = {
+  id: 'id',
+  utility: 'utility',
+  name: 'name',
+  accountNumber: 'accountNumber',
+  phone: 'phone',
+  emergencyPhone: 'emergencyPhone',
+  email: 'email',
+  website: 'website',
+  outageUrl: 'outageUrl',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UtilityProviderScalarFieldEnum = (typeof UtilityProviderScalarFieldEnum)[keyof typeof UtilityProviderScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -2003,6 +2098,7 @@ export type GlobalOmitConfig = {
   syncExclusion?: Prisma.SyncExclusionOmit
   appSetting?: Prisma.AppSettingOmit
   diagram?: Prisma.DiagramOmit
+  utilityProvider?: Prisma.UtilityProviderOmit
 }
 
 /* Types for Logging */

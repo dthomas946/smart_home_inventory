@@ -4,6 +4,9 @@ import {
   ConnectionTypeGroup,
   CreateConnectionTypeDto,
   UpdateConnectionTypeDto,
+  DEFAULT_TYPE_UTILITY,
+  isUtilityKind,
+  UtilityKind,
 } from '@smart-home-inventory/shared';
 import { ConnectionType } from '@smart-home-inventory/prisma';
 import { PrismaService } from '../prisma/prisma.service';
@@ -23,6 +26,7 @@ const SYSTEM_CONNECTION_TYPES: Array<{
   group: ConnectionTypeGroup;
   color: string;
   dash: string;
+  utility?: UtilityKind;
 }> = [
   { key: 'mains_230v', label: '230V mains', group: 'wired', color: '#8b5a2b', dash: SOLID },
   { key: 'dc_24v', label: '24V DC', group: 'wired', color: '#c62828', dash: SOLID },
@@ -57,6 +61,10 @@ const SYSTEM_CONNECTION_TYPES: Array<{
     color: '#ff7043',
     dash: 'dashed',
   },
+  // Utility runs for the Electrical/Phone/Internet/Solar maps.
+  { key: 'phone_line', label: 'Phone line', group: 'wired', color: '#5d4037', dash: SOLID, utility: 'phone' },
+  { key: 'fiber', label: 'Fiber', group: 'wired', color: '#ec407a', dash: SOLID, utility: 'internet' },
+  { key: 'solar_dc', label: 'Solar DC', group: 'wired', color: '#f9a825', dash: SOLID, utility: 'solar' },
   { key: 'other', label: 'Other', group: 'other', color: '#757575', dash: SOLID },
 ];
 
@@ -68,6 +76,7 @@ function toConnectionTypeDto(t: ConnectionType, connectionCount: number): Connec
     group: t.group as ConnectionTypeGroup,
     color: t.color,
     dash: t.dash,
+    utility: isUtilityKind(t.utility) ? t.utility : null,
     isSystem: t.isSystem,
     connectionCount,
   };
@@ -85,7 +94,7 @@ export class ConnectionTypesService implements OnModuleInit {
     for (const type of SYSTEM_CONNECTION_TYPES) {
       await this.prisma.connectionType.upsert({
         where: { key: type.key },
-        create: { ...type, isSystem: true },
+        create: { ...type, utility: type.utility ?? DEFAULT_TYPE_UTILITY[type.key] ?? null, isSystem: true },
         update: {},
       });
     }
@@ -111,7 +120,7 @@ export class ConnectionTypesService implements OnModuleInit {
   async create(dto: CreateConnectionTypeDto): Promise<ConnectionTypeDto> {
     const existing = await this.prisma.connectionType.findUnique({ where: { key: dto.key } });
     if (existing) throw new ConflictException(`Connection type "${dto.key}" already exists`);
-    const type = await this.prisma.connectionType.create({ data: { ...dto, isSystem: false } });
+    const type = await this.prisma.connectionType.create({ data: { ...dto, utility: dto.utility ?? null, isSystem: false } });
     return toConnectionTypeDto(type, 0);
   }
 

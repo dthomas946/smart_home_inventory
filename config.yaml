@@ -1,7 +1,7 @@
 name: "Smart Home Inventory"
-version: "0.7.0"
+version: "0.8.0"
 slug: "smart_home_inventory"
-description: "Document areas, devices, capabilities, connections, and infrastructure"
+description: "Document areas, devices, connections, utilities and infrastructure. Community fork of jkopcsek/smart_home_inventory by Jan Kopcsek."
 url: "https://github.com/dthomas946/smart_home_inventory"
 arch:
   - aarch64

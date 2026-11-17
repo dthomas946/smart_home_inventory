@@ -1,5 +1,5 @@
 import { NetworkGraphDto } from '@smart-home-inventory/shared';
-import { H_WRAP, layoutGraph, layoutHierarchy } from './network-layout';
+import { downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
 
 const node = (id: string, isController = false): NetworkGraphDto['nodes'][number] => ({
   id,
@@ -176,5 +176,28 @@ describe('layoutHierarchy', () => {
     };
     const l = layoutHierarchy(cyc, all);
     expect(l.nodes).toHaveLength(2);
+  });
+});
+
+describe('downstreamOf', () => {
+  const edges = [
+    { fromId: 'panel', toId: 'b1' },
+    { fromId: 'panel', toId: 'b2' },
+    { fromId: 'b1', toId: 'lamp' },
+    { fromId: 'lamp', toId: 'panel' }, // cycle
+  ];
+  it('collects every device below, cycle-safe', () => {
+    expect(downstreamOf(edges, 'panel').sort()).toEqual(['b1', 'b2', 'lamp']);
+  });
+  it('is empty for the lowest level', () => {
+    expect(downstreamOf(edges, 'b2')).toEqual([]);
+  });
+});
+
+describe('snapToGrid', () => {
+  it('rounds to the nearest grid line', () => {
+    expect(snapToGrid(29)).toBe(20);
+    expect(snapToGrid(31)).toBe(40);
+    expect(snapToGrid(-11)).toBe(-20);
   });
 });

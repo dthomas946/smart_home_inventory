@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DiagramContent, DiagramContentSchema } from '../diagram-content';
+import { UtilityKind, UtilityKindSchema } from './utility.dto';
 
 export interface DiagramDto {
   id: string;
@@ -8,6 +9,8 @@ export interface DiagramDto {
   version: number;
   deviceId: string | null;
   areaId: string | null;
+  /** Set for a utility's plan (Electrical, Gas, …) shown on the Utilities page. */
+  utility: UtilityKind | null;
   previewAttachmentId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -17,6 +20,7 @@ export const CreateDiagramSchema = z.object({
   title: z.string().min(1).max(200),
   deviceId: z.string().nullish(),
   areaId: z.string().nullish(),
+  utility: UtilityKindSchema.nullish(),
 });
 export type CreateDiagramDto = z.infer<typeof CreateDiagramSchema>;
 
@@ -32,6 +36,7 @@ export type UpdateDiagramDto = z.infer<typeof UpdateDiagramSchema>;
 export const DiagramQuerySchema = z.object({
   deviceId: z.string().optional(),
   areaId: z.string().optional(),
+  utility: UtilityKindSchema.optional(),
   standalone: z.enum(['1', 'true']).optional(),
 });
 export type DiagramQueryDto = z.infer<typeof DiagramQuerySchema>;

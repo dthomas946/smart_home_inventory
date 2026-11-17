@@ -14,7 +14,7 @@ import {
   AutoLinkStatusDto,
   NetworkGraphDto,
   NetworkLayoutDto,
-  NetworkLayoutMode,
+  circuitOf,
   NetworkPositions,
   SetAutoLinkRulesDto,
 } from '@smart-home-inventory/shared';
@@ -178,7 +178,7 @@ export class AutoLinkService {
     return this.lastResult;
   }
 
-  async getLayout(mode: NetworkLayoutMode): Promise<NetworkLayoutDto> {
+  async getLayout(mode: string): Promise<NetworkLayoutDto> {
     const row = await this.prisma.networkLayout.findUnique({ where: { mode } });
     return {
       mode,
@@ -187,7 +187,7 @@ export class AutoLinkService {
     };
   }
 
-  async saveLayout(mode: NetworkLayoutMode, positions: NetworkPositions): Promise<NetworkLayoutDto> {
+  async saveLayout(mode: string, positions: NetworkPositions): Promise<NetworkLayoutDto> {
     // Drop positions for devices that no longer exist so the blob can't grow forever.
     const ids = Object.keys(positions);
     const existing = new Set(
@@ -205,7 +205,7 @@ export class AutoLinkService {
     return { mode, positions: clean, updatedAt: row.updatedAt.toISOString() };
   }
 
-  async resetLayout(mode: NetworkLayoutMode): Promise<void> {
+  async resetLayout(mode: string): Promise<void> {
     await this.prisma.networkLayout.deleteMany({ where: { mode } });
   }
 
@@ -257,6 +257,7 @@ export class AutoLinkService {
         toDeviceId: c.toDeviceId,
         auto: isManaged(c.metadata),
         label: c.label,
+        circuit: circuitOf(c.metadata),
       })),
       types: types.map((t) => ({
         key: t.key,
@@ -264,6 +265,7 @@ export class AutoLinkService {
         color: t.color,
         dash: t.dash,
         group: t.group,
+        utility: t.utility,
       })),
     };
   }

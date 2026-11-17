@@ -16,12 +16,17 @@ import { ConfirmService } from './confirm.service';
       @if (confirm.current(); as req) {
         <h3>{{ req.title }}</h3>
         <p>{{ req.message }}</p>
+        @if (req.skipKey) {
+          <label class="skip">
+            <input type="checkbox" #skip /> Don't ask me again
+          </label>
+        }
         <div class="actions">
           <button class="btn secondary" (click)="confirm.answer(false)">{{ req.cancelLabel }}</button>
           <button
             class="btn"
             [class.danger]="req.danger"
-            (click)="confirm.answer(true)"
+            (click)="confirm.answer(true, !!skipBox()?.nativeElement?.checked)"
           >
             {{ req.confirmLabel }}
           </button>
@@ -30,6 +35,13 @@ import { ConfirmService } from './confirm.service';
     </dialog>
   `,
   styles: `
+    .skip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9em;
+      color: var(--secondary-text-color);
+    }
     .actions {
       display: flex;
       justify-content: flex-end;
@@ -41,6 +53,7 @@ import { ConfirmService } from './confirm.service';
 export class ConfirmDialogComponent {
   protected readonly confirm = inject(ConfirmService);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
+  protected readonly skipBox = viewChild<ElementRef<HTMLInputElement>>('skip');
 
   constructor() {
     effect(() => {

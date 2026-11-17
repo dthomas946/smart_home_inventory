@@ -2,6 +2,10 @@ import { HttpClient, HttpEvent, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  CreateUtilityProviderDto,
+  UpdateUtilityProviderDto,
+  UtilityProviderDto,
+  UtilitySummaryDto,
   AiSettingsDto,
   AiSettingsViewDto,
   AiTestResultDto,
@@ -262,6 +266,7 @@ export class DiagramsApi {
   list(q?: {
     deviceId?: string;
     areaId?: string;
+    utility?: string;
     standalone?: '1';
   }): Observable<DiagramDto[]> {
     return this.http.get<DiagramDto[]>('api/diagrams', { params: params(q ?? {}) });
@@ -386,13 +391,13 @@ export class AutoLinkApi {
   graph(): Observable<NetworkGraphDto> {
     return this.http.get<NetworkGraphDto>('api/auto-link/graph');
   }
-  getLayout(mode: NetworkLayoutMode): Observable<NetworkLayoutDto> {
+  getLayout(mode: string): Observable<NetworkLayoutDto> {
     return this.http.get<NetworkLayoutDto>(`api/auto-link/layout/${mode}`);
   }
-  saveLayout(mode: NetworkLayoutMode, positions: NetworkPositions): Observable<NetworkLayoutDto> {
+  saveLayout(mode: string, positions: NetworkPositions): Observable<NetworkLayoutDto> {
     return this.http.put<NetworkLayoutDto>(`api/auto-link/layout/${mode}`, { positions });
   }
-  resetLayout(mode: NetworkLayoutMode): Observable<void> {
+  resetLayout(mode: string): Observable<void> {
     return this.http.delete<void>(`api/auto-link/layout/${mode}`);
   }
 }
@@ -419,5 +424,23 @@ export class SettingsApi {
   }
   saveRegion(dto: RegionSettingsDto): Observable<EffectiveRegionDto> {
     return this.http.put<EffectiveRegionDto>('api/settings/region', dto);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class UtilitiesApi {
+  private readonly http = inject(HttpClient);
+
+  list(): Observable<UtilitySummaryDto[]> {
+    return this.http.get<UtilitySummaryDto[]>('api/utilities');
+  }
+  createProvider(dto: CreateUtilityProviderDto): Observable<UtilityProviderDto> {
+    return this.http.post<UtilityProviderDto>('api/utilities/providers', dto);
+  }
+  updateProvider(id: string, dto: UpdateUtilityProviderDto): Observable<UtilityProviderDto> {
+    return this.http.patch<UtilityProviderDto>(`api/utilities/providers/${id}`, dto);
+  }
+  removeProvider(id: string): Observable<void> {
+    return this.http.delete<void>(`api/utilities/providers/${id}`);
   }
 }

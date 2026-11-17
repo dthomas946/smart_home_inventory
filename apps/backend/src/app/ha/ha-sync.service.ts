@@ -114,9 +114,9 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
    *  local ones (once — renaming or recolouring them afterwards sticks). */
   private async ensureNorthAmericanPowerTypes(): Promise<void> {
     const wanted = [
-      { key: 'mains_120v', label: '120V', group: 'wired', color: '#fbc02d', dash: 'solid' },
-      { key: 'mains_240v', label: '240V', group: 'wired', color: '#6a1b9a', dash: 'solid' },
-      { key: 'ac_24v', label: '24V AC (HVAC control)', group: 'wired', color: '#2e7d32', dash: 'dashed' },
+      { key: 'mains_120v', label: '120V', group: 'wired', color: '#fbc02d', dash: 'solid', utility: 'electrical' },
+      { key: 'mains_240v', label: '240V', group: 'wired', color: '#6a1b9a', dash: 'solid', utility: 'electrical' },
+      { key: 'ac_24v', label: '24V AC (HVAC control)', group: 'wired', color: '#2e7d32', dash: 'dashed', utility: 'electrical' },
     ];
     for (const t of wanted) {
       const exists = await this.prisma.connectionType.findUnique({ where: { key: t.key } });

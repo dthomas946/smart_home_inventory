@@ -226,6 +226,9 @@ model ConnectionType {
   // one-shot-preset-then-independently-editable treatment as color, see
   // EdgeDataSchema.dash in libs/shared.
   dash     String              @default("solid")
+  // Which utility map (electrical, gas, water, phone, internet, solar) this
+  // type is drawn on; null = only on the full Network map.
+  utility  String?
   isSystem Boolean             @default(false)
 }
 
@@ -309,6 +312,8 @@ model Diagram {
   device    Device?  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   areaId    String?
   area      Area?    @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  // Owned by a utility (Utilities page) rather than a device/area.
+  utility   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -321,4 +326,24 @@ model Diagram {
 
   @@index([deviceId])
   @@index([areaId])
+  @@index([utility])
+}
+
+// Who supplies a utility (power company, gas, water, ISP, phone, solar
+// installer) and how to reach them.
+model UtilityProvider {
+  id             String   @id @default(cuid())
+  utility        String
+  name           String
+  accountNumber  String?
+  phone          String?
+  emergencyPhone String?
+  email          String?
+  website        String?
+  outageUrl      String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([utility])
 }

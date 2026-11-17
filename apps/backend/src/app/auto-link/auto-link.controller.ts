@@ -1,7 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import {
-  NetworkLayoutMode,
-  NetworkLayoutModeSchema,
+  NetworkLayoutKeySchema,
   SaveNetworkLayoutDto,
   SaveNetworkLayoutSchema,
   SetAutoLinkRulesDto,
@@ -59,20 +58,20 @@ export class AutoLinkController {
 
   /** Hand-arranged Network map positions for a layout mode. */
   @Get('layout/:mode')
-  getLayout(@Param('mode', zodPipe(NetworkLayoutModeSchema)) mode: NetworkLayoutMode) {
+  getLayout(@Param('mode', zodPipe(NetworkLayoutKeySchema)) mode: string) {
     return this.autoLink.getLayout(mode);
   }
 
   @Put('layout/:mode')
   saveLayout(
-    @Param('mode', zodPipe(NetworkLayoutModeSchema)) mode: NetworkLayoutMode,
+    @Param('mode', zodPipe(NetworkLayoutKeySchema)) mode: string,
     @Body(zodPipe(SaveNetworkLayoutSchema)) dto: SaveNetworkLayoutDto
   ) {
     return this.autoLink.saveLayout(mode, dto.positions);
   }
 
   @Delete('layout/:mode')
-  resetLayout(@Param('mode', zodPipe(NetworkLayoutModeSchema)) mode: NetworkLayoutMode) {
+  resetLayout(@Param('mode', zodPipe(NetworkLayoutKeySchema)) mode: string) {
     return this.autoLink.resetLayout(mode);
   }
 }

@@ -25,6 +25,7 @@ import { DiagramCanvasComponent } from './diagram-canvas.component';
         [diagramId]="s.id"
         [areaId]="areaId()"
         [deviceId]="deviceId()"
+        [utility]="utility()"
         (saved)="onSaved($event)"
         (deleted)="onDeleted()"
         (back)="back()"
@@ -59,6 +60,7 @@ export class DiagramsPageComponent implements OnInit {
   protected readonly selected = signal<DiagramDto | null>(null);
   protected readonly areaId = signal<string | null>(null);
   protected readonly deviceId = signal<string | null>(null);
+  protected readonly utility = signal<string | null>(null);
   protected readonly standalone = signal(false);
 
   protected readonly icons = {
@@ -70,6 +72,7 @@ export class DiagramsPageComponent implements OnInit {
     this.route.queryParamMap.subscribe((params) => {
       this.areaId.set(params.get('areaId'));
       this.deviceId.set(params.get('deviceId'));
+      this.utility.set(params.get('utility'));
       this.standalone.set(params.get('standalone') === '1');
       const openId = params.get('open');
       this.load(openId ?? undefined);
@@ -79,7 +82,8 @@ export class DiagramsPageComponent implements OnInit {
   private load(openId?: string): void {
     const areaId = this.areaId();
     const deviceId = this.deviceId();
-    const q = areaId ? { areaId } : deviceId ? { deviceId } : { standalone: '1' as const };
+    const utility = this.utility();
+    const q = areaId ? { areaId } : deviceId ? { deviceId } : utility ? { utility } : { standalone: '1' as const };
     this.api.list(q).subscribe((diagrams) => {
       const toSelect = openId
         ? diagrams.find((d) => d.id === openId)
@@ -95,6 +99,7 @@ export class DiagramsPageComponent implements OnInit {
     const deviceId = this.deviceId();
     if (areaId) this.router.navigate(['/areas', areaId]);
     else if (deviceId) this.router.navigate(['/devices', deviceId]);
+    else if (this.utility()) this.router.navigate(['/utilities'], { fragment: this.utility() ?? undefined });
     else this.router.navigate(['/home']);
   }
 

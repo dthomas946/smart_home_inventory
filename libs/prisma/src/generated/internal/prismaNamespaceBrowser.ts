@@ -64,7 +64,8 @@ export const ModelName = {
   NetworkLayout: 'NetworkLayout',
   SyncExclusion: 'SyncExclusion',
   AppSetting: 'AppSetting',
-  Diagram: 'Diagram'
+  Diagram: 'Diagram',
+  UtilityProvider: 'UtilityProvider'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -189,6 +190,7 @@ export const ConnectionTypeScalarFieldEnum = {
   group: 'group',
   color: 'color',
   dash: 'dash',
+  utility: 'utility',
   isSystem: 'isSystem'
 } as const
 
@@ -264,12 +266,31 @@ export const DiagramScalarFieldEnum = {
   version: 'version',
   deviceId: 'deviceId',
   areaId: 'areaId',
+  utility: 'utility',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   previewAttachmentId: 'previewAttachmentId'
 } as const
 
 export type DiagramScalarFieldEnum = (typeof DiagramScalarFieldEnum)[keyof typeof DiagramScalarFieldEnum]
+
+
+export const UtilityProviderScalarFieldEnum = {
+  id: 'id',
+  utility: 'utility',
+  name: 'name',
+  accountNumber: 'accountNumber',
+  phone: 'phone',
+  emergencyPhone: 'emergencyPhone',
+  email: 'email',
+  website: 'website',
+  outageUrl: 'outageUrl',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UtilityProviderScalarFieldEnum = (typeof UtilityProviderScalarFieldEnum)[keyof typeof UtilityProviderScalarFieldEnum]
 
 
 export const SortOrder = {

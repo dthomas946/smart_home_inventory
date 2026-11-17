@@ -1,9 +1,18 @@
 # Smart Home Inventory
 
-[![Version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjkopcsek%2Fsmart_home_inventory%2Fmain%2Fconfig.yaml&query=%24.version&label=version&prefix=v&color=blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdthomas946%2Fsmart_home_inventory%2Fmain%2Fconfig.yaml&query=%24.version&label=version&prefix=v&color=blue)](CHANGELOG.md)
 [![Architectures](https://img.shields.io/badge/arch-aarch64%20%7C%20amd64-blue)](config.yaml)
-[![Build and publish add-on image](https://github.com/jkopcsek/smart_home_inventory/actions/workflows/build-addon.yml/badge.svg)](https://github.com/jkopcsek/smart_home_inventory/actions/workflows/build-addon.yml)
-[![License: MIT](https://img.shields.io/github/license/jkopcsek/smart_home_inventory)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+> **Credit:** Smart Home Inventory was created by **Jan Kopcsek
+> ([@jkopcsek](https://github.com/jkopcsek))** —
+> [jkopcsek/smart_home_inventory](https://github.com/jkopcsek/smart_home_inventory).
+> The data model, Home Assistant sync, areas/devices/attachments, the
+> diagram editor and the add-on itself are his work. This repository is a
+> community fork that builds the add-on from source (so it installs without
+> the prebuilt image) and adds the features listed under
+> [What this fork adds](#what-this-fork-adds). Please send ideas for the
+> core app to the original project.
 
 A Home Assistant add-on that documents your home's smart-home setup and
 infrastructure: areas, devices, capabilities, actual connections, annotated
@@ -39,6 +48,23 @@ photos, or a spreadsheet that falls out of date.
 All of it is stored under the add-on's data directory, so it rides along
 with your normal HA backups — no separate export/import step.
 
+## What this fork adds
+
+On top of the original (see [CHANGELOG.md](CHANGELOG.md) for detail):
+
+- Builds from source on your Home Assistant box — no registry image needed
+- Resources card, **Find manual**, and **Scan label** (rating-plate photo → any
+  vision AI: Ollama, OpenAI-compatible, or Home Assistant AI Task)
+- Brand vs. manufacturer, Equipment / Smart home filters, sortable columns
+- **Auto-link** smart devices to their coordinators from HA's registry, and a
+  **Network map** (hierarchy or radial, drag a device with everything below
+  it, snap-to-grid, undo)
+- **Utilities**: Electrical, Gas, Water, Phone, Internet and Solar — each
+  with its own map, hand-drawn plans and service-provider contacts; breaker,
+  amps and area served on electrical circuits
+- Physical-devices-only exclusions, duplicate hints, HA defaults (currency,
+  country → wire colours and power types), region settings
+
 ## Screenshots
 
 Areas synced from Home Assistant, with local-only devices mixed in:
@@ -53,12 +79,13 @@ network runs, not just electrical:
 
 ## Installation
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fjkopcsek%2Fsmart_home_inventory)
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fdthomas946%2Fsmart_home_inventory)
 
 Or manually:
 
 1. Settings → Add-ons → Add-on Store → ⋮ (top right) → Repositories, and add
-   `https://github.com/jkopcsek/smart_home_inventory`.
+   `https://github.com/dthomas946/smart_home_inventory` (this fork; the
+   original is `https://github.com/jkopcsek/smart_home_inventory`).
 2. Find "Smart Home Inventory" in the store and install it.
 3. Start the add-on, then open it from the sidebar panel (or "Open Web UI").
 
@@ -122,8 +149,10 @@ connection types are added on first sync.
 
 ## Support
 
-Found a bug or have a request? Open an issue on
-[GitHub](https://github.com/jkopcsek/smart_home_inventory/issues). Release
+Problems with something this fork added? Open an issue on
+[this fork](https://github.com/dthomas946/smart_home_inventory/issues).
+For the core app, use the
+[original project](https://github.com/jkopcsek/smart_home_inventory/issues). Release
 notes live in [CHANGELOG.md](CHANGELOG.md).
 
 ## Development

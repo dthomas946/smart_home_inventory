@@ -1,3 +1,4 @@
-name: Smart Home Inventory
+name: Smart Home Inventory (community fork)
 url: https://github.com/dthomas946/smart_home_inventory
-maintainer: Jan Kopcsek
+# Original project and author: Jan Kopcsek — https://github.com/jkopcsek/smart_home_inventory
+maintainer: dthomas946 (fork of jkopcsek/smart_home_inventory by Jan Kopcsek)

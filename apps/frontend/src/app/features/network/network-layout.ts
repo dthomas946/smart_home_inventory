@@ -379,3 +379,38 @@ function buildForest(graph: NetworkGraphDto, visibleTypes: Set<string>) {
   );
   return { nodesById, edges, children, roots, linked };
 }
+
+/** Grid used by "Snap to grid" on the Network map (SVG units). */
+export const GRID = 20;
+
+export function snapToGrid(v: number, grid = GRID): number {
+  return Math.round(v / grid) * grid;
+}
+
+/**
+ * Everything downstream of `id` along the drawn edges (from → to), not
+ * including `id` itself. Dragging a device carries these with it; a device
+ * with nothing downstream moves alone. Cycle-safe.
+ */
+export function downstreamOf(edges: Array<{ fromId: string; toId: string }>, id: string): string[] {
+  const out = new Map<string, string[]>();
+  for (const e of edges) {
+    if (e.fromId === e.toId) continue;
+    const list = out.get(e.fromId);
+    if (list) list.push(e.toId);
+    else out.set(e.fromId, [e.toId]);
+  }
+  const seen = new Set<string>([id]);
+  const queue = [id];
+  const result: string[] = [];
+  while (queue.length) {
+    const cur = queue.shift() as string;
+    for (const next of out.get(cur) ?? []) {
+      if (seen.has(next)) continue;
+      seen.add(next);
+      result.push(next);
+      queue.push(next);
+    }
+  }
+  return result;
+}

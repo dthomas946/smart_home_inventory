@@ -18,6 +18,7 @@ import { ManualLookupModule } from './manual-lookup/manual-lookup.module';
 import { LabelScanModule } from './label-scan/label-scan.module';
 import { AutoLinkModule } from './auto-link/auto-link.module';
 import { SettingsModule } from './settings/settings.module';
+import { UtilitiesModule } from './utilities/utilities.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { SettingsModule } from './settings/settings.module';
     LabelScanModule,
     AutoLinkModule,
     SettingsModule,
+    UtilitiesModule,
   ],
 })
 export class AppModule {}

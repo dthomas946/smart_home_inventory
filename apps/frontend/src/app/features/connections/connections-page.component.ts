@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ConnectionDto } from '@smart-home-inventory/shared';
+import { circuitOf, circuitSummary, ConnectionDto } from '@smart-home-inventory/shared';
 import {
   mdiDelete,
   mdiGraphOutline,
@@ -118,6 +118,9 @@ import { ToastService } from '../../core/toast/toast.service';
                   <span class="auto-badge" title="Created by auto-link. Delete or make manual to override.">auto</span>
                 }
                 {{ conn.label }}
+                @if (circuit(conn); as cs) {
+                  <span class="chip circuit" title="Circuit">{{ cs }}</span>
+                }
               </td>
               <td class="muted">{{ conn.notes }}</td>
               <td class="row-actions">
@@ -240,6 +243,10 @@ import { ToastService } from '../../core/toast/toast.service';
   `,
 })
 export class ConnectionsPageComponent implements OnInit {
+  protected circuit(c: ConnectionDto): string {
+    return circuitSummary(circuitOf(c.metadata));
+  }
+
   private readonly api = inject(ConnectionsApi);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
@@ -291,7 +298,7 @@ export class ConnectionsPageComponent implements OnInit {
       (c) =>
         (!filter || c.type === filter) &&
         (!q ||
-          [c.fromDeviceName, c.toDeviceName, c.label, c.notes, this.connectionTypes.label(c.type)]
+          [c.fromDeviceName, c.toDeviceName, c.label, c.notes, this.connectionTypes.label(c.type), circuitSummary(circuitOf(c.metadata)), circuitOf(c.metadata)?.serves]
             .filter(Boolean)
             .some((v) => (v as string).toLowerCase().includes(q)))
     );
@@ -338,7 +345,7 @@ export class ConnectionsPageComponent implements OnInit {
   protected async excludeTarget(conn: ConnectionDto): Promise<void> {
     const ok = await this.confirm.ask(
       `Exclude "${conn.toDeviceName}" from the inventory? The device and all its connections are removed, and future Home Assistant syncs won't add it back. Undo in Settings → Physical devices only.`,
-      { confirmLabel: 'Exclude' }
+      { confirmLabel: 'Exclude', skipKey: 'exclude-device' }
     );
     if (!ok) return;
     this.haApi.excludeDevice(conn.toDeviceId).subscribe(() => {

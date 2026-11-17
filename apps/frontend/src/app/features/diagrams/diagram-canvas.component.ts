@@ -1649,6 +1649,8 @@ export class DiagramCanvasComponent implements OnDestroy {
   readonly diagramId = input.required<string>();
   readonly areaId = input<string | null>(null);
   readonly deviceId = input<string | null>(null);
+  /** Set when this is a utility's plan (opened from the Utilities page). */
+  readonly utility = input<string | null>(null);
   readonly saved = output<DiagramDto>();
   readonly deleted = output<void>();
   readonly back = output<void>();
@@ -1909,9 +1911,10 @@ export class DiagramCanvasComponent implements OnDestroy {
     effect(() => {
       const areaId = this.areaId();
       const deviceId = this.deviceId();
+      const utility = this.utility();
       const current = this.diagramId();
       this.api
-        .list(areaId ? { areaId } : deviceId ? { deviceId } : { standalone: '1' })
+        .list(areaId ? { areaId } : deviceId ? { deviceId } : utility ? { utility } : { standalone: '1' })
         .subscribe((diagrams) => this.siblingDiagrams.set(diagrams.filter((d) => d.id !== current)));
       this.connectionsApi
         .list(areaId ? { areaId } : deviceId ? { deviceId } : undefined)
@@ -2901,7 +2904,9 @@ export class DiagramCanvasComponent implements OnDestroy {
       ? { areaId: this.areaId(), open: diagramId }
       : this.deviceId()
         ? { deviceId: this.deviceId(), open: diagramId }
-        : { standalone: '1', open: diagramId };
+        : this.utility()
+          ? { utility: this.utility(), open: diagramId }
+          : { standalone: '1', open: diagramId };
     this.router.navigate(['/diagrams'], { queryParams });
   }
 

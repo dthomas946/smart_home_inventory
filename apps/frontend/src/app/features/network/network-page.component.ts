@@ -3,34 +3,52 @@ import {
   Component,
   computed,
   ElementRef,
+  HostListener,
   inject,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   DASH_STYLE_PATTERNS,
   DashStyle,
   NetworkGraphDto,
   NetworkLayoutMode,
   NetworkPositions,
+  AreaDto,
+  circuitSummary,
+  isUtilityKind,
+  UTILITY_KINDS,
+  UTILITY_LABELS,
+  UtilityKind,
 } from '@smart-home-inventory/shared';
 import {
   mdiBackupRestore,
   mdiFileTreeOutline,
   mdiFitToScreenOutline,
   mdiGraphOutline,
+  mdiGrid,
   mdiRefresh,
+  mdiUndo,
 } from '@mdi/js';
-import { AutoLinkApi } from '../../core/api/api.services';
+import { AreasApi, AutoLinkApi } from '../../core/api/api.services';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy } from './network-layout';
+import { downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
 
 const MODE_PREF_KEY = 'shi.network.mode';
 const WRAP_PREF_KEY = 'shi.network.wrap';
 const WRAP_CHOICES = [2, 3, 4, 5, 6];
+const SNAP_PREF_KEY = 'shi.network.snap';
+const UNDO_LIMIT = 5;
+function readSnapPref(): boolean {
+  try {
+    return localStorage.getItem(SNAP_PREF_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 function readWrapPref(): number {
   try {
     const n = Number(localStorage.getItem(WRAP_PREF_KEY));
@@ -59,8 +77,17 @@ function readModePref(): NetworkLayoutMode {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="header">
-      <h1>Network map</h1>
+      <h1>{{ mapKind() ? labels[mapKind()!] + ' map' : 'Network map' }}</h1>
       <div class="head-actions">
+        <label class="wrap-pick" title="Show one utility, or every connection">
+          Show
+          <select class="text" [value]="mapKind() ?? ''" (change)="setMap($any($event.target).value)">
+            <option value="">All connections</option>
+            @for (u of utilityKinds; track u) {
+              <option [value]="u">{{ labels[u] }}</option>
+            }
+          </select>
+        </label>
         <div class="segmented" role="group" aria-label="Layout">
           <button type="button" [class.active]="mode() === 'hierarchy'" (click)="setMode('hierarchy')" title="Top-down tree">
             <app-icon [path]="icons.tree" [size]="16" /> Hierarchy
@@ -79,6 +106,26 @@ function readModePref(): NetworkLayoutMode {
             </select>
           </label>
         }
+        <button
+          class="btn secondary"
+          [class.on]="snap()"
+          (click)="toggleSnap()"
+          [title]="snap() ? 'Snap to grid: on' : 'Snap to grid: off'"
+          [attr.aria-pressed]="snap()"
+        >
+          <app-icon [path]="icons.grid" [size]="18" />
+        </button>
+        <button
+          class="btn secondary"
+          (click)="undo()"
+          [disabled]="undoStack().length === 0"
+          [title]="undoStack().length ? 'Undo move (' + undoStack().length + ' left) · Ctrl+Z' : 'Nothing to undo'"
+        >
+          <app-icon [path]="icons.undo" [size]="18" />
+          @if (undoStack().length) {
+            <span class="undo-count">{{ undoStack().length }}</span>
+          }
+        </button>
         @if (hasOverrides()) {
           <button class="btn secondary" (click)="resetPositions()" title="Forget dragged positions for this layout">
             <app-icon [path]="icons.reset" [size]="18" />
@@ -148,6 +195,21 @@ function readModePref(): NetworkLayoutMode {
           (pointerleave)="onPointerUp($event)"
         >
           <svg #svg [attr.viewBox]="viewBox()" preserveAspectRatio="xMidYMid meet">
+            @if (snap()) {
+              <defs>
+                <pattern id="net-grid" [attr.width]="grid" [attr.height]="grid" patternUnits="userSpaceOnUse">
+                  <circle cx="0" cy="0" r="1" class="grid-dot" />
+                </pattern>
+              </defs>
+              <rect
+                [attr.x]="camView().x"
+                [attr.y]="camView().y"
+                [attr.width]="camView().w"
+                [attr.height]="camView().h"
+                fill="url(#net-grid)"
+                pointer-events="none"
+              />
+            }
             <g>
               @for (e of layout().edges; track e.edge.id) {
                 <path
@@ -160,8 +222,17 @@ function readModePref(): NetworkLayoutMode {
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 >
-                  <title>{{ e.from.node.name }} → {{ e.to.node.name }} · {{ labelOf(e.edge.type) }}{{ e.edge.auto ? ' (auto)' : '' }}</title>
+                  <title>{{ e.from.node.name }} → {{ e.to.node.name }} · {{ labelOf(e.edge.type) }}{{ edgeCaption(e.edge) ? ' · ' + edgeCaption(e.edge) : '' }}{{ e.edge.auto ? ' (auto)' : '' }}</title>
                 </path>
+              }
+            </g>
+            <g class="edge-labels">
+              @for (e of layout().edges; track e.edge.id) {
+                @if (edgeCaption(e.edge); as cap) {
+                  <text [attr.x]="labelPos(e.from, e.to).x" [attr.y]="labelPos(e.from, e.to).y" [attr.text-anchor]="mode() === 'radial' ? 'middle' : 'start'">
+                    {{ cap }}
+                  </text>
+                }
               }
             </g>
             <g>
@@ -207,8 +278,11 @@ function readModePref(): NetworkLayoutMode {
           </svg>
         </div>
         <p class="muted small hint">
-          Drag a device to move it (saved) · drag the background to pan · scroll or pinch to zoom ·
-          tap a device to open it. Faded lines were created by auto-link.
+          Drag a device to move it with everything below it (saved) · drag the background to pan ·
+          scroll or pinch to zoom · tap a device to open it. Faded lines were created by auto-link.
+          @if (mapKind() === 'electrical') {
+            Breaker, amps and area served come from each circuit's connection (edit it on the Connections page).
+          }
         </p>
       } @else {
         <app-empty-state
@@ -233,6 +307,17 @@ function readModePref(): NetworkLayoutMode {
   `,
   styles: `
     .wrap-pick { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
+    .btn.on { background: color-mix(in srgb, var(--primary-color) 22%, transparent); }
+    .undo-count { font-size: 0.75em; margin-left: 2px; }
+    .grid-dot { fill: var(--secondary-text-color, #9e9e9e); opacity: 0.22; }
+    .edge-labels text {
+      font-size: 10px;
+      fill: var(--secondary-text-color, #9e9e9e);
+      paint-order: stroke;
+      stroke: var(--card-background-color, #1c1c1c);
+      stroke-width: 3px;
+      pointer-events: none;
+    }
     .wrap-pick select { width: auto; padding: 4px 6px; }
     .header {
       display: flex;
@@ -370,7 +455,9 @@ function readModePref(): NetworkLayoutMode {
 })
 export class NetworkPageComponent implements OnInit {
   private readonly api = inject(AutoLinkApi);
+  private readonly areasApi = inject(AreasApi);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly canvas = viewChild<ElementRef<HTMLDivElement>>('canvas');
   private readonly svgRef = viewChild<ElementRef<SVGSVGElement>>('svg');
 
@@ -380,7 +467,19 @@ export class NetworkPageComponent implements OnInit {
     graph: mdiGraphOutline,
     tree: mdiFileTreeOutline,
     reset: mdiBackupRestore,
+    grid: mdiGrid,
+    undo: mdiUndo,
   };
+  protected readonly utilityKinds = UTILITY_KINDS;
+  protected readonly labels = UTILITY_LABELS;
+  protected readonly grid = GRID;
+
+  /** null = every connection; otherwise one utility's map. */
+  protected readonly mapKind = signal<UtilityKind | null>(null);
+  protected readonly snap = signal(readSnapPref());
+  /** Positions before each of the last few moves; cleared when you leave. */
+  protected readonly undoStack = signal<NetworkPositions[]>([]);
+  private areaNames = new Map<string, string>();
 
   protected readonly mode = signal<NetworkLayoutMode>(readModePref());
   protected readonly wrap = signal(readWrapPref());
@@ -397,6 +496,7 @@ export class NetworkPageComponent implements OnInit {
 
   // viewBox camera
   private readonly cam = signal({ x: 0, y: 0, w: 1000, h: 600 });
+  protected readonly camView = computed(() => this.cam());
   protected readonly viewBox = computed(() => {
     const c = this.cam();
     return `${c.x} ${c.y} ${c.w} ${c.h}`;
@@ -426,19 +526,99 @@ export class NetworkPageComponent implements OnInit {
     return { ...base, nodes, edges };
   });
 
-  /** Only types that actually appear in the graph, in store order. */
+  /** Only types that actually appear in the graph (and belong to the
+   *  chosen utility map), in store order. */
   protected readonly usedTypes = computed(() => {
     const g = this.graph();
     if (!g) return [];
     const used = new Set(g.edges.map((e) => e.type));
-    return g.types.filter((t) => used.has(t.key));
+    const map = this.mapKind();
+    return g.types.filter((t) => used.has(t.key) && (!map || t.utility === map));
   });
 
   private typeMap = new Map<string, NetworkGraphDto['types'][number]>();
 
   ngOnInit(): void {
+    const m = this.route.snapshot.queryParamMap.get('map');
+    this.mapKind.set(isUtilityKind(m) ? m : null);
+    this.areasApi.list().subscribe((areas: AreaDto[]) => {
+      this.areaNames = new Map(areas.map((a) => [a.id, a.name]));
+    });
     this.load();
     this.loadPositions();
+  }
+
+  /** Saved positions are kept per layout mode and per utility map. */
+  private layoutKey(): string {
+    const m = this.mapKind();
+    return m ? `${this.mode()}:${m}` : this.mode();
+  }
+
+  private typesForMap(g: NetworkGraphDto): Set<string> {
+    const m = this.mapKind();
+    const used = new Set(g.edges.map((e) => e.type));
+    return new Set(
+      g.types.filter((t) => used.has(t.key) && (!m || t.utility === m)).map((t) => t.key)
+    );
+  }
+
+  protected setMap(value: string): void {
+    const m = isUtilityKind(value) ? value : null;
+    if (m === this.mapKind()) return;
+    this.mapKind.set(m);
+    this.undoStack.set([]);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { map: m }, replaceUrl: true });
+    const g = this.graph();
+    if (g) this.visibleTypes.set(this.typesForMap(g));
+    this.loadPositions();
+  }
+
+  protected toggleSnap(): void {
+    const on = !this.snap();
+    this.snap.set(on);
+    try {
+      localStorage.setItem(SNAP_PREF_KEY, on ? '1' : '0');
+    } catch {
+      /* per-browser convenience only */
+    }
+  }
+
+  private pushUndo(snapshot: NetworkPositions): void {
+    this.undoStack.update((s) => [...s, snapshot].slice(-UNDO_LIMIT));
+  }
+
+  protected undo(): void {
+    const stack = this.undoStack();
+    if (stack.length === 0) return;
+    this.overrides.set(stack[stack.length - 1]);
+    this.undoStack.set(stack.slice(0, -1));
+    this.scheduleSave(true);
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  protected onKey(ev: KeyboardEvent): void {
+    const target = ev.target as HTMLElement | null;
+    if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+    if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && ev.key.toLowerCase() === 'z' && this.undoStack().length) {
+      ev.preventDefault();
+      this.undo();
+    }
+  }
+
+  /** "#12 · 20A · Kitchen" for electrical circuits; else the connection label. */
+  protected edgeCaption(edge: NetworkGraphDto['edges'][number]): string {
+    const c = edge.circuit;
+    if (!c) return this.mapKind() ? edge.label ?? '' : '';
+    const served = [
+      ...(c.servesAreaIds ?? []).map((id) => this.areaNames.get(id) ?? ''),
+      c.serves ?? '',
+    ].filter(Boolean);
+    return [circuitSummary(c), ...served].filter(Boolean).join(' · ');
+  }
+
+  protected labelPos(a: LaidOutNode, b: LaidOutNode): { x: number; y: number } {
+    if (this.mode() === 'radial' || b.y <= a.y + 10) return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 4 };
+    return { x: b.x + 5, y: b.y - 34 };
   }
 
   protected setWrap(n: number): void {
@@ -454,6 +634,7 @@ export class NetworkPageComponent implements OnInit {
   protected setMode(mode: NetworkLayoutMode): void {
     if (mode === this.mode()) return;
     this.mode.set(mode);
+    this.undoStack.set([]);
     try {
       localStorage.setItem(MODE_PREF_KEY, mode);
     } catch {
@@ -463,10 +644,10 @@ export class NetworkPageComponent implements OnInit {
   }
 
   private loadPositions(): void {
-    const mode = this.mode();
-    this.api.getLayout(mode).subscribe({
+    const key = this.layoutKey();
+    this.api.getLayout(key).subscribe({
       next: (l) => {
-        if (this.mode() !== mode) return;
+        if (this.layoutKey() !== key) return;
         this.overrides.set(l.positions);
         queueMicrotask(() => this.fit());
       },
@@ -475,20 +656,25 @@ export class NetworkPageComponent implements OnInit {
   }
 
   protected resetPositions(): void {
-    const mode = this.mode();
-    this.api.resetLayout(mode).subscribe(() => {
+    const key = this.layoutKey();
+    this.pushUndo(this.overrides());
+    this.api.resetLayout(key).subscribe(() => {
       this.overrides.set({});
       queueMicrotask(() => this.fit());
     });
   }
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
-  private scheduleSave(): void {
+  private scheduleSave(now = false): void {
     if (this.saveTimer) clearTimeout(this.saveTimer);
-    const mode = this.mode();
-    this.saveTimer = setTimeout(() => {
-      this.api.saveLayout(mode, this.overrides()).subscribe();
-    }, 600);
+    const key = this.layoutKey();
+    const run = () => {
+      const positions = this.overrides();
+      if (Object.keys(positions).length === 0) this.api.resetLayout(key).subscribe();
+      else this.api.saveLayout(key, positions).subscribe();
+    };
+    if (now) run();
+    else this.saveTimer = setTimeout(run, 600);
   }
 
   /** Straight in radial mode; right-angled "org chart" elbows in hierarchy. */
@@ -507,7 +693,7 @@ export class NetworkPageComponent implements OnInit {
         this.typeMap = new Map(g.types.map((t) => [t.key, t]));
         this.graph.set(g);
         if (this.visibleTypes().size === 0) {
-          this.visibleTypes.set(new Set(g.edges.map((e) => e.type)));
+          this.visibleTypes.set(this.typesForMap(g));
         }
         this.loaded.set(true);
         queueMicrotask(() => this.fit());
@@ -582,6 +768,9 @@ export class NetworkPageComponent implements OnInit {
   // --- node drag -------------------------------------------------------------
   protected dragId: string | null = null;
   private dragOffset = { x: 0, y: 0 };
+  /** Start positions of the dragged device and everything below it. */
+  private dragGroup = new Map<string, { x: number; y: number }>();
+  private dragBefore: NetworkPositions = {};
 
   private toSvg(clientX: number, clientY: number): { x: number; y: number } | null {
     const svg = this.svgRef()?.nativeElement;
@@ -602,6 +791,16 @@ export class NetworkPageComponent implements OnInit {
     this.dragId = n.node.id;
     this.dragged = false;
     this.dragOffset = { x: p.x - n.x, y: p.y - n.y };
+    const l = this.layout();
+    const below = downstreamOf(
+      l.edges.map((e) => ({ fromId: e.from.node.id, toId: e.to.node.id })),
+      n.node.id
+    );
+    const pos = new Map(l.nodes.map((x) => [x.node.id, { x: x.x, y: x.y }]));
+    this.dragGroup = new Map(
+      [n.node.id, ...below].filter((id) => pos.has(id)).map((id) => [id, pos.get(id) as { x: number; y: number }])
+    );
+    this.dragBefore = this.overrides();
     this.last = { x: ev.clientX, y: ev.clientY };
     (this.canvas()?.nativeElement as HTMLElement | undefined)?.setPointerCapture?.(ev.pointerId);
   }
@@ -631,9 +830,15 @@ export class NetworkPageComponent implements OnInit {
         this.dragged = true;
       }
       if (!this.dragged) return;
-      const id = this.dragId;
-      const pos = { x: Math.round(p.x - this.dragOffset.x), y: Math.round(p.y - this.dragOffset.y) };
-      this.overrides.update((o) => ({ ...o, [id]: pos }));
+      const start = this.dragGroup.get(this.dragId);
+      if (!start) return;
+      const dx = p.x - this.dragOffset.x - start.x;
+      const dy = p.y - this.dragOffset.y - start.y;
+      const snap = this.snap();
+      const place = (v: number) => (snap ? snapToGrid(v) : Math.round(v));
+      const moved: NetworkPositions = {};
+      for (const [id, s] of this.dragGroup) moved[id] = { x: place(s.x + dx), y: place(s.y + dy) };
+      this.overrides.update((o) => ({ ...o, ...moved }));
       return;
     }
     if (!this.dragging) return;
@@ -659,7 +864,11 @@ export class NetworkPageComponent implements OnInit {
     if (this.dragId) {
       const moved = this.dragged;
       this.dragId = null;
-      if (moved) this.scheduleSave();
+      this.dragGroup.clear();
+      if (moved) {
+        this.pushUndo(this.dragBefore);
+        this.scheduleSave();
+      }
       setTimeout(() => (this.dragged = false), 0);
       return;
     }

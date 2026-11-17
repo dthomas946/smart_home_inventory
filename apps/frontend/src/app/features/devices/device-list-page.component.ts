@@ -584,7 +584,7 @@ export class DeviceListPageComponent implements OnInit {
       `Exclude "${device.name}" (${device.integrations.join(', ') || 'Home Assistant'}) from the inventory?` +
         (other ? ` "${other.name}" (${other.integrations.join(', ') || 'added by you'}) stays.` : '') +
         ` Future syncs won't add it back; undo in Settings → Physical devices only.`,
-      { confirmLabel: 'Exclude' }
+      { confirmLabel: 'Exclude', skipKey: 'exclude-device' }
     );
     if (!ok) return;
     this.haApi.excludeDevice(device.id).subscribe(() => {

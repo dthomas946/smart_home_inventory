@@ -117,3 +117,8 @@ export type AppSetting = Prisma.AppSettingModel
  * 
  */
 export type Diagram = Prisma.DiagramModel
+/**
+ * Model UtilityProvider
+ * 
+ */
+export type UtilityProvider = Prisma.UtilityProviderModel

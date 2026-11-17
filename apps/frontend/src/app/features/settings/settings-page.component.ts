@@ -19,6 +19,9 @@ import {
   DashStyle,
   HaStatusDto,
   SyncResultDto,
+  UTILITY_KINDS,
+  UTILITY_LABELS,
+  UtilityKind,
 } from '@smart-home-inventory/shared';
 import { mdiDelete, mdiSync } from '@mdi/js';
 import { CapabilitiesApi, ConnectionTypesApi, HaApi } from '../../core/api/api.services';
@@ -168,7 +171,7 @@ import { RegionSettingsComponent } from './region-settings.component';
       <h3>Connection types</h3>
       <p class="muted">
         The wire/protocol types available on connections and diagram
-        wires/ports. Change any type's name, group, colour or line style right
+        wires/ports. Change any type's name, group, colour, line style or utility map right
         in the table — the Network map and diagrams follow. Built-in types
         cannot be deleted; add your own for anything missing (DALI, 1-Wire, …).
       </p>
@@ -219,6 +222,20 @@ import { RegionSettingsComponent } from './region-settings.component';
                   }
                 </select>
               </td>
+              <td>
+                <select
+                  class="text inline-edit"
+                  [value]="type.utility ?? ''"
+                  (change)="patchType(type, { utility: $any($event.target).value || null })"
+                  aria-label="Utility map"
+                  title="Which Utilities map shows this type"
+                >
+                  <option value="">— no utility map —</option>
+                  @for (u of utilityKinds; track u) {
+                    <option [value]="u">{{ utilityLabels[u] }}</option>
+                  }
+                </select>
+              </td>
               <td class="muted">
                 {{ type.connectionCount }} connection{{ type.connectionCount === 1 ? '' : 's' }}
               </td>
@@ -257,6 +274,12 @@ import { RegionSettingsComponent } from './region-settings.component';
             <option [value]="d">{{ dashStyleLabels[d] }}</option>
           }
         </select>
+        <select class="text" name="ctUtility" [(ngModel)]="newTypeUtility">
+          <option value="">— no utility map —</option>
+          @for (u of utilityKinds; track u) {
+            <option [value]="u">{{ utilityLabels[u] }}</option>
+          }
+        </select>
         <button
           class="btn"
           type="submit"
@@ -266,10 +289,22 @@ import { RegionSettingsComponent } from './region-settings.component';
         </button>
       </form>
     </div>
+
+    <p class="muted credit">
+      Smart Home Inventory was created by Jan Kopcsek —
+      <a href="https://github.com/jkopcsek/smart_home_inventory" target="_blank" rel="noopener">jkopcsek/smart_home_inventory</a>.
+      You're running a community fork:
+      <a href="https://github.com/dthomas946/smart_home_inventory" target="_blank" rel="noopener">dthomas946/smart_home_inventory</a>.
+    </p>
   `,
   styles: `
     .section {
       margin-bottom: 16px;
+    }
+    .credit {
+      font-size: 0.85em;
+      text-align: center;
+      margin: 24px 0 8px;
     }
     .result {
       margin-top: 12px;
@@ -352,6 +387,9 @@ export class SettingsPageComponent implements OnInit {
   protected newTypeGroup: ConnectionTypeGroup = 'other';
   protected newTypeColor = '#757575';
   protected newTypeDash: DashStyle = 'solid';
+  protected newTypeUtility: UtilityKind | '' = '';
+  protected readonly utilityKinds = UTILITY_KINDS;
+  protected readonly utilityLabels = UTILITY_LABELS;
   protected readonly dashStyles = DASH_STYLES;
   protected readonly dashStyleLabels = DASH_STYLE_LABELS;
 
@@ -412,7 +450,14 @@ export class SettingsPageComponent implements OnInit {
     const label = this.newTypeLabel.trim();
     if (!key || !label) return;
     this.connectionTypesApi
-      .create({ key, label, group: this.newTypeGroup, color: this.newTypeColor, dash: this.newTypeDash })
+      .create({
+        key,
+        label,
+        group: this.newTypeGroup,
+        color: this.newTypeColor,
+        dash: this.newTypeDash,
+        utility: this.newTypeUtility || null,
+      })
       .subscribe(() => {
         this.newTypeKey = '';
         this.newTypeLabel = '';

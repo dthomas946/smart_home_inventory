@@ -65,6 +65,11 @@ export const appRoutes: Route[] = [
       import('./features/network/network-page.component').then((m) => m.NetworkPageComponent),
   },
   {
+    path: 'utilities',
+    loadComponent: () =>
+      import('./features/utilities/utilities-page.component').then((m) => m.UtilitiesPageComponent),
+  },
+  {
     path: 'diagrams',
     loadComponent: () =>
       import('./features/diagrams/diagrams-page.component').then(

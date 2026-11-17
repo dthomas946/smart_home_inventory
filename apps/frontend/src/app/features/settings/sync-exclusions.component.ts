@@ -26,6 +26,12 @@ import { IconComponent } from '../../shared/ui/icon.component';
         serial or hand-drawn connections to one — those are kept and listed below). Remove a rule
         and the devices come back on the next sync.
       </p>
+      @if (confirmSkipped()) {
+        <p class="muted">
+          Exclude no longer asks for confirmation in this browser.
+          <button type="button" class="btn secondary small-reset" (click)="resetConfirm()">Ask again</button>
+        </p>
+      }
 
       <h4>Your rules</h4>
       @if (data()?.rules?.length) {
@@ -158,6 +164,12 @@ export class SyncExclusionsComponent implements OnInit {
   private readonly api = inject(HaApi);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  protected readonly confirmSkipped = signal(this.confirm.isSkipped('exclude-device'));
+
+  protected resetConfirm(): void {
+    this.confirm.resetSkipped();
+    this.confirmSkipped.set(false);
+  }
 
   protected readonly icons = { delete: mdiDelete };
   protected readonly data = signal<SyncExclusionsDto | null>(null);

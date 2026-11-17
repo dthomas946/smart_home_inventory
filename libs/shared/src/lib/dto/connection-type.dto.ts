@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DashStyleSchema } from '../dash-style';
+import { UtilityKind, UtilityKindSchema } from './utility.dto';
 
 /** How a connection type clusters for display — a flat list mixes wired
  *  cables in with wireless protocols (e.g. Zigbee has no cable at all),
@@ -26,6 +27,8 @@ export interface ConnectionTypeDto {
   group: ConnectionTypeGroup;
   color: string;
   dash: string;
+  /** Which utility map this type belongs to (null = only on the full map). */
+  utility: UtilityKind | null;
   isSystem: boolean;
   connectionCount: number;
 }
@@ -40,6 +43,7 @@ export const CreateConnectionTypeSchema = z.object({
   group: ConnectionTypeGroupSchema.default('other'),
   color: z.string().min(1).max(30),
   dash: DashStyleSchema.default('solid'),
+  utility: UtilityKindSchema.nullish(),
 });
 export type CreateConnectionTypeDto = z.infer<typeof CreateConnectionTypeSchema>;
 
@@ -48,5 +52,6 @@ export const UpdateConnectionTypeSchema = z.object({
   group: ConnectionTypeGroupSchema.optional(),
   color: z.string().min(1).max(30).optional(),
   dash: DashStyleSchema.optional(),
+  utility: UtilityKindSchema.nullable().optional(),
 });
 export type UpdateConnectionTypeDto = z.infer<typeof UpdateConnectionTypeSchema>;

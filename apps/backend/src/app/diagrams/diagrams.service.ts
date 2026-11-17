@@ -14,6 +14,7 @@ import {
   DiagramQueryDto,
   EMPTY_DIAGRAM_CONTENT,
   UpdateDiagramDto,
+  isUtilityKind,
 } from '@smart-home-inventory/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AttachmentsService } from '../attachments/attachments.service';
@@ -32,6 +33,7 @@ function toDiagramDto(d: Diagram): DiagramDto {
     version: d.version,
     deviceId: d.deviceId,
     areaId: d.areaId,
+    utility: isUtilityKind(d.utility) ? d.utility : null,
     previewAttachmentId: d.previewAttachmentId,
     createdAt: d.createdAt.toISOString(),
     updatedAt: d.updatedAt.toISOString(),
@@ -50,7 +52,8 @@ export class DiagramsService {
       where: {
         ...(query.deviceId ? { deviceId: query.deviceId } : {}),
         ...(query.areaId ? { areaId: query.areaId } : {}),
-        ...(query.standalone ? { deviceId: null, areaId: null } : {}),
+        ...(query.utility ? { utility: query.utility } : {}),
+        ...(query.standalone ? { deviceId: null, areaId: null, utility: null } : {}),
       },
       orderBy: { title: 'asc' },
     });
@@ -68,6 +71,7 @@ export class DiagramsService {
         title: dto.title,
         deviceId: dto.deviceId ?? null,
         areaId: dto.areaId ?? null,
+        utility: dto.utility ?? null,
         content: EMPTY_DIAGRAM_CONTENT as unknown as Prisma.InputJsonValue,
       },
     });
@@ -85,6 +89,7 @@ export class DiagramsService {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.deviceId !== undefined ? { deviceId: dto.deviceId } : {}),
         ...(dto.areaId !== undefined ? { areaId: dto.areaId } : {}),
+        ...(dto.utility !== undefined ? { utility: dto.utility } : {}),
         ...(dto.previewAttachmentId !== undefined
           ? { previewAttachmentId: dto.previewAttachmentId }
           : {}),

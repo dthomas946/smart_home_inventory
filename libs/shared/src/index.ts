@@ -19,3 +19,4 @@ export * from './lib/dto/label-scan.dto';
 export * from './lib/dto/auto-link.dto';
 export * from './lib/dto/sync-exclusion.dto';
 export * from './lib/dto/settings.dto';
+export * from './lib/dto/utility.dto';

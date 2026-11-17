@@ -739,7 +739,7 @@ export class DeviceDetailPageComponent implements OnInit {
     if (!device) return;
     const confirmed = await this.confirm.ask(
       `Exclude "${device.name}" from the inventory? It's removed now (with any attachments and connections) and future Home Assistant syncs won't add it back. You can undo this in Settings → Physical devices only.`,
-      { confirmLabel: 'Exclude' }
+      { confirmLabel: 'Exclude', skipKey: 'exclude-device' }
     );
     if (!confirmed) return;
     this.haApi.excludeDevice(device.id).subscribe(() => {

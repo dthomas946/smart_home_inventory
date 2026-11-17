@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.0
+
+- **Utilities page**: Electrical, Gas, Water, Phone, Internet and Solar.
+  - **Service providers** for each, with account number, customer-service and outage/emergency phone (tap to call), email, website, outage map and notes.
+  - **Plans**: hand-drawn diagrams in the existing editor, owned by the utility.
+  - **Map** opens the Network map filtered to that utility.
+- **Electrical circuits**: breaker #, amps, poles and area served on electrical connections. Shown on the Connections list and as labels on the Network map.
+- **Network map**:
+  - "Show" picker: all connections or one utility. Positions are saved separately for each.
+  - Dragging a device **moves everything downstream of it**; a device with nothing below it moves alone.
+  - **Snap to grid** toggle with a subtle dot grid.
+  - **Undo** the last 5 moves (button or Ctrl+Z), kept until you leave the page.
+- Connection types get a **utility map** setting (Settings → Connection types). New built-in types: Phone line, Fiber, Solar DC.
+- **Exclude** confirmation has "Don't ask me again" (per browser). Bring it back from Settings → Physical devices only.
+- Credits: README, LICENSE, repository and add-on description and the Settings page credit Jan Kopcsek ([@jkopcsek](https://github.com/jkopcsek)) as the original author. The fork's install link now points to the fork.
+
 ## 0.7.0
 
 - **Choose your AI for Scan label** (Settings → AI for Scan label):

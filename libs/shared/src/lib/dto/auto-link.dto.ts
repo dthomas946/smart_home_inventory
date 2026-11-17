@@ -1,3 +1,4 @@
+import { CircuitDto, UtilityKind } from './utility.dto';
 import { z } from 'zod';
 import { ConnectionType, ConnectionTypeSchema } from '../enums';
 
@@ -116,6 +117,12 @@ export const NETWORK_LAYOUT_MODES = ['hierarchy', 'radial'] as const;
 export const NetworkLayoutModeSchema = z.enum(NETWORK_LAYOUT_MODES);
 export type NetworkLayoutMode = z.infer<typeof NetworkLayoutModeSchema>;
 
+/** Saved-positions key: a layout mode, optionally for one utility's map
+ *  ("hierarchy", "radial:electrical"). */
+export const NetworkLayoutKeySchema = z
+  .string()
+  .regex(/^(hierarchy|radial)(:(electrical|gas|water|phone|internet|solar))?$/);
+
 export const NetworkPositionsSchema = z.record(
   z.string(),
   z.object({ x: z.number().finite(), y: z.number().finite() })
@@ -126,7 +133,7 @@ export const SaveNetworkLayoutSchema = z.object({ positions: NetworkPositionsSch
 export type SaveNetworkLayoutDto = z.infer<typeof SaveNetworkLayoutSchema>;
 
 export interface NetworkLayoutDto {
-  mode: NetworkLayoutMode;
+  mode: string;
   positions: NetworkPositions;
   updatedAt: string | null;
 }
@@ -152,10 +159,12 @@ export interface NetworkGraphEdgeDto {
   toDeviceId: string;
   auto: boolean;
   label: string | null;
+  /** Breaker / amps / area served, when this is an electrical circuit. */
+  circuit?: CircuitDto | null;
 }
 
 export interface NetworkGraphDto {
   nodes: NetworkGraphNodeDto[];
   edges: NetworkGraphEdgeDto[];
-  types: Array<{ key: string; label: string; color: string; dash: string; group: string }>;
+  types: Array<{ key: string; label: string; color: string; dash: string; group: string; utility: UtilityKind | null }>;
 }

@@ -11,9 +11,9 @@ import {
   ElementRef,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ConnectionDto, ConnectionType, DeviceDto } from '@smart-home-inventory/shared';
+import { AreaDto, circuitOf, CircuitDto, ConnectionDto, ConnectionType, DeviceDto } from '@smart-home-inventory/shared';
 import { mdiSwapHorizontal } from '@mdi/js';
-import { ConnectionsApi } from '../../core/api/api.services';
+import { AreasApi, ConnectionsApi } from '../../core/api/api.services';
 import { ConnectionTypesStore } from '../../core/connection-types/connection-types.store';
 import { ToastService } from '../../core/toast/toast.service';
 import { DevicePickerComponent } from '../../shared/ui/device-picker.component';
@@ -136,6 +136,44 @@ import { IconComponent } from '../../shared/ui/icon.component';
           </div>
         }
 
+        @if (isElectrical()) {
+          <fieldset class="circuit">
+            <legend>Circuit</legend>
+            <div class="circuit-row">
+              <label class="field">
+                <span>Breaker #</span>
+                <input class="text" name="breaker" [(ngModel)]="circuit.breaker" placeholder="12 or 12/14" />
+              </label>
+              <label class="field">
+                <span>Amps</span>
+                <input class="text" name="amps" type="number" min="1" max="1000" [(ngModel)]="circuit.amps" placeholder="20" />
+              </label>
+              <label class="field">
+                <span>Poles</span>
+                <select class="text" name="poles" [(ngModel)]="circuit.poles">
+                  <option [ngValue]="null">—</option>
+                  <option [ngValue]="1">1 (120 V)</option>
+                  <option [ngValue]="2">2 (240 V)</option>
+                  <option [ngValue]="3">3 (3-phase)</option>
+                </select>
+              </label>
+            </div>
+            <label class="field">
+              <span>Area served</span>
+              <select class="text" name="servesArea" [(ngModel)]="circuitArea">
+                <option value="">— the connected device's area —</option>
+                @for (a of areas(); track a.id) {
+                  <option [value]="a.id">{{ a.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Serves (details)</span>
+              <input class="text" name="serves" [(ngModel)]="circuit.serves" placeholder="e.g. Kitchen counter outlets, bath GFCI" />
+            </label>
+          </fieldset>
+        }
+
         <label class="field">
           <span>Label</span>
           <input
@@ -162,6 +200,22 @@ import { IconComponent } from '../../shared/ui/icon.component';
     </dialog>
   `,
   styles: `
+    .circuit {
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      padding: 6px 10px 2px;
+      margin: 0 0 12px;
+    }
+    .circuit legend {
+      font-size: 0.85em;
+      color: var(--secondary-text-color);
+      padding: 0 4px;
+    }
+    .circuit-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 8px;
+    }
     .value {
       font-size: 13px;
       color: var(--primary-text-color);
@@ -198,6 +252,16 @@ import { IconComponent } from '../../shared/ui/icon.component';
 })
 export class ConnectionFormDialogComponent {
   private readonly api = inject(ConnectionsApi);
+  private readonly areasApi = inject(AreasApi);
+  protected readonly areas = signal<AreaDto[]>([]);
+  /** Electrical circuit details (breaker, amps, area served). */
+  protected circuit: { breaker: string; amps: number | null; poles: 1 | 2 | 3 | null; serves: string } = {
+    breaker: '',
+    amps: null,
+    poles: null,
+    serves: '',
+  };
+  protected circuitArea = '';
   private readonly toast = inject(ToastService);
   protected readonly connectionTypes = inject(ConnectionTypesStore);
   private readonly dlg = viewChild.required<ElementRef<HTMLDialogElement>>('dlg');
@@ -249,6 +313,7 @@ export class ConnectionFormDialogComponent {
         this.type = editing.type;
         this.label = editing.label ?? '';
         this.notes = editing.notes ?? '';
+        this.loadCircuit(circuitOf(editing.metadata));
         this.editFrom.set({ id: editing.fromDeviceId, name: editing.fromDeviceName });
         this.editTo.set({ id: editing.toDeviceId, name: editing.toDeviceName });
         this.changingEnd.set(null);
@@ -258,6 +323,7 @@ export class ConnectionFormDialogComponent {
         this.fixedIsSource = this.fixedAsSource();
         this.label = this.initialLabel();
         this.notes = '';
+        this.loadCircuit(null);
         this.sourceDevice.set(null);
         this.otherDevice.set(null);
         this.swapped.set(false);
@@ -266,6 +332,43 @@ export class ConnectionFormDialogComponent {
         el.close();
       }
     });
+  }
+
+  protected isElectrical(): boolean {
+    return this.connectionTypes.byKey()[this.type]?.utility === 'electrical';
+  }
+
+  private loadCircuit(c: CircuitDto | null): void {
+    this.circuit = {
+      breaker: c?.breaker ?? '',
+      amps: c?.amps ?? null,
+      poles: (c?.poles as 1 | 2 | 3 | null | undefined) ?? null,
+      serves: c?.serves ?? '',
+    };
+    this.circuitArea = c?.servesAreaIds?.[0] ?? '';
+    if (this.areas().length === 0) this.areasApi.list().subscribe((a) => this.areas.set(a));
+  }
+
+  /** Metadata to send: the circuit merged into what's already there (only
+   *  for electrical types; anything else leaves metadata untouched). */
+  private metadataFor(current: Record<string, unknown> | null): Record<string, unknown> | undefined {
+    if (!this.isElectrical()) return undefined;
+    const amps = Number(this.circuit.amps);
+    const circuit: CircuitDto = {
+      breaker: this.circuit.breaker.trim() || null,
+      amps: Number.isFinite(amps) && amps > 0 ? amps : null,
+      poles: this.circuit.poles,
+      servesAreaIds: this.circuitArea ? [this.circuitArea] : null,
+      serves: this.circuit.serves.trim() || null,
+    };
+    const empty = !circuit.breaker && !circuit.amps && !circuit.poles && !circuit.servesAreaIds && !circuit.serves;
+    const base = { ...(current ?? {}) };
+    if (empty) {
+      if (!('circuit' in base)) return undefined;
+      delete base['circuit'];
+      return base;
+    }
+    return { ...base, circuit };
   }
 
   protected swapEdit(): void {
@@ -314,6 +417,7 @@ export class ConnectionFormDialogComponent {
         toDeviceId,
         label: this.label.trim() || null,
         notes: this.notes.trim() || null,
+        ...(this.metadataFor(null) ? { metadata: this.metadataFor(null) } : {}),
       })
       .subscribe({
         next: (connection) => {
@@ -338,6 +442,7 @@ export class ConnectionFormDialogComponent {
         ...(to !== current.toDeviceId ? { toDeviceId: to } : {}),
         label,
         notes,
+        ...(this.metadataFor(current.metadata) !== undefined ? { metadata: this.metadataFor(current.metadata) } : {}),
       })
       .subscribe({
         next: (connection) => {
