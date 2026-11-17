@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4
+
+- **Fix: Wrap at now re-wraps dragged trees.** Changing it (for the whole map or for a selected parent) keeps the top dragged device of each tree where you placed it and re-lays out everything below it, branch lines and devices, at the new width. Before, devices with saved positions stayed put and only the branch line moved. Undo restores the previous layout.
+
 ## 0.8.3
 
 - **Wrap per parent device**: the last parent device you drag is selected (dashed ring), and **Wrap at** then sets the width for that device's whole tree, re-flowing it under the device where you placed it. **Default** removes the per-device setting, and **✕** returns the picker to the map-wide default. Per-device widths are remembered per browser, and Undo restores the previous layout.

@@ -1,5 +1,5 @@
 import { NetworkGraphDto } from '@smart-home-inventory/shared';
-import { branchType, withTypeBranches, downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
+import { reflowPositions, branchType, withTypeBranches, downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
 
 const node = (id: string, isController = false): NetworkGraphDto['nodes'][number] => ({
   id,
@@ -251,5 +251,44 @@ describe('per-parent wrap', () => {
     const rows = (prefix: string) => new Set(l.nodes.filter((n) => n.node.id.startsWith(prefix) && n.node.id.length > 1).map((n) => n.y)).size;
     expect(rows('a')).toBe(1); // 6 wide
     expect(rows('b')).toBe(2); // default 3 wide
+  });
+});
+
+describe('reflowPositions', () => {
+  // router → [wifi branch] → w0..w5 ; hub → h0 (untouched tree)
+  const wifi = Array.from({ length: 6 }, (_, i) => node(`w${i}`));
+  const g: NetworkGraphDto = {
+    nodes: [node('router', true), node('lan'), ...wifi, node('hub', true), node('h0')],
+    edges: [...wifi.map((w) => edge('router', w.id, 'wifi')), edge('router', 'lan', 'ethernet'), edge('hub', 'h0')],
+    types: [],
+  };
+  const types = new Set(['wifi', 'ethernet', 'zigbee_network']);
+  const b = withTypeBranches(g, types);
+
+  it('keeps the dragged top device and re-wraps everything under it, branch lines included', () => {
+    const old = layoutHierarchy(b, types, 3);
+    const at = (id: string) => old.nodes.find((n) => n.node.id === id) as { x: number; y: number };
+    // whole router tree dragged +500,+200 (devices saved, branch pill not)
+    const current: Record<string, { x: number; y: number }> = {};
+    for (const id of ['router', 'lan', ...wifi.map((w) => w.id)]) current[id] = { x: at(id).x + 500, y: at(id).y + 200 };
+    const base = layoutHierarchy(b, types, 6);
+    const next = reflowPositions(base, current);
+    const nb = (id: string) => base.nodes.find((n) => n.node.id === id) as { x: number; y: number };
+    expect(next['router']).toEqual(current['router']);
+    const off = { x: current['router'].x - nb('router').x, y: current['router'].y - nb('router').y };
+    for (const id of ['branch:router:wifi', 'w0', 'w5']) {
+      expect(next[id]).toEqual({ x: Math.round(nb(id).x + off.x), y: Math.round(nb(id).y + off.y) });
+    }
+    expect(new Set(wifi.map((w) => next[w.id].y)).size).toBe(1); // now one row of 6
+    expect(next['h0']).toBeUndefined();
+  });
+
+  it('with a scope, re-flows only that device\'s tree around it', () => {
+    const current = { hub: { x: 10, y: 10 }, h0: { x: 999, y: 999 }, w0: { x: 1, y: 1 } };
+    const base = layoutHierarchy(b, types, 3);
+    const next = reflowPositions(base, current, 'hub');
+    expect(next['hub']).toEqual({ x: 10, y: 10 });
+    expect(next['h0']).not.toEqual({ x: 999, y: 999 });
+    expect(next['w0']).toEqual({ x: 1, y: 1 }); // outside the scope
   });
 });

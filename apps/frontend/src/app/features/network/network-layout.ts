@@ -18,6 +18,8 @@ export interface LaidOutNode {
   depth: number;
   rootId: string;
   childCount: number;
+  /** Tree parent (hierarchy layout only); null for a top-level device. */
+  parentId?: string | null;
 }
 
 export interface LaidOutEdge {
@@ -282,7 +284,7 @@ export function layoutHierarchy(
   };
 
   const out: LaidOutNode[] = [];
-  const place = (id: string, left: number, top: number, depth: number, rootId: string) => {
+  const place = (id: string, left: number, top: number, depth: number, rootId: string, parentId: string | null) => {
     const b = box.get(id) ?? { w: H_COL, h: 0 };
     const node = nodesById.get(id);
     const rows = rowsOf.get(id) ?? [];
@@ -294,13 +296,14 @@ export function layoutHierarchy(
         depth,
         rootId,
         childCount: rows.reduce((n, r) => n + r.ids.length, 0),
+        parentId,
       });
     }
     let y = top + H_LEVEL;
     for (const r of rows) {
       let x = left + (b.w - r.w) / 2;
       for (const k of r.ids) {
-        place(k, x, y, depth + 1, rootId);
+        place(k, x, y, depth + 1, rootId, id);
         x += box.get(k)?.w ?? H_COL;
       }
       y += r.h + H_ROW_GAP;
@@ -323,7 +326,7 @@ export function layoutHierarchy(
     let rowH = 0;
     for (const rootId of rowIds) {
       const b = box.get(rootId) ?? { w: H_COL, h: 0 };
-      place(rootId, x, y, 0, rootId);
+      place(rootId, x, y, 0, rootId, null);
       x += b.w + H_TREE_GAP_X;
       rowH = Math.max(rowH, b.h);
     }
@@ -496,4 +499,53 @@ export function withTypeBranches(graph: NetworkGraphDto, visibleTypes: Set<strin
     edges.push({ ...e, fromDeviceId: bid });
   }
   return { ...graph, nodes: [...graph.nodes, ...branchNodes], edges };
+}
+
+type Positions = Record<string, { x: number; y: number }>;
+
+/**
+ * Re-flow dragged positions after the wrap width changes, so the new width
+ * actually shows. In each tree the topmost dragged device stays where it was
+ * put, and everything below it is re-laid out underneath it (new layout +
+ * that device's drag offset). With `scope`, only that device's tree is
+ * re-flowed, around the scope device itself; everything else is untouched.
+ */
+export function reflowPositions(base: Layout, current: Positions, scope?: string): Positions {
+  const byId = new Map(base.nodes.map((n) => [n.node.id, n]));
+  const parentOf = (id: string) => byId.get(id)?.parentId ?? null;
+  const offset = (id: string) => {
+    const b = byId.get(id);
+    const c = current[id];
+    return b && c ? { dx: c.x - b.x, dy: c.y - b.y } : { dx: 0, dy: 0 };
+  };
+  const next: Positions = { ...current };
+
+  for (const n of base.nodes) {
+    const id = n.node.id;
+    // Walk up the tree: is this inside the scope, and which is the topmost
+    // dragged ancestor (or itself)?
+    let anchor: string | null = current[id] ? id : null;
+    let inScope = !scope || id === scope;
+    let cur = parentOf(id);
+    const guard = new Set([id]);
+    while (cur && !guard.has(cur)) {
+      guard.add(cur);
+      if (cur === scope) inScope = true;
+      if (current[cur] && !(scope && inScope && anchor === scope)) anchor = cur;
+      if (scope && cur === scope) {
+        anchor = scope;
+        break;
+      }
+      cur = parentOf(cur);
+    }
+    if (!inScope || id === anchor) continue;
+    if (!anchor) {
+      delete next[id];
+      continue;
+    }
+    const { dx, dy } = offset(anchor);
+    if (dx === 0 && dy === 0) delete next[id];
+    else next[id] = { x: Math.round(n.x + dx), y: Math.round(n.y + dy) };
+  }
+  return next;
 }

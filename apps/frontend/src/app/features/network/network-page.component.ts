@@ -35,7 +35,7 @@ import {
 import { AreasApi, AutoLinkApi } from '../../core/api/api.services';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
+import { reflowPositions, branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
 
 const MODE_PREF_KEY = 'shi.network.mode';
 const WRAP_PREF_KEY = 'shi.network.wrap';
@@ -119,7 +119,7 @@ function readModePref(): NetworkLayoutMode {
             class="wrap-pick"
             [title]="selectedName()
               ? 'Devices side by side under ' + selectedName() + ' and everything below it'
-              : 'Default devices side by side before wrapping. Drag a parent device to set its own.' + (hasOverrides() ? ' Dragged devices keep their spots — Reset to re-wrap them.' : '')"
+              : 'Devices side by side before wrapping, for the whole map. Dragged trees re-wrap under their top device. Drag a parent device to set its own.'"
           >
             Wrap at
             <select class="text" [value]="selectedWrapValue()" (change)="setWrap(+$any($event.target).value)">
@@ -738,11 +738,16 @@ export class NetworkPageComponent implements OnInit {
       return;
     }
     if (!WRAP_CHOICES.includes(n)) return;
+    const before = this.overrides();
     this.wrap.set(n);
     try {
       localStorage.setItem(WRAP_PREF_KEY, String(n));
     } catch {
       /* per-browser convenience only */
+    }
+    // Dragged trees re-wrap under their (still placed) top device.
+    if (this.mode() === 'hierarchy' && Object.keys(before).length) {
+      this.applyReflow(before, reflowPositions(this.baseLayout(), before));
     }
   }
 
@@ -754,7 +759,7 @@ export class NetworkPageComponent implements OnInit {
   private setParentWrap(parent: string, n: number): void {
     if (n !== 0 && !WRAP_CHOICES.includes(n)) return;
     const before = this.overrides();
-    const parentAt = this.layout().nodes.find((x) => x.node.id === parent);
+    const shown = this.layout().nodes.find((x) => x.node.id === parent);
     this.parentWraps.update((w) => {
       const next = { ...w };
       if (n === 0) delete next[parent];
@@ -766,28 +771,17 @@ export class NetworkPageComponent implements OnInit {
       }
       return next;
     });
-    const base = this.baseLayout(); // recomputed with the new wrap
-    const laidParent = base.nodes.find((x) => x.node.id === parent);
-    if (!parentAt || !laidParent) return;
-    const dx = parentAt.x - laidParent.x;
-    const dy = parentAt.y - laidParent.y;
-    const below = downstreamOf(
-      base.edges.map((e) => ({ fromId: e.from.node.id, toId: e.to.node.id })),
-      parent
-    );
-    const pos = new Map(base.nodes.map((x) => [x.node.id, x]));
-    const next: NetworkPositions = { ...before };
-    if (dx || dy) next[parent] = { x: Math.round(parentAt.x), y: Math.round(parentAt.y) };
-    for (const id of below) {
-      const p = pos.get(id);
-      if (!p) continue;
-      if (dx || dy) next[id] = { x: Math.round(p.x + dx), y: Math.round(p.y + dy) };
-      else delete next[id];
-    }
+    // Pin the parent where it's shown, then re-flow its tree under it.
+    const current = shown ? { ...before, [parent]: { x: Math.round(shown.x), y: Math.round(shown.y) } } : before;
+    this.applyReflow(before, reflowPositions(this.baseLayout(), current, parent));
+  }
+
+  private applyReflow(before: NetworkPositions, next: NetworkPositions): void {
     this.pushUndo(before);
     this.overrides.set(next);
-    this.scheduleSave();
+    this.scheduleSave(true);
   }
+
 
   protected setMode(mode: NetworkLayoutMode): void {
     if (mode === this.mode()) return;
