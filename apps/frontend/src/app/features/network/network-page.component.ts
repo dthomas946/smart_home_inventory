@@ -39,6 +39,15 @@ import { branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOut
 
 const MODE_PREF_KEY = 'shi.network.mode';
 const WRAP_PREF_KEY = 'shi.network.wrap';
+const PARENT_WRAP_KEY = 'shi.network.wrapByParent';
+function readParentWraps(): Record<string, number> {
+  try {
+    const v = JSON.parse(localStorage.getItem(PARENT_WRAP_KEY) ?? '{}');
+    return v && typeof v === 'object' ? (v as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
 const WRAP_CHOICES = [2, 3, 4, 5, 6];
 const SNAP_PREF_KEY = 'shi.network.snap';
 const MOVE_PREF_KEY = 'shi.network.move';
@@ -106,13 +115,27 @@ function readModePref(): NetworkLayoutMode {
           </button>
         </div>
         @if (mode() === 'hierarchy') {
-          <label class="wrap-pick" title="Most devices side by side before wrapping to a new row">
+          <label
+            class="wrap-pick"
+            [title]="selectedName()
+              ? 'Devices side by side under ' + selectedName() + ' and everything below it'
+              : 'Default devices side by side before wrapping. Drag a parent device to set its own.' + (hasOverrides() ? ' Dragged devices keep their spots — Reset to re-wrap them.' : '')"
+          >
             Wrap at
-            <select class="text" [value]="wrap()" (change)="setWrap(+$any($event.target).value)">
+            <select class="text" [value]="selectedWrapValue()" (change)="setWrap(+$any($event.target).value)">
+              @if (selectedName()) {
+                <option [value]="0">Default ({{ wrap() }})</option>
+              }
               @for (n of wrapChoices; track n) {
                 <option [value]="n">{{ n }}</option>
               }
             </select>
+            @if (selectedName(); as name) {
+              <span class="sel-name">for {{ name }}</span>
+              <button type="button" class="btn secondary sel-clear" title="Back to the default for the whole map" (click)="selectedParent.set(null)">✕</button>
+            } @else {
+              <span class="muted sel-name">all</span>
+            }
           </label>
         }
         <div class="seg" role="group" aria-label="What dragging moves" title="Hold Shift while dragging to use the other one">
@@ -267,6 +290,9 @@ function readModePref(): NetworkLayoutMode {
                   (pointerenter)="hovered.set(n.node.id)"
                   (pointerleave)="hovered.set(null)"
                 >
+                  @if (selectedParent() === n.node.id && mode() === 'hierarchy') {
+                    <circle class="sel-ring" [attr.r]="isBranch(n) ? branchWidth(n) / 2 + 6 : radius(n) + 7" />
+                  }
                   @if (isBranch(n)) {
                     <!-- per-type branch: pill with the connection type's name -->
                     <rect
@@ -369,6 +395,15 @@ function readModePref(): NetworkLayoutMode {
       pointer-events: none;
     }
     .wrap-pick select { width: auto; padding: 4px 6px; }
+    .sel-name { max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sel-clear { padding: 2px 7px; }
+    .sel-ring {
+      fill: none;
+      stroke: var(--primary-color);
+      stroke-width: 2;
+      stroke-dasharray: 4 3;
+      pointer-events: none;
+    }
     .header {
       display: flex;
       justify-content: space-between;
@@ -544,6 +579,18 @@ export class NetworkPageComponent implements OnInit {
 
   protected readonly mode = signal<NetworkLayoutMode>(readModePref());
   protected readonly wrap = signal(readWrapPref());
+  /** Wrap widths set for particular parents (and their trees). */
+  protected readonly parentWraps = signal<Record<string, number>>(readParentWraps());
+  /** Last parent device dragged; the Wrap picker applies to its tree. */
+  protected readonly selectedParent = signal<string | null>(null);
+  protected readonly selectedName = computed(() => {
+    const id = this.selectedParent();
+    return id ? this.baseLayout().nodes.find((n) => n.node.id === id)?.node.name ?? null : null;
+  });
+  protected readonly selectedWrapValue = computed(() => {
+    const id = this.selectedParent();
+    return id ? this.parentWraps()[id] ?? 0 : this.wrap();
+  });
   protected readonly wrapChoices = WRAP_CHOICES;
   /** Hand-placed positions for the current mode (deviceId → x,y). */
   protected readonly overrides = signal<NetworkPositions>({});
@@ -570,7 +617,7 @@ export class NetworkPageComponent implements OnInit {
     const types = this.visibleTypes();
     const branched = withTypeBranches(g, types);
     return this.mode() === 'hierarchy'
-      ? layoutHierarchy(branched, types, this.wrap())
+      ? layoutHierarchy(branched, types, this.wrap(), new Map(Object.entries(this.parentWraps())))
       : layoutGraph(branched, types);
   });
 
@@ -685,6 +732,11 @@ export class NetworkPageComponent implements OnInit {
   }
 
   protected setWrap(n: number): void {
+    const parent = this.selectedParent();
+    if (parent) {
+      this.setParentWrap(parent, n);
+      return;
+    }
     if (!WRAP_CHOICES.includes(n)) return;
     this.wrap.set(n);
     try {
@@ -692,6 +744,49 @@ export class NetworkPageComponent implements OnInit {
     } catch {
       /* per-browser convenience only */
     }
+  }
+
+  /**
+   * Re-wrap one parent's tree (0 = back to the default). The parent stays
+   * where it is; the devices below it are re-flowed under it, even if they
+   * had been dragged (undo restores them).
+   */
+  private setParentWrap(parent: string, n: number): void {
+    if (n !== 0 && !WRAP_CHOICES.includes(n)) return;
+    const before = this.overrides();
+    const parentAt = this.layout().nodes.find((x) => x.node.id === parent);
+    this.parentWraps.update((w) => {
+      const next = { ...w };
+      if (n === 0) delete next[parent];
+      else next[parent] = n;
+      try {
+        localStorage.setItem(PARENT_WRAP_KEY, JSON.stringify(next));
+      } catch {
+        /* per-browser convenience only */
+      }
+      return next;
+    });
+    const base = this.baseLayout(); // recomputed with the new wrap
+    const laidParent = base.nodes.find((x) => x.node.id === parent);
+    if (!parentAt || !laidParent) return;
+    const dx = parentAt.x - laidParent.x;
+    const dy = parentAt.y - laidParent.y;
+    const below = downstreamOf(
+      base.edges.map((e) => ({ fromId: e.from.node.id, toId: e.to.node.id })),
+      parent
+    );
+    const pos = new Map(base.nodes.map((x) => [x.node.id, x]));
+    const next: NetworkPositions = { ...before };
+    if (dx || dy) next[parent] = { x: Math.round(parentAt.x), y: Math.round(parentAt.y) };
+    for (const id of below) {
+      const p = pos.get(id);
+      if (!p) continue;
+      if (dx || dy) next[id] = { x: Math.round(p.x + dx), y: Math.round(p.y + dy) };
+      else delete next[id];
+    }
+    this.pushUndo(before);
+    this.overrides.set(next);
+    this.scheduleSave();
   }
 
   protected setMode(mode: NetworkLayoutMode): void {
@@ -941,11 +1036,15 @@ export class NetworkPageComponent implements OnInit {
   protected onPointerUp(ev: PointerEvent): void {
     if (this.dragId) {
       const moved = this.dragged;
+      const id = this.dragId;
       this.dragId = null;
       this.dragGroup.clear();
       if (moved) {
         this.pushUndo(this.dragBefore);
         this.scheduleSave();
+        // A dragged parent becomes the target of the Wrap picker.
+        const node = this.baseLayout().nodes.find((x) => x.node.id === id);
+        if (node && node.childCount > 0) this.selectedParent.set(node.node.id);
       }
       setTimeout(() => (this.dragged = false), 0);
       return;

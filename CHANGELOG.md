@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3
+
+- **Wrap per parent device**: the last parent device you drag is selected (dashed ring), and **Wrap at** then sets the width for that device's whole tree, re-flowing it under the device where you placed it. **Default** removes the per-device setting, and **✕** returns the picker to the map-wide default. Per-device widths are remembered per browser, and Undo restores the previous layout.
+
 ## 0.8.2
 
 - Network map **Move: Device / Device & tree** toggle. Dragging moves just the device by default; "Device & tree" also moves everything below it. Holding Shift while dragging swaps for that one drag. The choice is remembered per browser.

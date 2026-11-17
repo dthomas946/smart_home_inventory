@@ -219,9 +219,13 @@ export const H_WRAP = 3;
 export function layoutHierarchy(
   graph: NetworkGraphDto,
   visibleTypes: Set<string>,
-  wrap: number = H_WRAP
+  wrap: number = H_WRAP,
+  /** Per-parent wrap widths; a parent's setting applies to its whole tree
+   *  unless a device further down has its own. */
+  wrapByParent: ReadonlyMap<string, number> = new Map()
 ): Layout {
-  const W = Math.max(1, Math.round(wrap));
+  const clampW = (n: number) => Math.max(1, Math.round(n));
+  const W = clampW(wrap);
   const { nodesById, edges, children, roots, linked } = buildForest(graph, visibleTypes);
 
   interface Box {
@@ -237,10 +241,10 @@ export function layoutHierarchy(
   const rowsOf = new Map<string, Row[]>();
   const seen = new Set<string>();
 
-  const chunk = (ids: string[]): Row[] => {
+  const chunk = (ids: string[], per: number): Row[] => {
     const rows: Row[] = [];
-    for (let i = 0; i < ids.length; i += W) {
-      const slice = ids.slice(i, i + W);
+    for (let i = 0; i < ids.length; i += per) {
+      const slice = ids.slice(i, i + per);
       rows.push({
         ids: slice,
         w: slice.reduce((sum, id) => sum + (box.get(id)?.w ?? H_COL), 0),
@@ -250,17 +254,19 @@ export function layoutHierarchy(
     return rows;
   };
 
-  const measure = (id: string): Box => {
+  const measure = (id: string, inherited: number): Box => {
     seen.add(id);
+    const own = wrapByParent.get(id);
+    const per = own ? clampW(own) : inherited;
     const kids = (children.get(id) ?? []).filter((k) => !seen.has(k));
     kids.forEach((k) => seen.add(k)); // claim before recursing: shared/cyclic safe
-    for (const k of kids) measure(k);
+    for (const k of kids) measure(k, per);
     if (kids.length === 0) {
       const b = { w: H_COL, h: 0 };
       box.set(id, b);
       return b;
     }
-    const rows = chunk(kids);
+    const rows = chunk(kids, per);
     rowsOf.set(id, rows);
     const w = Math.max(H_COL, ...rows.map((r) => r.w));
     // first row sits H_LEVEL below; each further row sits below the
@@ -306,7 +312,7 @@ export function layoutHierarchy(
   const treeRoots: string[] = [];
   for (const rootId of ordered) {
     if (seen.has(rootId)) continue;
-    measure(rootId);
+    measure(rootId, W);
     treeRoots.push(rootId);
   }
   let y = 40;

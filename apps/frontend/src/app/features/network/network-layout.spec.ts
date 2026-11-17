@@ -237,3 +237,19 @@ describe('withTypeBranches', () => {
     expect(y('pc')).toBeGreaterThan(y('branch:router:ethernet'));
   });
 });
+
+describe('per-parent wrap', () => {
+  it('applies a parent\'s wrap to its whole tree, leaving others on the default', () => {
+    const kidsA = Array.from({ length: 6 }, (_, i) => node(`a${i}`));
+    const kidsB = Array.from({ length: 6 }, (_, i) => node(`b${i}`));
+    const g: NetworkGraphDto = {
+      nodes: [node('A', true), node('B', true), ...kidsA, ...kidsB],
+      edges: [...kidsA.map((k) => edge('A', k.id)), ...kidsB.map((k) => edge('B', k.id))],
+      types: [],
+    };
+    const l = layoutHierarchy(g, new Set(['zigbee_network']), 3, new Map([['A', 6]]));
+    const rows = (prefix: string) => new Set(l.nodes.filter((n) => n.node.id.startsWith(prefix) && n.node.id.length > 1).map((n) => n.y)).size;
+    expect(rows('a')).toBe(1); // 6 wide
+    expect(rows('b')).toBe(2); // default 3 wide
+  });
+});
