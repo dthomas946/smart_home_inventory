@@ -35,7 +35,7 @@ import {
 import { AreasApi, AutoLinkApi } from '../../core/api/api.services';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
+import { branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
 
 const MODE_PREF_KEY = 'shi.network.mode';
 const WRAP_PREF_KEY = 'shi.network.wrap';
@@ -174,7 +174,7 @@ function readModePref(): NetworkLayoutMode {
           non-smart / added by you
         </span>
         <span class="muted small legend-note">
-          {{ layout().nodes.length }} devices · {{ layout().edges.length }} links
+          {{ deviceCount() }} devices · {{ linkCount() }} links
           @if (layout().unlinked.length) {
             · <button class="linkish" (click)="showUnlinked.set(!showUnlinked())">
               {{ layout().unlinked.length }} unlinked
@@ -242,13 +242,27 @@ function readModePref(): NetworkLayoutMode {
                   [class.controller]="n.node.isController"
                   [class.hover]="hovered() === n.node.id"
                   [class.dragging]="dragId === n.node.id"
+                  [class.branch]="isBranch(n)"
                   [attr.transform]="'translate(' + n.x + ',' + n.y + ')'"
                   (pointerdown)="onNodeDown($event, n)"
                   (click)="open(n)"
                   (pointerenter)="hovered.set(n.node.id)"
                   (pointerleave)="hovered.set(null)"
                 >
-                  @if (n.node.source === 'manual') {
+                  @if (isBranch(n)) {
+                    <!-- per-type branch: pill with the connection type's name -->
+                    <rect
+                      [attr.x]="-branchWidth(n) / 2"
+                      y="-10"
+                      [attr.width]="branchWidth(n)"
+                      height="20"
+                      rx="10"
+                      class="branch-pill"
+                      [attr.stroke]="colorOf(branchKey(n))"
+                    />
+                    <text y="4" text-anchor="middle" class="branch-text">{{ n.node.name }}</text>
+                    <title>{{ n.node.name }} branch — drag to move it with its devices</title>
+                  } @else if (n.node.source === 'manual') {
                     <!-- non-smart / added by you: square -->
                     <rect
                       [attr.x]="-radius(n)"
@@ -261,9 +275,10 @@ function readModePref(): NetworkLayoutMode {
                   } @else {
                     <circle [attr.r]="radius(n)" [attr.fill]="fillOf(n)" />
                   }
-                  @if (n.node.isController) {
+                  @if (n.node.isController && !isBranch(n)) {
                     <circle [attr.r]="radius(n) + 4" fill="none" [attr.stroke]="fillOf(n)" stroke-opacity="0.35" stroke-width="3" />
                   }
+                  @if (!isBranch(n)) {
                   <text
                     [attr.y]="radius(n) + 13"
                     text-anchor="middle"
@@ -272,6 +287,7 @@ function readModePref(): NetworkLayoutMode {
                     {{ shortName(n.node.name) }}
                   </text>
                   <title>{{ n.node.name }}{{ n.node.areaName ? ' · ' + n.node.areaName : '' }}{{ n.node.model ? ' · ' + (n.node.brand ?? n.node.manufacturer ?? '') + ' ' + n.node.model : '' }}</title>
+                  }
                 </g>
               }
             </g>
@@ -309,6 +325,17 @@ function readModePref(): NetworkLayoutMode {
     .wrap-pick { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
     .btn.on { background: color-mix(in srgb, var(--primary-color) 22%, transparent); }
     .undo-count { font-size: 0.75em; margin-left: 2px; }
+    .branch-pill {
+      fill: var(--card-background-color, #1c1c1c);
+      stroke-width: 2;
+    }
+    .branch-text {
+      font-size: 10px;
+      font-weight: 600;
+      fill: var(--primary-text-color, #e1e1e1);
+      pointer-events: none;
+    }
+    .node.branch { cursor: grab; }
     .grid-dot { fill: var(--secondary-text-color, #9e9e9e); opacity: 0.22; }
     .edge-labels text {
       font-size: 10px;
@@ -506,9 +533,11 @@ export class NetworkPageComponent implements OnInit {
   private readonly baseLayout = computed(() => {
     const g = this.graph();
     if (!g) return { nodes: [], edges: [], width: 1, height: 1, unlinked: [] };
+    const types = this.visibleTypes();
+    const branched = withTypeBranches(g, types);
     return this.mode() === 'hierarchy'
-      ? layoutHierarchy(g, this.visibleTypes(), this.wrap())
-      : layoutGraph(g, this.visibleTypes());
+      ? layoutHierarchy(branched, types, this.wrap())
+      : layoutGraph(branched, types);
   });
 
   /** Final positions: overrides win. Edges re-point at the moved nodes. */
@@ -760,8 +789,20 @@ export class NetworkPageComponent implements OnInit {
     return name.length > 22 ? name.slice(0, 20) + '…' : name;
   }
 
+  protected isBranch(n: LaidOutNode): boolean {
+    return isBranchId(n.node.id);
+  }
+  protected branchKey(n: LaidOutNode): string {
+    return branchType(n.node.id) ?? '';
+  }
+  protected branchWidth(n: LaidOutNode): number {
+    return Math.max(48, n.node.name.length * 6.2 + 18);
+  }
+  protected readonly deviceCount = computed(() => this.layout().nodes.filter((n) => !isBranchId(n.node.id)).length);
+  protected readonly linkCount = computed(() => this.layout().edges.filter((e) => !isBranchId(e.to.node.id)).length);
+
   protected open(n: LaidOutNode): void {
-    if (this.dragged) return;
+    if (this.dragged || isBranchId(n.node.id)) return;
     this.router.navigate(['/devices', n.node.id]);
   }
 

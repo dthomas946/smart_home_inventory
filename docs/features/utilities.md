@@ -33,3 +33,7 @@ handy for the day it's needed.
   cycle-safe). Snap rounds each moved node to a 20-unit grid.
 - Undo keeps the positions from before each of the last 5 moves (and the last
   Reset) in memory. It is cleared on mode/map switch and when leaving the page.
+- A device whose outgoing links use more than one type gets a virtual
+  branch node per type (`withTypeBranches`, id `branch:<deviceId>:<type>`).
+  The trunk runs parent → branch, then each original edge runs from the branch.
+  Branch nodes save positions like devices and aren't clickable.

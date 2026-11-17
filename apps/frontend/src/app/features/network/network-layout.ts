@@ -414,3 +414,80 @@ export function downstreamOf(edges: Array<{ fromId: string; toId: string }>, id:
   }
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// Per-type branches
+// ---------------------------------------------------------------------------
+
+export const BRANCH_PREFIX = 'branch:';
+
+export function isBranchId(id: string): boolean {
+  return id.startsWith(BRANCH_PREFIX);
+}
+
+/** The connection type a branch node stands for, or null for a real device. */
+export function branchType(id: string): string | null {
+  if (!isBranchId(id)) return null;
+  return id.slice(id.lastIndexOf(':') + 1);
+}
+
+/**
+ * When a device feeds others over more than one connection type (a router
+ * with Ethernet, Wi-Fi and USB clients), give each type its own branch:
+ * device → [Ethernet] → clients, device → [Wi-Fi] → clients, instead of
+ * running every type down the same channel. Branches are virtual nodes
+ * (id `branch:<deviceId>:<type>`), so their dragged positions save like
+ * any device's. Devices with a single outgoing type are left as they are.
+ */
+export function withTypeBranches(graph: NetworkGraphDto, visibleTypes: Set<string>): NetworkGraphDto {
+  const ids = new Set(graph.nodes.map((n) => n.id));
+  const visible = graph.edges.filter(
+    (e) => visibleTypes.has(e.type) && ids.has(e.fromDeviceId) && ids.has(e.toDeviceId) && e.fromDeviceId !== e.toDeviceId
+  );
+  const typesFrom = new Map<string, Set<string>>();
+  for (const e of visible) {
+    const set = typesFrom.get(e.fromDeviceId) ?? new Set<string>();
+    set.add(e.type);
+    typesFrom.set(e.fromDeviceId, set);
+  }
+  const split = new Set([...typesFrom].filter(([, t]) => t.size > 1).map(([id]) => id));
+  if (split.size === 0) return { ...graph, edges: visible };
+
+  const labelOf = new Map(graph.types.map((t) => [t.key, t.label]));
+  const parentNode = new Map(graph.nodes.map((n) => [n.id, n]));
+  const branchNodes: NetworkGraphNodeDto[] = [];
+  const edges: NetworkGraphEdgeDto[] = [];
+  const made = new Set<string>();
+  for (const e of visible) {
+    if (!split.has(e.fromDeviceId)) {
+      edges.push(e);
+      continue;
+    }
+    const bid = `${BRANCH_PREFIX}${e.fromDeviceId}:${e.type}`;
+    if (!made.has(bid)) {
+      made.add(bid);
+      const parent = parentNode.get(e.fromDeviceId);
+      branchNodes.push({
+        id: bid,
+        name: labelOf.get(e.type) ?? e.type,
+        category: null,
+        areaName: parent?.areaName ?? null,
+        brand: null,
+        manufacturer: null,
+        model: null,
+        source: 'manual',
+        isController: true,
+      });
+      edges.push({
+        id: `${bid}:trunk`,
+        type: e.type,
+        fromDeviceId: e.fromDeviceId,
+        toDeviceId: bid,
+        auto: e.auto,
+        label: null,
+      });
+    }
+    edges.push({ ...e, fromDeviceId: bid });
+  }
+  return { ...graph, nodes: [...graph.nodes, ...branchNodes], edges };
+}

@@ -1,5 +1,5 @@
 import { NetworkGraphDto } from '@smart-home-inventory/shared';
-import { downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
+import { branchType, withTypeBranches, downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
 
 const node = (id: string, isController = false): NetworkGraphDto['nodes'][number] => ({
   id,
@@ -199,5 +199,41 @@ describe('snapToGrid', () => {
     expect(snapToGrid(29)).toBe(20);
     expect(snapToGrid(31)).toBe(40);
     expect(snapToGrid(-11)).toBe(-20);
+  });
+});
+
+describe('withTypeBranches', () => {
+  const g: NetworkGraphDto = {
+    nodes: [node('router', true), node('pc'), node('tv'), node('phone'), node('printer'), node('hub', true), node('lamp')],
+    edges: [
+      edge('router', 'pc', 'ethernet'),
+      edge('router', 'tv', 'ethernet'),
+      edge('router', 'phone', 'wifi'),
+      edge('router', 'printer', 'usb'),
+      edge('hub', 'lamp', 'zigbee_network'),
+    ],
+    types: [],
+  };
+  const all = new Set(['ethernet', 'wifi', 'usb', 'zigbee_network']);
+
+  it('gives each connection type its own branch under a multi-type device', () => {
+    const out = withTypeBranches(g, all);
+    const branches = out.nodes.filter((n) => branchType(n.id)).map((n) => branchType(n.id)).sort();
+    expect(branches).toEqual(['ethernet', 'usb', 'wifi']);
+    expect(out.edges.find((e) => e.toDeviceId === 'pc')?.fromDeviceId).toBe('branch:router:ethernet');
+    expect(out.edges.find((e) => e.toDeviceId === 'branch:router:wifi')?.fromDeviceId).toBe('router');
+  });
+
+  it('leaves single-type devices alone and respects hidden types', () => {
+    const out = withTypeBranches(g, new Set(['ethernet', 'zigbee_network']));
+    expect(out.nodes.some((n) => branchType(n.id))).toBe(false);
+    expect(out.edges.find((e) => e.toDeviceId === 'lamp')?.fromDeviceId).toBe('hub');
+  });
+
+  it('lays out the branches between the device and its clients', () => {
+    const l = layoutHierarchy(withTypeBranches(g, all), all);
+    const y = (id: string) => l.nodes.find((n) => n.node.id === id)?.y ?? NaN;
+    expect(y('branch:router:ethernet')).toBeGreaterThan(y('router'));
+    expect(y('pc')).toBeGreaterThan(y('branch:router:ethernet'));
   });
 });
