@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2
+
+- Wi-Fi band and signal now also appear on devices whose router-integration duplicate you excluded. They're matched to the device you kept by MAC address.
+
 ## 0.9.1
 
 - Fix: reading Zigbee routes failed because ZHA reports a device's own network address as a number.

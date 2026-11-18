@@ -183,6 +183,27 @@ export class MeshRoutesService {
       select: { id: true, haDeviceId: true },
     });
     const inv = new Map(rows.map((r) => [r.haDeviceId as string, r.id]));
+    // The router integration keeps its own copy of each client device; when
+    // that copy was excluded, find the device you kept by its MAC address.
+    const missingWifi = wifi.filter((w) => !inv.has(w.haId));
+    if (missingWifi.length) {
+      const macOf = new Map(
+        devices.map((d) => [
+          d.id,
+          (d.connections ?? []).filter(([k]) => k === 'mac').map(([, v]) => v.toLowerCase().replace(/-/g, ':')),
+        ])
+      );
+      const withMacs = await this.prisma.device.findMany({
+        where: { haMacs: { not: null } },
+        select: { id: true, haMacs: true },
+      });
+      const byMac = new Map<string, string>();
+      for (const r of withMacs) for (const m of (r.haMacs ?? '').split(',')) if (m) byMac.set(m, r.id);
+      for (const w of missingWifi) {
+        const hit = (macOf.get(w.haId) ?? []).map((m) => byMac.get(m)).find(Boolean);
+        if (hit) inv.set(w.haId, hit);
+      }
+    }
     const haName = new Map(devices.map((d) => [d.id, d.name_by_user ?? d.name ?? d.id]));
 
     const outHops: MeshHopDto[] = [];
