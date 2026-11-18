@@ -204,10 +204,13 @@ function readModePref(): NetworkLayoutMode {
 
     @if (graph(); as g) {
       <div class="chips legend">
+        <button class="chip" [class.active]="selectedTypes().size === 0" (click)="showAllTypes()">
+          All
+        </button>
         @for (t of usedTypes(); track t.key) {
           <button
             class="chip"
-            [class.active]="visibleTypes().has(t.key)"
+            [class.active]="selectedTypes().has(t.key)"
             (click)="toggleType(t.key)"
             [title]="t.label"
           >
@@ -681,7 +684,16 @@ export class NetworkPageComponent implements OnInit {
 
   protected readonly graph = signal<NetworkGraphDto | null>(null);
   protected readonly loaded = signal(false);
-  protected readonly visibleTypes = signal<Set<string>>(new Set());
+  /** Types switched on in the legend; empty = All (like the Connections filter). */
+  protected readonly selectedTypes = signal<Set<string>>(new Set());
+  /** Types actually drawn: the selection, or every type on the current map. */
+  protected readonly visibleTypes = computed(() => {
+    const g = this.graph();
+    if (!g) return new Set<string>();
+    const all = this.typesForMap(g);
+    const sel = [...this.selectedTypes()].filter((t) => all.has(t));
+    return sel.length ? new Set(sel) : all;
+  });
   protected readonly hovered = signal<string | null>(null);
   protected readonly showUnlinked = signal(false);
 
@@ -763,8 +775,7 @@ export class NetworkPageComponent implements OnInit {
     this.mapKind.set(m);
     this.undoStack.set([]);
     this.router.navigate([], { relativeTo: this.route, queryParams: { map: m }, replaceUrl: true });
-    const g = this.graph();
-    if (g) this.visibleTypes.set(this.typesForMap(g));
+    this.selectedTypes.set(new Set());
     this.loadPositions();
   }
 
@@ -931,9 +942,6 @@ export class NetworkPageComponent implements OnInit {
       next: (g) => {
         this.typeMap = new Map(g.types.map((t) => [t.key, t]));
         this.graph.set(g);
-        if (this.visibleTypes().size === 0) {
-          this.visibleTypes.set(this.typesForMap(g));
-        }
         this.loaded.set(true);
         queueMicrotask(() => this.fit());
       },
@@ -961,8 +969,14 @@ export class NetworkPageComponent implements OnInit {
     this.cam.set({ x: minX - (vw - w) / 2, y: minY - (vh - h) / 2, w: vw, h: vh });
   }
 
+  protected showAllTypes(): void {
+    this.selectedTypes.set(new Set());
+  }
+
+  /** Tap a type to show only it (and any others you've switched on); tap
+   *  again to switch it off; none on = All. */
   protected toggleType(key: string): void {
-    this.visibleTypes.update((set) => {
+    this.selectedTypes.update((set) => {
       const next = new Set(set);
       if (next.has(key)) next.delete(key);
       else next.add(key);

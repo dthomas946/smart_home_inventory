@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.3
+
+- Network map type buttons now work like the Devices and Connections filters. **All** is on by default. Tapping a type shows only that type (tap more to add them, tap again to remove). With none selected, you're back to All. Changing the Show map resets to All.
+
 ## 0.9.2
 
 - Wi-Fi band and signal now also appear on devices whose router-integration duplicate you excluded. They're matched to the device you kept by MAC address.
