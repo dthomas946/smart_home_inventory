@@ -28,10 +28,16 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-function qualityFromLqi(lqi: number | null, max: number): MeshHop['quality'] {
+/** Zigbee LQI 0–255: ≥150 good, 80–149 fair, <80 weak (ZHA's usual reading). */
+function zigbeeQuality(lqi: number | null): MeshHop['quality'] {
   if (lqi === null) return null;
-  const f = lqi / max;
-  return f >= 0.66 ? 'good' : f >= 0.4 ? 'fair' : 'poor';
+  return lqi >= 150 ? 'good' : lqi >= 80 ? 'fair' : 'poor';
+}
+
+/** Thread link quality 0–3. */
+function threadQuality(lqi: number | null): MeshHop['quality'] {
+  if (lqi === null) return null;
+  return lqi >= 3 ? 'good' : lqi >= 2 ? 'fair' : 'poor';
 }
 
 function qualityFromRssi(rssi: number | null): MeshHop['quality'] {
@@ -56,7 +62,7 @@ interface ZhaRoute {
 }
 export interface ZhaDevice {
   ieee: string;
-  nwk?: string;
+  nwk?: string | number;
   device_type?: string;
   device_reg_id?: string;
   lqi?: number | string | null;
@@ -65,7 +71,12 @@ export interface ZhaDevice {
   routes?: ZhaRoute[];
 }
 
-const normNwk = (v: string | undefined) => (v ? `0x${v.replace(/^0x/i, '').toUpperCase().padStart(4, '0')}` : '');
+/** ZHA gives a device's own nwk as a number and route/neighbour nwks as "0x1A2B". */
+const normNwk = (v: string | number | null | undefined): string => {
+  if (typeof v === 'number') return `0x${v.toString(16).toUpperCase().padStart(4, '0')}`;
+  if (typeof v === 'string' && v) return `0x${v.replace(/^0x/i, '').toUpperCase().padStart(4, '0')}`;
+  return '';
+};
 
 export function zigbeeHops(devices: ZhaDevice[]): MeshHop[] {
   const byNwk = new Map(devices.map((d) => [normNwk(d.nwk), d]));
@@ -108,7 +119,7 @@ export function zigbeeHops(devices: ZhaDevice[]): MeshHop[] {
       parent: parent?.device_reg_id ?? null,
       lqi,
       rssi: num(d.rssi),
-      quality: qualityFromLqi(lqi, 255),
+      quality: zigbeeQuality(lqi),
     });
   }
   return hops;
@@ -233,7 +244,7 @@ export function threadHops(
     const { device, isBr, ext } = lookup(entry[NB_EXT]);
     const lqi = num(entry[NB_LQI]);
     const rssi = num(entry[NB_AVG_RSSI]);
-    const base = { protocol: 'thread' as const, child, lqi, rssi, quality: qualityFromLqi(lqi, 3) ?? qualityFromRssi(rssi) };
+    const base = { protocol: 'thread' as const, child, lqi, rssi, quality: threadQuality(lqi) ?? qualityFromRssi(rssi) };
     if (isBr) hops.push({ ...base, parent: null });
     else if (device) hops.push({ ...base, parent: device });
     else {

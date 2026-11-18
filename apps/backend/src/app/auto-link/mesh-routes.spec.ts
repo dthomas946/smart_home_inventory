@@ -21,7 +21,7 @@ describe('zigbeeHops', () => {
     nwk: '0x6ADD',
     device_type: 'Router',
     device_reg_id: 'B',
-    neighbors: [{ ieee: 'aa:aa', lqi: '80' }],
+    neighbors: [{ ieee: 'aa:aa', lqi: '60' }],
     routes: [
       { dest_nwk: '0x0000', next_hop: '0x344F', route_status: 'Discovery_Underway' },
       { dest_nwk: '0x0000', next_hop: '0x18e2', route_status: 'Active' },
@@ -35,7 +35,12 @@ describe('zigbeeHops', () => {
     expect(by('A')?.parent).toBeNull();
     expect(by('A')?.lqi).toBe(240);
     expect(by('B')?.parent).toBe('A');
-    expect(by('B')?.quality).toBe('poor'); // LQI 80
+    expect(by('B')?.quality).toBe('poor'); // LQI 60
+  });
+
+  it('accepts numeric nwk addresses (as ZHA returns for the device itself)', () => {
+    const numeric = [{ ...coord, nwk: 0 }, { ...a, nwk: 0x18e2 }, { ...b, nwk: 0x6add }] as ZhaDevice[];
+    expect(zigbeeHops(numeric).find((h) => h.child === 'B')?.parent).toBe('A');
   });
 
   it('places end devices under the router that lists them as a child', () => {

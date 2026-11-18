@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+- Fix: reading Zigbee routes failed because ZHA reports a device's own network address as a number.
+- Zigbee link quality now follows ZHA's usual reading: LQI 150+ good, 80–149 fair, under 80 weak. Thread uses its 0–3 scale.
+
 ## 0.9.0
 
 - **Network map: Routes — Logical / Actual.** Actual draws the path each mesh device really uses instead of a straight line to its controller:
