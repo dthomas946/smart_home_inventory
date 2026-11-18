@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.5
+
+- Network map link quality:
+  - **Weak links** always show their reading on the line.
+  - **Good and fair links** show theirs only when you click the line, together with the details panel. Hover no longer pops anything up.
+- **The map remembers where you were.** Opening a device from the map and coming back (via Back, Save, or the Network tab) restores the same Show map, type filter, routes view, zoom/position, selected link and selected parent. The device page's back link reads "Network map".
+
 ## 0.9.4
 
 - Fix: clicking a device on the Network map with a mouse didn't open it. The device now opens when you release the button without dragging, on every kind of screen.

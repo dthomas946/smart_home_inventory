@@ -5,6 +5,7 @@ import {
   ElementRef,
   HostListener,
   inject,
+  OnDestroy,
   OnInit,
   signal,
   viewChild,
@@ -35,6 +36,8 @@ import {
   mdiUndo,
 } from '@mdi/js';
 import { AreasApi, AutoLinkApi } from '../../core/api/api.services';
+import { ReturnStore } from '../../core/navigation/return.store';
+import { NetworkViewStore } from './network-view.store';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { withActualRoutes, reflowPositions, branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
@@ -325,15 +328,13 @@ function readModePref(): NetworkLayoutMode {
                   stroke="transparent"
                   stroke-width="12"
                   pointer-events="stroke"
-                  (pointerenter)="$event.pointerType === 'mouse' && hoveredEdge.set(e.edge.id)"
-                  (pointerleave)="$event.pointerType === 'mouse' && hoveredEdge.set(null)"
                   (click)="tapEdge(e.edge.id)"
                 ></path>
               }
             </g>
             <g class="edge-labels">
               @for (e of layout().edges; track e.edge.id) {
-                @if (edgeCaption(e.edge); as cap) {
+                @if (lineLabel(e.edge); as cap) {
                   <text [attr.x]="labelPos(e.from, e.to).x" [attr.y]="labelPos(e.from, e.to).y" [attr.text-anchor]="mode() === 'radial' ? 'middle' : 'start'">
                     {{ cap }}
                   </text>
@@ -625,11 +626,15 @@ function readModePref(): NetworkLayoutMode {
     }
   `,
 })
-export class NetworkPageComponent implements OnInit {
+export class NetworkPageComponent implements OnInit, OnDestroy {
   private readonly api = inject(AutoLinkApi);
   private readonly areasApi = inject(AreasApi);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly viewStore = inject(NetworkViewStore);
+  private readonly returnStore = inject(ReturnStore);
+  /** Set when the view was restored, so loading doesn't re-fit the camera. */
+  private keepCam = false;
   private readonly canvas = viewChild<ElementRef<HTMLDivElement>>('canvas');
   private readonly svgRef = viewChild<ElementRef<SVGSVGElement>>('svg');
 
@@ -691,6 +696,7 @@ export class NetworkPageComponent implements OnInit {
   }
 
   protected setRoutes(r: RoutesMode): void {
+    this.keepCam = false;
     if (r === this.routes()) return;
     this.routes.set(r);
     try {
@@ -823,12 +829,53 @@ export class NetworkPageComponent implements OnInit {
 
   ngOnInit(): void {
     const m = this.route.snapshot.queryParamMap.get('map');
-    this.mapKind.set(isUtilityKind(m) ? m : null);
+    const saved = this.viewStore.restore();
+    if (isUtilityKind(m)) this.mapKind.set(m);
+    else if (!this.route.snapshot.queryParamMap.has('map') && saved?.mapKind) {
+      // Back from a device (or the nav tab): return to the map you left.
+      this.mapKind.set(saved.mapKind);
+      this.router.navigate([], { relativeTo: this.route, queryParams: { map: saved.mapKind }, replaceUrl: true });
+    }
+    if (saved && saved.key === this.layoutKey()) {
+      this.selectedTypes.set(new Set(saved.selectedTypes));
+      this.hoveredEdge.set(saved.selectedEdge);
+      this.selectedParent.set(saved.selectedParent);
+      this.cam.set(saved.cam);
+      this.keepCam = true;
+    }
     this.areasApi.list().subscribe((areas: AreaDto[]) => {
       this.areaNames = new Map(areas.map((a) => [a.id, a.name]));
     });
     this.load();
     this.loadPositions();
+  }
+
+  ngOnDestroy(): void {
+    this.saveView();
+  }
+
+  private saveView(): void {
+    this.viewStore.save({
+      key: this.layoutKey(),
+      mapKind: this.mapKind(),
+      selectedTypes: [...this.selectedTypes()],
+      cam: this.cam(),
+      selectedEdge: this.hoveredEdge(),
+      selectedParent: this.selectedParent(),
+    });
+  }
+
+  /** Fit to screen unless we're returning to a view that was left zoomed. */
+  private autoFit(): void {
+    if (!this.keepCam) this.fit();
+  }
+
+  /** Text drawn on a link: weak links always; others only once clicked. */
+  protected lineLabel(edge: NetworkGraphDto['edges'][number]): string {
+    const cap = this.edgeCaption(edge);
+    if (cap) return cap;
+    if (this.hoveredEdge() === edge.id && edge.signal) return edge.signal;
+    return '';
   }
 
   /** Saved positions are kept per layout mode and per utility map. */
@@ -847,6 +894,7 @@ export class NetworkPageComponent implements OnInit {
   }
 
   protected setMap(value: string): void {
+    this.keepCam = false;
     const m = isUtilityKind(value) ? value : null;
     if (m === this.mapKind()) return;
     this.mapKind.set(m);
@@ -958,6 +1006,7 @@ export class NetworkPageComponent implements OnInit {
 
 
   protected setMode(mode: NetworkLayoutMode): void {
+    this.keepCam = false;
     if (mode === this.mode()) return;
     this.mode.set(mode);
     this.undoStack.set([]);
@@ -975,13 +1024,14 @@ export class NetworkPageComponent implements OnInit {
       next: (l) => {
         if (this.layoutKey() !== key) return;
         this.overrides.set(l.positions);
-        queueMicrotask(() => this.fit());
+        queueMicrotask(() => this.autoFit());
       },
       error: () => this.overrides.set({}),
     });
   }
 
   protected resetPositions(): void {
+    this.keepCam = false;
     const key = this.layoutKey();
     this.pushUndo(this.overrides());
     this.api.resetLayout(key).subscribe(() => {
@@ -1020,7 +1070,7 @@ export class NetworkPageComponent implements OnInit {
         this.typeMap = new Map(g.types.map((t) => [t.key, t]));
         this.graph.set(g);
         this.loaded.set(true);
-        queueMicrotask(() => this.fit());
+        queueMicrotask(() => this.autoFit());
       },
       error: () => this.loaded.set(true),
     });
@@ -1217,7 +1267,11 @@ export class NetworkPageComponent implements OnInit {
         // `click`: with the pointer captured for dragging, desktop browsers
         // send the click to the map, not the device.
         const node = this.layout().nodes.find((x) => x.node.id === id);
-        if (node && !isBranchId(node.node.id)) this.router.navigate(['/devices', node.node.id]);
+        if (node && !isBranchId(node.node.id)) {
+          this.saveView();
+          this.returnStore.remember(node.node.id, this.router.url, 'Network map');
+          this.router.navigate(['/devices', node.node.id]);
+        }
       }
       setTimeout(() => (this.dragged = false), 0);
       return;
