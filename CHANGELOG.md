@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.4
+
+- Fix: clicking a device on the Network map with a mouse didn't open it. The device now opens when you release the button without dragging, on every kind of screen.
+- **Link details panel.** Hovering a link (or tapping it on a phone) shows from → to, the connection type, link quality and the readout (LQI, dBm, band, signal, circuit) in a panel at the bottom left. Each link now has a wider invisible hover area, so thin and dashed links are easy to hit. Tapping empty map clears the panel.
+
 ## 0.9.3
 
 - Network map type buttons now work like the Devices and Connections filters. **All** is on by default. Tapping a type shows only that type (tap more to add them, tap again to remove). With none selected, you're back to All. Changing the Show map resets to All.

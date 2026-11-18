@@ -225,6 +225,20 @@ function readModePref(): NetworkLayoutMode {
                 [attr.stroke-dasharray]="dash(t.dash)"
               />
             </svg>
+          @if (edgeInfo(); as info) {
+            <div class="edge-info" role="status">
+              <div class="ei-title">{{ info.from }} → {{ info.to }}</div>
+              <div class="ei-type">
+                <span class="ei-dot" [style.background]="info.color"></span>{{ info.type }}{{ info.auto ? ' · auto-linked' : '' }}
+              </div>
+              @if (info.quality) {
+                <div [class]="'ei-q ' + info.quality">{{ info.quality === 'poor' ? 'weak' : info.quality }} link</div>
+              }
+              @for (line of info.lines; track $index) {
+                <div class="ei-line">{{ line }}</div>
+              }
+            </div>
+          }
             {{ t.label }}
             <span class="muted">{{ countFor(t.key) }}</span>
           </button>
@@ -294,13 +308,27 @@ function readModePref(): NetworkLayoutMode {
                   [attr.stroke]="colorOf(e.edge.type)"
                   [attr.stroke-dasharray]="dash(dashOf(e.edge.type))"
                   [attr.stroke-opacity]="e.edge.quality === 'poor' ? 1 : e.edge.auto ? 0.55 : 0.9"
-                  [attr.stroke-width]="e.edge.quality === 'good' ? 2.6 : e.edge.quality === 'poor' ? 1.4 : 2"
+                  [attr.stroke-width]="(e.edge.quality === 'good' ? 2.6 : e.edge.quality === 'poor' ? 1.4 : 2) + (hoveredEdge() === e.edge.id ? 2 : 0)"
                   [class.weak-link]="e.edge.quality === 'poor'"
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                >
-                  <title>{{ e.from.node.name }} → {{ e.to.node.name }} · {{ labelOf(e.edge.type) }}{{ edgeCaption(e.edge) ? ' · ' + edgeCaption(e.edge) : '' }}{{ e.edge.signal ? ' · ' + e.edge.signal : '' }}{{ e.edge.quality ? ' · ' + e.edge.quality + ' link' : '' }}{{ e.edge.auto ? ' (auto)' : '' }}</title>
-                </path>
+                  pointer-events="none"
+                ></path>
+              }
+            </g>
+            <!-- wide invisible hover/tap targets so thin and dashed links are easy to hit -->
+            <g class="edge-hits">
+              @for (e of layout().edges; track e.edge.id) {
+                <path
+                  [attr.d]="edgePath(e.from, e.to)"
+                  fill="none"
+                  stroke="transparent"
+                  stroke-width="12"
+                  pointer-events="stroke"
+                  (pointerenter)="$event.pointerType === 'mouse' && hoveredEdge.set(e.edge.id)"
+                  (pointerleave)="$event.pointerType === 'mouse' && hoveredEdge.set(null)"
+                  (click)="tapEdge(e.edge.id)"
+                ></path>
               }
             </g>
             <g class="edge-labels">
@@ -322,7 +350,6 @@ function readModePref(): NetworkLayoutMode {
                   [class.branch]="isBranch(n)"
                   [attr.transform]="'translate(' + n.x + ',' + n.y + ')'"
                   (pointerdown)="onNodeDown($event, n)"
-                  (click)="open(n)"
                   (pointerenter)="hovered.set(n.node.id)"
                   (pointerleave)="hovered.set(null)"
                 >
@@ -525,7 +552,29 @@ function readModePref(): NetworkLayoutMode {
       cursor: pointer;
       font: inherit;
     }
+    .edge-info {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      max-width: min(340px, calc(100% - 24px));
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--card-background-color, #1c1c1c);
+      border: 1px solid var(--divider-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      font-size: 0.85em;
+      pointer-events: none;
+    }
+    .ei-title { font-weight: 600; margin-bottom: 2px; }
+    .ei-type { display: flex; align-items: center; gap: 6px; color: var(--secondary-text-color); }
+    .ei-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .ei-q { margin-top: 2px; font-weight: 600; text-transform: capitalize; }
+    .ei-q.good { color: var(--success-color, #43a047); }
+    .ei-q.fair { color: var(--warning-color, #fb8c00); }
+    .ei-q.poor { color: var(--error-color, #e53935); }
+    .ei-line { color: var(--secondary-text-color); }
     .canvas {
+      position: relative;
       height: calc(100vh - 230px);
       min-height: 360px;
       padding: 0;
@@ -695,6 +744,34 @@ export class NetworkPageComponent implements OnInit {
     return sel.length ? new Set(sel) : all;
   });
   protected readonly hovered = signal<string | null>(null);
+  /** Link under the mouse (or last tapped on a touch screen). */
+  protected readonly hoveredEdge = signal<string | null>(null);
+  protected readonly edgeInfo = computed(() => {
+    const id = this.hoveredEdge();
+    if (!id) return null;
+    const e = this.layout().edges.find((x) => x.edge.id === id);
+    if (!e) return null;
+    const caption = this.edgeCaption(e.edge);
+    const lines = [
+      ...(e.edge.signal ? e.edge.signal.split(' · ') : []),
+      ...(caption && !caption.startsWith('weak') ? [caption] : []),
+      ...(e.edge.label && e.edge.label !== caption ? [e.edge.label] : []),
+    ];
+    return {
+      from: e.from.node.name,
+      to: e.to.node.name,
+      type: this.labelOf(e.edge.type),
+      color: this.colorOf(e.edge.type),
+      auto: e.edge.auto,
+      quality: e.edge.quality ?? null,
+      lines,
+    };
+  });
+
+  protected tapEdge(id: string): void {
+    if (this.dragged) return;
+    this.hoveredEdge.set(this.hoveredEdge() === id ? null : id);
+  }
   protected readonly showUnlinked = signal(false);
 
   // viewBox camera
@@ -1025,11 +1102,6 @@ export class NetworkPageComponent implements OnInit {
   protected readonly deviceCount = computed(() => this.layout().nodes.filter((n) => !isBranchId(n.node.id)).length);
   protected readonly linkCount = computed(() => this.layout().edges.filter((e) => !isBranchId(e.to.node.id)).length);
 
-  protected open(n: LaidOutNode): void {
-    if (this.dragged || isBranchId(n.node.id)) return;
-    this.router.navigate(['/devices', n.node.id]);
-  }
-
   // --- node drag -------------------------------------------------------------
   protected dragId: string | null = null;
   private dragOffset = { x: 0, y: 0 };
@@ -1140,12 +1212,21 @@ export class NetworkPageComponent implements OnInit {
         // A dragged parent becomes the target of the Wrap picker.
         const node = this.baseLayout().nodes.find((x) => x.node.id === id);
         if (node && node.childCount > 0) this.selectedParent.set(node.node.id);
+      } else {
+        // A press without a drag opens the device. Done here rather than on
+        // `click`: with the pointer captured for dragging, desktop browsers
+        // send the click to the map, not the device.
+        const node = this.layout().nodes.find((x) => x.node.id === id);
+        if (node && !isBranchId(node.node.id)) this.router.navigate(['/devices', node.node.id]);
       }
       setTimeout(() => (this.dragged = false), 0);
       return;
     }
     this.pointers.delete(ev.pointerId);
     if (this.pointers.size === 0) {
+      // A tap on empty map clears the link panel on touch screens (a tap on a
+      // link sets it again in its click handler, which runs after this).
+      if (!this.dragged && ev.pointerType !== 'mouse') this.hoveredEdge.set(null);
       this.dragging = false;
       // Let the click handler see `dragged` before resetting it.
       setTimeout(() => (this.dragged = false), 0);
