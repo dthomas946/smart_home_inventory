@@ -2,6 +2,8 @@ import { Logger } from '@nestjs/common';
 import WebSocket from 'ws';
 import {
   HaArea,
+  HaBatchRequest,
+  HaBatchResult,
   HaConfigEntry,
   HaCoreConfig,
   HaDevice,
@@ -32,6 +34,12 @@ const READ_ONLY_COMMANDS = new Set([
   'get_config',
   'get_states',
   'ping',
+  // Mesh route snapshots (Network map → Actual routes). All read-only:
+  'zha/devices',
+  'matter/node_diagnostics',
+  // A subscription, but only its first (current-state) event is read and the
+  // connection is then closed.
+  'zwave_js/subscribe_node_statistics',
 ]);
 
 export function assertCommandAllowed(type: string, readOnly: boolean): void {
@@ -144,6 +152,75 @@ export class WsHaRegistryClient implements HaRegistryClient {
       platform: e.platform,
       device_class: e.device_class ?? e.original_device_class ?? null,
     }));
+  }
+
+  /**
+   * Run several read commands over one connection. Each request resolves on
+   * its own: a failed or unanswered request gives `{ ok: false }` without
+   * failing the others. With `snapshot`, the request is a subscription and
+   * the first event after its result is returned; the connection is closed
+   * afterwards, which ends the subscription.
+   */
+  async batch(requests: HaBatchRequest[], timeoutMs = 20000): Promise<HaBatchResult[]> {
+    for (const r of requests) assertCommandAllowed(r.type, this.readOnly);
+    if (requests.length === 0) return [];
+    return new Promise((resolve, reject) => {
+      const results: Array<HaBatchResult | undefined> = requests.map(() => undefined);
+      const ws = new WebSocket(this.wsUrl);
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        try {
+          ws.close();
+        } catch {
+          // ignore
+        }
+        resolve(results.map((r) => r ?? { ok: false, error: 'no answer before timeout' }));
+      };
+      const timer = setTimeout(finish, timeoutMs);
+      const check = () => {
+        if (results.every((r) => r !== undefined)) finish();
+      };
+
+      ws.on('error', (err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(err);
+      });
+      ws.on('message', (raw) => {
+        let msg: { type: string; id?: number; success?: boolean; result?: unknown; event?: unknown; error?: { message?: string } };
+        try {
+          msg = JSON.parse(raw.toString());
+        } catch {
+          return;
+        }
+        if (msg.type === 'auth_required') {
+          ws.send(JSON.stringify({ type: 'auth', access_token: this.token }));
+        } else if (msg.type === 'auth_invalid') {
+          settled = true;
+          clearTimeout(timer);
+          reject(new Error('HA WebSocket authentication failed'));
+        } else if (msg.type === 'auth_ok') {
+          requests.forEach((r, i) => ws.send(JSON.stringify({ ...(r.data ?? {}), id: i + 1, type: r.type })));
+        } else if (msg.type === 'result' && typeof msg.id === 'number') {
+          const i = msg.id - 1;
+          const req = requests[i];
+          if (!req || results[i]) return;
+          if (!msg.success) results[i] = { ok: false, error: msg.error?.message ?? 'failed' };
+          else if (!req.snapshot) results[i] = { ok: true, result: msg.result };
+          check();
+        } else if (msg.type === 'event' && typeof msg.id === 'number') {
+          const i = msg.id - 1;
+          if (requests[i]?.snapshot && !results[i]) {
+            results[i] = { ok: true, result: msg.event };
+            check();
+          }
+        }
+      });
+    });
   }
 
   async ping(): Promise<boolean> {

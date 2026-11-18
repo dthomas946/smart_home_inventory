@@ -9,6 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   DASH_STYLE_PATTERNS,
@@ -17,6 +18,7 @@ import {
   NetworkLayoutMode,
   NetworkPositions,
   AreaDto,
+  MeshSnapshotDto,
   circuitSummary,
   isUtilityKind,
   UTILITY_KINDS,
@@ -35,9 +37,18 @@ import {
 import { AreasApi, AutoLinkApi } from '../../core/api/api.services';
 import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { reflowPositions, branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
+import { withActualRoutes, reflowPositions, branchType, isBranchId, withTypeBranches, downstreamOf, H_WRAP, LaidOutNode, layoutGraph, layoutHierarchy, GRID, snapToGrid } from './network-layout';
 
 const MODE_PREF_KEY = 'shi.network.mode';
+const ROUTES_PREF_KEY = 'shi.network.routes';
+type RoutesMode = 'logical' | 'actual';
+function readRoutesPref(): RoutesMode {
+  try {
+    return localStorage.getItem(ROUTES_PREF_KEY) === 'actual' ? 'actual' : 'logical';
+  } catch {
+    return 'logical';
+  }
+}
 const WRAP_PREF_KEY = 'shi.network.wrap';
 const PARENT_WRAP_KEY = 'shi.network.wrapByParent';
 function readParentWraps(): Record<string, number> {
@@ -91,7 +102,7 @@ function readModePref(): NetworkLayoutMode {
  */
 @Component({
   selector: 'app-network-page',
-  imports: [RouterLink, IconComponent, EmptyStateComponent],
+  imports: [RouterLink, IconComponent, EmptyStateComponent, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="header">
@@ -172,10 +183,19 @@ function readModePref(): NetworkLayoutMode {
             <app-icon [path]="icons.reset" [size]="18" />
           </button>
         }
+        <div class="seg" role="group" aria-label="Which routes to draw">
+          <span class="seg-label">Routes</span>
+          <button type="button" class="btn secondary" [class.on]="routes() === 'logical'" [attr.aria-pressed]="routes() === 'logical'" (click)="setRoutes('logical')" title="Each device linked to its controller">
+            Logical
+          </button>
+          <button type="button" class="btn secondary" [class.on]="routes() === 'actual'" [attr.aria-pressed]="routes() === 'actual'" (click)="setRoutes('actual')" title="The hops each mesh device really uses, with link quality">
+            Actual
+          </button>
+        </div>
         <button class="btn secondary" (click)="fit()" title="Fit to screen">
           <app-icon [path]="icons.fit" [size]="18" />
         </button>
-        <button class="btn secondary" (click)="load()" title="Reload">
+        <button class="btn secondary" (click)="load(true)" [title]="routes() === 'actual' ? 'Reload devices and re-read mesh routes' : 'Reload'">
           <app-icon [path]="icons.refresh" [size]="18" />
         </button>
         <a class="btn secondary" routerLink="/connections">Connections</a>
@@ -216,6 +236,18 @@ function readModePref(): NetworkLayoutMode {
         </span>
         <span class="muted small legend-note">
           {{ deviceCount() }} devices · {{ linkCount() }} links
+          @if (routes() === 'actual') {
+            · @if (meshLoading()) {
+              reading mesh routes…
+            } @else if (mesh(); as m) {
+              routes as of {{ m.fetchedAt | date: 'shortTime' }} ({{ meshSummary() }})
+              @if (weakCount()) {
+                · <span class="weak">{{ weakCount() }} weak links</span>
+              }
+            } @else {
+              couldn't read mesh routes
+            }
+          }
           @if (layout().unlinked.length) {
             · <button class="linkish" (click)="showUnlinked.set(!showUnlinked())">
               {{ layout().unlinked.length }} unlinked
@@ -258,12 +290,13 @@ function readModePref(): NetworkLayoutMode {
                   fill="none"
                   [attr.stroke]="colorOf(e.edge.type)"
                   [attr.stroke-dasharray]="dash(dashOf(e.edge.type))"
-                  [attr.stroke-opacity]="e.edge.auto ? 0.55 : 0.9"
-                  stroke-width="2"
+                  [attr.stroke-opacity]="e.edge.quality === 'poor' ? 1 : e.edge.auto ? 0.55 : 0.9"
+                  [attr.stroke-width]="e.edge.quality === 'good' ? 2.6 : e.edge.quality === 'poor' ? 1.4 : 2"
+                  [class.weak-link]="e.edge.quality === 'poor'"
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 >
-                  <title>{{ e.from.node.name }} → {{ e.to.node.name }} · {{ labelOf(e.edge.type) }}{{ edgeCaption(e.edge) ? ' · ' + edgeCaption(e.edge) : '' }}{{ e.edge.auto ? ' (auto)' : '' }}</title>
+                  <title>{{ e.from.node.name }} → {{ e.to.node.name }} · {{ labelOf(e.edge.type) }}{{ edgeCaption(e.edge) ? ' · ' + edgeCaption(e.edge) : '' }}{{ e.edge.signal ? ' · ' + e.edge.signal : '' }}{{ e.edge.quality ? ' · ' + e.edge.quality + ' link' : '' }}{{ e.edge.auto ? ' (auto)' : '' }}</title>
                 </path>
               }
             </g>
@@ -330,7 +363,7 @@ function readModePref(): NetworkLayoutMode {
                   >
                     {{ shortName(n.node.name) }}
                   </text>
-                  <title>{{ n.node.name }}{{ n.node.areaName ? ' · ' + n.node.areaName : '' }}{{ n.node.model ? ' · ' + (n.node.brand ?? n.node.manufacturer ?? '') + ' ' + n.node.model : '' }}</title>
+                  <title>{{ n.node.name }}{{ n.node.areaName ? ' · ' + n.node.areaName : '' }}{{ n.node.model ? ' · ' + (n.node.brand ?? n.node.manufacturer ?? '') + ' ' + n.node.model : '' }}{{ viaNote(n) }}</title>
                   }
                 </g>
               }
@@ -385,6 +418,8 @@ function readModePref(): NetworkLayoutMode {
       pointer-events: none;
     }
     .node.branch { cursor: grab; }
+    .weak { color: var(--error-color, #e53935); }
+    .weak-link { stroke: var(--error-color, #e53935); }
     .grid-dot { fill: var(--secondary-text-color, #9e9e9e); opacity: 0.22; }
     .edge-labels text {
       font-size: 10px;
@@ -578,6 +613,54 @@ export class NetworkPageComponent implements OnInit {
   private areaNames = new Map<string, string>();
 
   protected readonly mode = signal<NetworkLayoutMode>(readModePref());
+  /** Logical = device → its controller; Actual = the hops meshes really use. */
+  protected readonly routes = signal<RoutesMode>(readRoutesPref());
+  protected readonly mesh = signal<MeshSnapshotDto | null>(null);
+  protected readonly meshLoading = signal(false);
+  protected readonly meshSummary = computed(() => {
+    const m = this.mesh();
+    if (!m) return '';
+    const label: Record<string, string> = { zigbee: 'Zigbee', zwave: 'Z-Wave', thread: 'Thread', wifi: 'Wi-Fi' };
+    return (Object.keys(label) as Array<keyof MeshSnapshotDto['sources']>)
+      .filter((k) => m.sources[k]?.status === 'ok' && m.sources[k].devices > 0)
+      .map((k) => `${label[k]} ${m.sources[k].devices}`)
+      .join(' · ') || 'no mesh data';
+  });
+  protected readonly weakCount = computed(() => this.layout().edges.filter((e) => e.edge.quality === 'poor').length);
+  private readonly viaUnknown = computed(() => {
+    const m = this.mesh();
+    return new Map((m?.hops ?? []).filter((h) => h.viaUnknown).map((h) => [h.deviceId, h.viaUnknown as string]));
+  });
+
+  protected viaNote(n: LaidOutNode): string {
+    if (this.routes() !== 'actual') return '';
+    const v = this.viaUnknown().get(n.node.id);
+    return v ? ` · connects via ${v}` : '';
+  }
+
+  protected setRoutes(r: RoutesMode): void {
+    if (r === this.routes()) return;
+    this.routes.set(r);
+    try {
+      localStorage.setItem(ROUTES_PREF_KEY, r);
+    } catch {
+      /* per-browser convenience only */
+    }
+    this.undoStack.set([]);
+    if (r === 'actual' && !this.mesh()) this.loadMesh(false);
+    this.loadPositions();
+  }
+
+  private loadMesh(refresh: boolean): void {
+    this.meshLoading.set(true);
+    this.api.mesh(refresh).subscribe({
+      next: (m) => {
+        this.mesh.set(m);
+        this.meshLoading.set(false);
+      },
+      error: () => this.meshLoading.set(false),
+    });
+  }
   protected readonly wrap = signal(readWrapPref());
   /** Wrap widths set for particular parents (and their trees). */
   protected readonly parentWraps = signal<Record<string, number>>(readParentWraps());
@@ -615,7 +698,8 @@ export class NetworkPageComponent implements OnInit {
     const g = this.graph();
     if (!g) return { nodes: [], edges: [], width: 1, height: 1, unlinked: [] };
     const types = this.visibleTypes();
-    const branched = withTypeBranches(g, types);
+    const m = this.routes() === 'actual' ? this.mesh() : null;
+    const branched = withTypeBranches(m ? withActualRoutes(g, m) : g, types);
     return this.mode() === 'hierarchy'
       ? layoutHierarchy(branched, types, this.wrap(), new Map(Object.entries(this.parentWraps())))
       : layoutGraph(branched, types);
@@ -661,7 +745,8 @@ export class NetworkPageComponent implements OnInit {
   /** Saved positions are kept per layout mode and per utility map. */
   private layoutKey(): string {
     const m = this.mapKind();
-    return m ? `${this.mode()}:${m}` : this.mode();
+    const base = m ? `${this.mode()}:${m}` : this.mode();
+    return this.routes() === 'actual' ? `${base}:actual` : base;
   }
 
   private typesForMap(g: NetworkGraphDto): Set<string> {
@@ -717,6 +802,7 @@ export class NetworkPageComponent implements OnInit {
 
   /** "#12 · 20A · Kitchen" for electrical circuits; else the connection label. */
   protected edgeCaption(edge: NetworkGraphDto['edges'][number]): string {
+    if (edge.quality === 'poor' && edge.signal) return `weak · ${edge.signal}`;
     const c = edge.circuit;
     if (!c) return this.mapKind() ? edge.label ?? '' : '';
     const served = [
@@ -839,7 +925,8 @@ export class NetworkPageComponent implements OnInit {
     return `M${a.x},${a.y} V${midY} H${b.x} V${b.y}`;
   }
 
-  protected load(): void {
+  protected load(refreshMesh = false): void {
+    if (this.routes() === 'actual' && (refreshMesh || !this.mesh())) this.loadMesh(refreshMesh);
     this.api.graph().subscribe({
       next: (g) => {
         this.typeMap = new Map(g.types.map((t) => [t.key, t]));

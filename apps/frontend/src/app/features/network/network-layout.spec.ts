@@ -1,5 +1,5 @@
 import { NetworkGraphDto } from '@smart-home-inventory/shared';
-import { reflowPositions, branchType, withTypeBranches, downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
+import { withActualRoutes, reflowPositions, branchType, withTypeBranches, downstreamOf, H_WRAP, layoutGraph, layoutHierarchy, snapToGrid } from './network-layout';
 
 const node = (id: string, isController = false): NetworkGraphDto['nodes'][number] => ({
   id,
@@ -290,5 +290,36 @@ describe('reflowPositions', () => {
     expect(next['hub']).toEqual({ x: 10, y: 10 });
     expect(next['h0']).not.toEqual({ x: 999, y: 999 });
     expect(next['w0']).toEqual({ x: 1, y: 1 }); // outside the scope
+  });
+});
+
+describe('withActualRoutes', () => {
+  const g: NetworkGraphDto = {
+    nodes: [node('coord', true), node('fan'), node('porch'), node('router', true), node('rachio')],
+    edges: [edge('coord', 'fan'), edge('coord', 'porch'), edge('router', 'rachio', 'wifi')],
+    types: [],
+  };
+  const mesh = {
+    fetchedAt: '2026-11-17T00:00:00Z',
+    hops: [
+      { protocol: 'zigbee' as const, deviceId: 'porch', parentId: 'fan', lqi: 80, rssi: null, quality: 'poor' as const },
+      { protocol: 'zigbee' as const, deviceId: 'fan', parentId: null, lqi: 240, rssi: null, quality: 'good' as const },
+    ],
+    wifi: [{ deviceId: 'rachio', band: '5GHz', signal: 36, quality: 'poor' as const }],
+    sources: {} as never,
+  };
+
+  it('re-points mesh links through the real next hop and keeps direct ones', () => {
+    const out = withActualRoutes(g, mesh);
+    expect(out.edges.find((e) => e.toDeviceId === 'porch')).toMatchObject({ fromDeviceId: 'fan', quality: 'poor', signal: 'LQI 80' });
+    expect(out.edges.find((e) => e.toDeviceId === 'fan')?.fromDeviceId).toBe('coord');
+  });
+
+  it('labels Wi-Fi links with band and signal', () => {
+    expect(withActualRoutes(g, mesh).edges.find((e) => e.toDeviceId === 'rachio')).toMatchObject({
+      fromDeviceId: 'router',
+      signal: '5GHz · 36%',
+      quality: 'poor',
+    });
   });
 });

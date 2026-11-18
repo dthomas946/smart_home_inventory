@@ -75,7 +75,18 @@ export interface HaRegistryClient {
   getCoreConfig?(): Promise<HaCoreConfig>;
   /** Optional: current entities of one domain (e.g. ai_task) with friendly names. */
   listStatesByDomain?(domain: string): Promise<Array<{ entity_id: string; name: string | null }>>;
+  /** Optional: several read commands over one connection (see WsHaRegistryClient.batch). */
+  batch?(requests: HaBatchRequest[], timeoutMs?: number): Promise<HaBatchResult[]>;
   ping(): Promise<boolean>;
 }
+
+export interface HaBatchRequest {
+  type: string;
+  data?: Record<string, unknown>;
+  /** Subscription: return its first event instead of the (empty) result. */
+  snapshot?: boolean;
+}
+
+export type HaBatchResult = { ok: true; result: unknown } | { ok: false; error: string };
 
 export const HA_REGISTRY_CLIENT = Symbol('HA_REGISTRY_CLIENT');

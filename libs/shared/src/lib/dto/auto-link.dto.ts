@@ -121,7 +121,7 @@ export type NetworkLayoutMode = z.infer<typeof NetworkLayoutModeSchema>;
  *  ("hierarchy", "radial:electrical"). */
 export const NetworkLayoutKeySchema = z
   .string()
-  .regex(/^(hierarchy|radial)(:(electrical|gas|water|phone|internet|solar))?$/);
+  .regex(/^(hierarchy|radial)(:(electrical|gas|water|phone|internet|solar))?(:actual)?$/);
 
 export const NetworkPositionsSchema = z.record(
   z.string(),
@@ -161,10 +161,54 @@ export interface NetworkGraphEdgeDto {
   label: string | null;
   /** Breaker / amps / area served, when this is an electrical circuit. */
   circuit?: CircuitDto | null;
+  /** Actual-routes view only: measured link quality and its readout. */
+  quality?: 'good' | 'fair' | 'poor' | null;
+  signal?: string | null;
 }
 
 export interface NetworkGraphDto {
   nodes: NetworkGraphNodeDto[];
   edges: NetworkGraphEdgeDto[];
   types: Array<{ key: string; label: string; color: string; dash: string; group: string; utility: UtilityKind | null }>;
+}
+
+// ---------------------------------------------------------------------------
+// Actual mesh routes (Network map → Routes: Actual)
+// ---------------------------------------------------------------------------
+
+export type MeshProtocolKey = 'zigbee' | 'zwave' | 'thread';
+export type LinkQuality = 'good' | 'fair' | 'poor';
+
+export interface MeshHopDto {
+  protocol: MeshProtocolKey;
+  /** Inventory device ids. parentId null = straight to its controller. */
+  deviceId: string;
+  parentId: string | null;
+  lqi: number | null;
+  rssi: number | null;
+  quality: LinkQuality | null;
+  /** Next hop that isn't in the inventory (e.g. an Apple Thread router). */
+  viaUnknown?: string | null;
+}
+
+export interface WifiLinkDto {
+  deviceId: string;
+  /** "5GHz", "2.4GHz", "2.4GHz - IoT", "wired"… as the router reports it. */
+  band: string | null;
+  /** Router-reported signal, 0–100 %. */
+  signal: number | null;
+  quality: LinkQuality | null;
+}
+
+export interface MeshSourceStatusDto {
+  status: 'ok' | 'unavailable' | 'error';
+  devices: number;
+  message?: string;
+}
+
+export interface MeshSnapshotDto {
+  fetchedAt: string;
+  hops: MeshHopDto[];
+  wifi: WifiLinkDto[];
+  sources: Record<MeshProtocolKey | 'wifi', MeshSourceStatusDto>;
 }

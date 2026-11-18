@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import {
   NetworkLayoutKeySchema,
   SaveNetworkLayoutDto,
@@ -8,10 +8,14 @@ import {
 } from '@smart-home-inventory/shared';
 import { zodPipe } from '../common/zod-validation.pipe';
 import { AutoLinkService } from './auto-link.service';
+import { MeshRoutesService } from './mesh-routes.service';
 
 @Controller('auto-link')
 export class AutoLinkController {
-  constructor(private readonly autoLink: AutoLinkService) {}
+  constructor(
+    private readonly mesh_: MeshRoutesService,
+    private readonly autoLink: AutoLinkService
+  ) {}
 
   @Get('status')
   status() {
@@ -54,6 +58,12 @@ export class AutoLinkController {
   @Get('graph')
   graph() {
     return this.autoLink.graph();
+  }
+
+  /** Routes the meshes actually use right now (cached ~5 min; ?refresh=1 re-reads). */
+  @Get('mesh')
+  mesh(@Query('refresh') refresh?: string) {
+    return this.mesh_.snapshot(refresh === '1' || refresh === 'true');
   }
 
   /** Hand-arranged Network map positions for a layout mode. */

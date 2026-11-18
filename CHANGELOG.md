@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0
+
+- **Network map: Routes — Logical / Actual.** Actual draws the path each mesh device really uses instead of a straight line to its controller:
+  - **Zigbee** (ZHA): next hop toward the coordinator from each device's routing table, or its parent router; link quality (LQI) from the neighbour tables.
+  - **Z-Wave** (Z-Wave JS): last working route through repeaters, with signal strength.
+  - **Thread** (Matter over Thread): each end device's parent router, from the Matter server's Thread diagnostics, matched to your devices by radio address. Routers that aren't in Home Assistant (e.g. Apple border routers) are named in the device's tooltip.
+  - **Wi-Fi**: band and signal from the router integration (Netgear/Orbi).
+- Links are drawn thicker when strong and thin and red when weak, with weak ones labelled. Hover any link for its LQI, dBm or signal.
+- Routes are read on demand when you switch to Actual or press Reload, and cached for 5 minutes. Nothing polls. Everything is read-only.
+- Actual view keeps its own saved positions.
+
 ## 0.8.5
 
 - **Fix:** dragged branch labels (Ethernet, Wi-Fi, …) on the Network map kept their spot only until you left the page. The server now saves them alongside the devices.

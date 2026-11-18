@@ -1,4 +1,9 @@
-import { NetworkGraphDto, NetworkGraphEdgeDto, NetworkGraphNodeDto } from '@smart-home-inventory/shared';
+import {
+  MeshSnapshotDto,
+  NetworkGraphDto,
+  NetworkGraphEdgeDto,
+  NetworkGraphNodeDto,
+} from '@smart-home-inventory/shared';
 
 /**
  * Hub-and-spoke layout for the network map. Pure functions, no DOM.
@@ -548,4 +553,53 @@ export function reflowPositions(base: Layout, current: Positions, scope?: string
     else next[id] = { x: Math.round(n.x + dx), y: Math.round(n.y + dy) };
   }
   return next;
+}
+
+// ---------------------------------------------------------------------------
+// Actual mesh routes
+// ---------------------------------------------------------------------------
+
+/** Connection types each mesh protocol's links are drawn with. */
+const MESH_TYPES: Record<MeshSnapshotDto['hops'][number]['protocol'], string[]> = {
+  zigbee: ['zigbee_network'],
+  zwave: ['zwave_network'],
+  thread: ['thread', 'matter_fabric'],
+};
+
+const hopReadout = (h: MeshSnapshotDto['hops'][number]): string =>
+  [h.lqi !== null ? `LQI ${h.lqi}` : '', h.rssi !== null ? `${h.rssi} dBm` : '', h.viaUnknown ? `via ${h.viaUnknown}` : '']
+    .filter(Boolean)
+    .join(' · ');
+
+/**
+ * Re-point mesh links at the device each one really goes through (Zigbee
+ * next hop, Z-Wave last repeater, Thread parent router) and attach measured
+ * link quality; Wi-Fi links get band and signal. View-only: nothing saved.
+ */
+export function withActualRoutes(graph: NetworkGraphDto, mesh: MeshSnapshotDto): NetworkGraphDto {
+  const ids = new Set(graph.nodes.map((n) => n.id));
+  const hop = new Map(mesh.hops.map((h) => [h.deviceId, h]));
+  const wifi = new Map(mesh.wifi.map((w) => [w.deviceId, w]));
+  const edges = graph.edges.map((e) => {
+    const h = hop.get(e.toDeviceId);
+    if (h && MESH_TYPES[h.protocol].includes(e.type)) {
+      const parent = h.parentId && ids.has(h.parentId) && h.parentId !== e.toDeviceId ? h.parentId : null;
+      return {
+        ...e,
+        ...(parent ? { fromDeviceId: parent } : {}),
+        quality: h.quality,
+        signal: hopReadout(h) || null,
+      };
+    }
+    const w = wifi.get(e.toDeviceId);
+    if (w && e.type === 'wifi') {
+      return {
+        ...e,
+        quality: w.quality,
+        signal: [w.band, w.signal !== null ? `${w.signal}%` : ''].filter(Boolean).join(' · ') || null,
+      };
+    }
+    return e;
+  });
+  return { ...graph, edges };
 }

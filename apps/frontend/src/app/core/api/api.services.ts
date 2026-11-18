@@ -2,6 +2,7 @@ import { HttpClient, HttpEvent, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  MeshSnapshotDto,
   CreateUtilityProviderDto,
   UpdateUtilityProviderDto,
   UtilityProviderDto,
@@ -388,6 +389,11 @@ export class AutoLinkApi {
   removeAllManaged(): Observable<{ removed: number }> {
     return this.http.delete<{ removed: number }>('api/auto-link/managed');
   }
+  /** Routes the meshes actually use (server caches ~5 min). */
+  mesh(refresh = false): Observable<MeshSnapshotDto> {
+    return this.http.get<MeshSnapshotDto>('api/auto-link/mesh', refresh ? { params: { refresh: '1' } } : {});
+  }
+
   graph(): Observable<NetworkGraphDto> {
     return this.http.get<NetworkGraphDto>('api/auto-link/graph');
   }
