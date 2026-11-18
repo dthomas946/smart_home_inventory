@@ -319,6 +319,18 @@ function readModePref(): NetworkLayoutMode {
                 ></path>
               }
             </g>
+            <!-- small arrowheads: direction of each link (from → to), just short of the target -->
+            <g class="edge-arrows" pointer-events="none">
+              @for (e of layout().edges; track e.edge.id) {
+                <path
+                  d="M0,0 L-7,-3.5 L-7,3.5 Z"
+                  [attr.transform]="arrowTransform(e.from, e.to)"
+                  [attr.fill]="colorOf(e.edge.type)"
+                  [attr.fill-opacity]="e.edge.auto && e.edge.quality !== 'poor' ? 0.7 : 1"
+                  [class.weak-arrow]="e.edge.quality === 'poor'"
+                ></path>
+              }
+            </g>
             <!-- wide invisible hover/tap targets so thin and dashed links are easy to hit -->
             <g class="edge-hits">
               @for (e of layout().edges; track e.edge.id) {
@@ -451,6 +463,7 @@ function readModePref(): NetworkLayoutMode {
     .node.branch { cursor: grab; }
     .weak { color: var(--error-color, #e53935); }
     .weak-link { stroke: var(--error-color, #e53935); }
+    .weak-arrow { fill: var(--error-color, #e53935); }
     .grid-dot { fill: var(--secondary-text-color, #9e9e9e); opacity: 0.22; }
     .edge-labels text {
       font-size: 10px;
@@ -1054,6 +1067,20 @@ export class NetworkPageComponent implements OnInit, OnDestroy {
   }
 
   /** Straight in radial mode; right-angled "org chart" elbows in hierarchy. */
+  /** Place an arrowhead on the last stretch of a link, pointing at its
+   *  target and stopping just short of the target's dot (or branch label). */
+  protected arrowTransform(a: LaidOutNode, b: LaidOutNode): string {
+    const stop = (isBranchId(b.node.id) ? 10 : this.radius(b)) + 3;
+    if (this.mode() !== 'radial' && b.y > a.y + 10) {
+      return `translate(${b.x},${b.y - stop}) rotate(90)`; // last segment runs straight down
+    }
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    return `translate(${b.x - (dx / len) * stop},${b.y - (dy / len) * stop}) rotate(${angle})`;
+  }
+
   protected edgePath(a: LaidOutNode, b: LaidOutNode): string {
     if (this.mode() === 'radial') return `M${a.x},${a.y} L${b.x},${b.y}`;
     if (b.y <= a.y + 10) return `M${a.x},${a.y} L${b.x},${b.y}`;

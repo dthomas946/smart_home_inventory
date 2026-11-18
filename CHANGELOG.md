@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.6
+
+- **Power capabilities for North America.** Installs in the US/CA/MX/PR get **120V**, **240V** and **24V AC** capabilities (the power chips on the device form), added once on sync like the matching connection types. Home Assistant's suggestion for a mains-powered Zigbee device is now 120V instead of 230V mains.
+- **Direction arrows on Network map links.** A small arrowhead just before each target shows which way the link runs. It takes the link's colour (red when weak).
+
 ## 0.9.5
 
 - Network map link quality:

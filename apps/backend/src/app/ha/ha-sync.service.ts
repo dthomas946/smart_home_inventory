@@ -13,7 +13,7 @@ import { HA_REGISTRY_CLIENT, HaRegistryClient } from './ha-registry.types';
 import { mergeRegistry } from './ha-sync.merge';
 import { HaExclusionsService } from './ha-exclusions.service';
 import { HaLocaleService } from './ha-locale.service';
-import { ConnectionTypeGroup, isNorthAmerica } from '@smart-home-inventory/shared';
+import { CapabilityCategory, ConnectionTypeGroup, isNorthAmerica } from '@smart-home-inventory/shared';
 import { integrationsOf } from './device-exclusion';
 import { HaConfigEntry, HaDevice } from './ha-registry.types';
 
@@ -118,6 +118,19 @@ export class HaSyncService implements OnModuleInit, OnModuleDestroy {
       { key: 'mains_240v', label: '240V', group: 'wired', color: '#6a1b9a', dash: 'solid', utility: 'electrical' },
       { key: 'ac_24v', label: '24V AC (HVAC control)', group: 'wired', color: '#2e7d32', dash: 'dashed', utility: 'electrical' },
     ];
+    // Matching device capabilities (the power chips on the device form).
+    const caps = [
+      { key: 'mains_120v', label: '120V', category: 'power' },
+      { key: 'mains_240v', label: '240V', category: 'power' },
+      { key: 'ac_24v', label: '24V AC', category: 'power' },
+    ];
+    for (const c of caps) {
+      const exists = await this.prisma.capabilityType.findUnique({ where: { key: c.key } });
+      if (!exists) {
+        await this.prisma.capabilityType.create({ data: { ...c, category: c.category as CapabilityCategory, isSystem: false } });
+        this.logger.log(`Added ${c.label} capability (North America)`);
+      }
+    }
     for (const t of wanted) {
       const exists = await this.prisma.connectionType.findUnique({ where: { key: t.key } });
       if (!exists) {

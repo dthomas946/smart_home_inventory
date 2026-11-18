@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HaCapabilitySuggestionDto } from '@smart-home-inventory/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { HaLocaleService } from './ha-locale.service';
+import { isNorthAmerica } from '@smart-home-inventory/shared';
 import { HA_REGISTRY_CLIENT, HaEntity, HaRegistryClient } from './ha-registry.types';
 
 /** Integrations whose platform alone is a confident, protocol-specific
@@ -47,7 +49,8 @@ export class HaCapabilitySuggestionsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(HA_REGISTRY_CLIENT) private readonly client: HaRegistryClient
+    @Inject(HA_REGISTRY_CLIENT) private readonly client: HaRegistryClient,
+    private readonly locale: HaLocaleService
   ) {}
 
   /** Null when the device isn't HA-sourced, or HA can't be reached — a
@@ -68,8 +71,13 @@ export class HaCapabilitySuggestionsService {
     }
 
     const own = entities.filter((e) => e.device_id === device.haDeviceId);
-    const keys = suggestKeysFromEntities(own);
+    let keys = suggestKeysFromEntities(own);
     if (keys.length === 0) return { suggestedCapabilities: [] };
+    // Mains-powered means 120V in North America (when that capability exists).
+    if (keys.includes('mains_230v')) {
+      const loc = await this.locale.get().catch(() => null);
+      if (loc && isNorthAmerica(loc.country)) keys = keys.map((k) => (k === 'mains_230v' ? 'mains_120v' : k));
+    }
 
     const types = await this.prisma.capabilityType.findMany({ where: { key: { in: keys } } });
     const byKey = new Map(types.map((t) => [t.key, t]));
