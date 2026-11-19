@@ -358,10 +358,12 @@ export class LabelScanApi {
   status(): Observable<LabelScanStatusDto> {
     return this.http.get<LabelScanStatusDto>('api/label-scan/status');
   }
-  /** Sends the photo to the AI provider chosen in Settings; nothing is stored. */
-  scan(image: File): Observable<LabelScanResultDto> {
+  /** Sends the photo (to the AI chosen in Settings) and/or the QR/barcode
+   *  texts read from it; nothing is stored. */
+  scan(image: File | null, codes: string[] = []): Observable<LabelScanResultDto> {
     const form = new FormData();
-    form.append('image', image);
+    if (image) form.append('image', image);
+    if (codes.length) form.append('codes', JSON.stringify(codes));
     return this.http.post<LabelScanResultDto>('api/label-scan', form);
   }
 }

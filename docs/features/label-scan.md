@@ -45,3 +45,22 @@ No cloud: the image goes to the user's own Ollama server and nowhere else.
   options plumbing in [app-config.ts](../../apps/backend/src/app/config/app-config.ts)
 - Frontend: Scan-label flow in
   [device-form-page.component.ts](../../apps/frontend/src/app/features/devices/device-form-page.component.ts)
+
+## QR codes and barcodes (0.10.0)
+
+- Browser: `core/scan/read-codes.ts` uses `BarcodeDetector` (QR, Data Matrix,
+  Aztec, PDF417, EAN/UPC, Code 128) or falls back to jsQR at a few sizes.
+  Codes are read from the full-resolution photo, before downscaling.
+- Shared: `scanned-codes.ts` decodes:
+  - Matter onboarding payloads (base38 → vendor and product id)
+  - HomeKit `X-HM://` (accessory category)
+  - Z-Wave SmartStart (Product ID TLV)
+  - GS1 element strings, Digital Link URLs and plain GTINs
+  - URLs
+- Backend: `MatterDclService` queries `https://on.dcl.csa-iot.org` (override
+  with `MATTER_DCL_URL`) at `/dcl/model/models/{vid}/{pid}` and
+  `/dcl/vendorinfo/vendors/{vid}`, and caches results in memory.
+  - Code summaries and registry matches are added to the AI prompt as exact hints.
+  - `mergeFields` lets registry identity override the AI, while the AI's serial and specs are kept.
+- `POST /api/label-scan` takes `image` and/or `codes` (JSON array). With no AI
+  provider, codes alone still produce a result.

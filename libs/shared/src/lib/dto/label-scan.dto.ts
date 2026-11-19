@@ -15,6 +15,26 @@ export interface LabelScanStatusDto {
   model: string | null;
   /** Shrink photos to this longest edge before sending. */
   maxImageEdge: number;
+  /** QR codes / barcodes can be read (and Matter codes looked up) even with
+   *  no AI provider, so the scan buttons always show. */
+  codes: boolean;
+}
+
+/** A QR code / barcode found on the label, decoded and (for Matter) looked up. */
+export interface ScannedCodeResultDto {
+  kind: 'matter' | 'homekit' | 'zwave' | 'gs1' | 'url' | 'text';
+  summary: string;
+  /** Matter certification registry (DCL) match, when found. */
+  registry?: {
+    vendorName: string | null;
+    productName: string | null;
+    partNumber: string | null;
+  } | null;
+}
+
+export interface LabelScanLinkDto {
+  label: string;
+  url: string;
 }
 
 export interface LabelScanElectrical {
@@ -46,6 +66,10 @@ export interface LabelScanResultDto {
   notesSuggestion: string;
   /** Best-effort category guess from productType, or null. */
   categorySuggestion: string | null;
+  /** Who read it: the AI model, "QR code", or both. */
   model: string;
   durationMs: number;
+  codes: ScannedCodeResultDto[];
+  /** Manual / support / product pages from the codes. */
+  links: LabelScanLinkDto[];
 }

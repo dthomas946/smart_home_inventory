@@ -9,11 +9,15 @@ import {
   DEVICE_CATEGORIES,
   DeviceCategory,
   LabelScanFields,
+  LabelScanLinkDto,
   LabelScanResultDto,
   LabelScanStatusDto,
+  parseScannedCode,
+  ScannedCodeResultDto,
 } from '@smart-home-inventory/shared';
 import { AiSettingsService } from '../settings/ai-settings.service';
 import { VisionError } from './vision-providers';
+import { MatterDclService } from './matter-dcl.service';
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
@@ -181,7 +185,10 @@ export function parseModelJson(content: string): unknown {
 export class LabelScanService {
   private readonly logger = new Logger(LabelScanService.name);
 
-  constructor(private readonly ai: AiSettingsService) {}
+  constructor(
+    private readonly ai: AiSettingsService,
+    private readonly dcl: MatterDclService
+  ) {}
 
   async status(): Promise<LabelScanStatusDto> {
     const s = await this.ai.get();
@@ -192,54 +199,169 @@ export class LabelScanService {
       host: provider?.host ?? null,
       model: provider?.label ?? null,
       maxImageEdge: s.scan.maxImageEdge,
+      codes: true,
     };
   }
 
-  async scan(image: Buffer, mimeType: string): Promise<LabelScanResultDto> {
+  /**
+   * Read a label from its photo (AI, when one is set up) and/or the QR codes
+   * and barcodes the browser found on it. Code results that come from a
+   * registry (Matter DCL) are exact, so they win over what the AI read.
+   */
+  async scan(image: Buffer | null, mimeType: string | null, rawCodes: string[] = []): Promise<LabelScanResultDto> {
+    const started = Date.now();
+    const codes = await this.decodeCodes(rawCodes);
     const settings = await this.ai.get();
-    const provider = this.ai.provider(settings);
-    if (!provider) {
+    const provider = image ? this.ai.provider(settings) : null;
+
+    if (!provider && codes.length === 0) {
       throw new ServiceUnavailableException(
-        'Scan label needs an AI provider — choose one in Settings → AI.'
+        image
+          ? 'No QR code or barcode found, and reading the label text needs an AI provider (Settings → AI).'
+          : 'Nothing to read: no photo and no code.'
       );
     }
-    if (!/^image\/(jpeg|png|webp|heic|heif)$/i.test(mimeType)) {
-      throw new BadRequestException(`Unsupported image type ${mimeType}; use JPEG, PNG or WebP`);
-    }
-    if (image.length > MAX_IMAGE_BYTES) {
-      throw new BadRequestException(`Image is too large (${image.length} bytes)`);
+
+    let aiFields: LabelScanFields | null = null;
+    if (provider && image && mimeType) {
+      if (!/^image\/(jpeg|png|webp|heic|heif)$/i.test(mimeType)) {
+        throw new BadRequestException(`Unsupported image type ${mimeType}; use JPEG, PNG or WebP`);
+      }
+      if (image.length > MAX_IMAGE_BYTES) {
+        throw new BadRequestException(`Image is too large (${image.length} bytes)`);
+      }
+      const hint = codes.length
+        ? `\n\nCodes printed on this label were read by a barcode scanner (exact — prefer them over hard-to-read text):\n` +
+          codes.map((c) => `- ${c.summary}${c.registryLine ? ` → ${c.registryLine}` : ''}`).join('\n')
+        : '';
+      try {
+        const content = await provider.read({
+          image,
+          mimeType,
+          prompt: PROMPT + hint,
+          jsonSchema: RESPONSE_SCHEMA,
+          jsonShapeHint: JSON_SHAPE_HINT,
+        });
+        aiFields = normalizeFields(parseModelJson(content));
+      } catch (err) {
+        if (err instanceof VisionError) {
+          // A code alone can still fill the form; only fail when it can't.
+          if (!codes.some((c) => c.fields)) throw new BadGatewayException(`${provider.label}: ${err.message}`);
+          this.logger.warn(`Label scan AI failed, using codes only: ${err.message}`);
+        } else throw err;
+      }
     }
 
-    const started = Date.now();
-    let content: string;
-    try {
-      content = await provider.read({
-        image,
-        mimeType,
-        prompt: PROMPT,
-        jsonSchema: RESPONSE_SCHEMA,
-        jsonShapeHint: JSON_SHAPE_HINT,
-      });
-    } catch (err) {
-      if (err instanceof VisionError) throw new BadGatewayException(`${provider.label}: ${err.message}`);
-      throw err;
-    }
-    const fields = normalizeFields(parseModelJson(content));
+    const fromCodes = mergeCodeFields(codes.map((c) => c.fields).filter((f): f is Partial<LabelScanFields> => !!f));
+    const fields = mergeFields(aiFields, fromCodes);
+    const links = dedupeLinks(codes.flatMap((c) => c.links));
     const durationMs = Date.now() - started;
+    const who = [aiFields && provider ? provider.label : null, codes.length ? 'QR/barcode' : null].filter(Boolean).join(' + ');
     this.logger.log(
-      `Label scan via ${settings.provider}/${provider.label} in ${durationMs} ms: ` +
-        `${fields.brand ?? fields.manufacturer ?? '?'} / ${fields.model ?? '?'}`
+      `Label scan via ${who} in ${durationMs} ms: ${fields.brand ?? fields.manufacturer ?? '?'} / ${fields.model ?? '?'}`
     );
+    const notes = [
+      buildNotes(fields),
+      codes.length ? `Codes on label:\n${codes.map((c) => `- ${c.summary}`).join('\n')}` : '',
+      links.length ? `Links:\n${links.map((l) => `- ${l.label}: ${l.url}`).join('\n')}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     const categorySuggestion = guessCategory(fields.productType);
     return {
       fields,
-      notesSuggestion: buildNotes(fields),
+      notesSuggestion: notes,
       categorySuggestion:
         categorySuggestion && (DEVICE_CATEGORIES as readonly string[]).includes(categorySuggestion)
           ? categorySuggestion
           : null,
-      model: provider.label,
+      model: who,
       durationMs,
+      codes: codes.map((c) => ({ kind: c.kind, summary: c.summary, registry: c.registry })),
+      links,
     };
   }
+
+  private async decodeCodes(raw: string[]): Promise<DecodedCode[]> {
+    const unique = [...new Set(raw.map((r) => r.trim()).filter(Boolean))].slice(0, 10);
+    return Promise.all(
+      unique.map(async (text) => {
+        const code = parseScannedCode(text);
+        const out: DecodedCode = { kind: code.kind, summary: code.summary, fields: null, links: [], registry: null, registryLine: null };
+        if (code.matter) {
+          const p = await this.dcl.lookup(code.matter.vendorId, code.matter.productId);
+          if (p) {
+            out.registry = { vendorName: p.vendorName, productName: p.productName, partNumber: p.partNumber };
+            out.registryLine = `Matter registry: ${[p.vendorName, p.productName, p.partNumber ? `part ${p.partNumber}` : null].filter(Boolean).join(', ')}`;
+            out.fields = {
+              brand: p.vendorName,
+              model: p.partNumber ?? p.productName,
+              productType: p.productLabel ?? p.productName,
+            };
+            if (p.userManualUrl) out.links.push({ label: 'Manual (Matter registry)', url: p.userManualUrl });
+            if (p.supportUrl) out.links.push({ label: 'Support (Matter registry)', url: p.supportUrl });
+            if (p.productUrl) out.links.push({ label: 'Product page (Matter registry)', url: p.productUrl });
+          }
+        } else if (code.zwave?.manufacturerName) {
+          out.fields = { brand: code.zwave.manufacturerName };
+        } else if (code.homekit?.categoryName) {
+          out.fields = { productType: code.homekit.categoryName };
+        } else if (code.gs1?.serial) {
+          out.fields = { serialNumber: code.gs1.serial };
+        }
+        if (code.url) out.links.push({ label: 'Link from QR code', url: code.url });
+        return out;
+      })
+    );
+  }
+}
+
+interface DecodedCode {
+  kind: ScannedCodeResultDto['kind'];
+  summary: string;
+  fields: Partial<LabelScanFields> | null;
+  links: LabelScanLinkDto[];
+  registry: ScannedCodeResultDto['registry'];
+  registryLine: string | null;
+}
+
+function mergeCodeFields(list: Array<Partial<LabelScanFields>>): Partial<LabelScanFields> {
+  const out: Partial<LabelScanFields> = {};
+  for (const f of list) {
+    for (const [k, v] of Object.entries(f) as Array<[keyof LabelScanFields, unknown]>) {
+      if (v && !out[k]) (out as Record<string, unknown>)[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
+ * Registry/code identity (brand, model, product type) beats the AI's reading;
+ * the AI fills everything else. A serial from a code only fills a gap, since
+ * the AI may have read the printed one.
+ */
+export function mergeFields(ai: LabelScanFields | null, codes: Partial<LabelScanFields>): LabelScanFields {
+  const base: LabelScanFields = ai ?? {
+    manufacturer: null,
+    brand: null,
+    model: null,
+    serialNumber: null,
+    productType: null,
+    manufactureDate: null,
+    electrical: { voltage: null, amps: null, watts: null, hz: null, phase: null },
+    extra: {},
+  };
+  return {
+    ...base,
+    brand: codes.brand ?? base.brand,
+    manufacturer: base.manufacturer ?? (ai ? null : codes.brand ?? null),
+    model: codes.model ?? base.model,
+    productType: codes.productType ?? base.productType,
+    serialNumber: base.serialNumber ?? codes.serialNumber ?? null,
+  };
+}
+
+function dedupeLinks(links: LabelScanLinkDto[]): LabelScanLinkDto[] {
+  const seen = new Set<string>();
+  return links.filter((l) => (seen.has(l.url) ? false : (seen.add(l.url), true)));
 }

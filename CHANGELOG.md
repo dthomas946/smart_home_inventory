@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0
+
+- **Scan label reads QR codes and barcodes.** The browser finds codes in the photo (built-in barcode reader where available, otherwise a QR library) before anything is sent.
+  - **Matter setup codes** (`MT:…`) are looked up in the CSA Matter registry (DCL). The exact brand, model / part number and product type fill the form, and manual, support and product-page links are added to the notes.
+  - **Web links**, **GS1 product codes** (GTIN, serial), **Z-Wave SmartStart** (manufacturer / product ids) and **HomeKit** (accessory type) codes are decoded too. They're given to the AI as exact hints and listed in the notes.
+  - Registry results win over the AI's reading of the label; the AI fills in the rest (serial, ratings, specs).
+- **Works without an AI provider.** The buttons become "Scan QR code" and fill what the code and registry provide.
+
 ## 0.9.6
 
 - **Power capabilities for North America.** Installs in the US/CA/MX/PR get **120V**, **240V** and **24V AC** capabilities (the power chips on the device form), added once on sync like the matching connection types. Home Assistant's suggestion for a mains-powered Zigbee device is now 120V instead of 230V mains.

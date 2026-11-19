@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { HttpEventType } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { readCodes } from '../../core/scan/read-codes';
 import { Router } from '@angular/router';
 import {
   AreaDto,
@@ -62,26 +63,28 @@ async function downscaleImage(file: File, maxEdge: number): Promise<File> {
   template: `
     <div class="page-head">
       <h1>{{ deviceId() ? 'Edit device' : 'New device' }}</h1>
-      @if (scanEnabled()) {
+      @if (scanEnabled() || codesEnabled()) {
         <div class="scan-actions">
           <button
             type="button"
             class="btn secondary"
             [disabled]="scanning()"
             (click)="cameraInput.click()"
-            title="Photograph the rating label and let the local vision model fill in the fields"
+            [title]="scanEnabled()
+              ? 'Photograph the rating label or its QR code; the AI and the code fill in the fields'
+              : 'Photograph the QR code or barcode on the device (reading label text needs an AI in Settings)'"
           >
             <app-icon [path]="icons.camera" [size]="18" />
-            {{ scanning() ? 'Reading label…' : 'Take photo' }}
+            {{ scanning() ? 'Reading label…' : scanEnabled() ? 'Take photo' : 'Scan QR code' }}
           </button>
           <button
             type="button"
             class="btn secondary"
             [disabled]="scanning()"
             (click)="uploadInput.click()"
-            title="Pick an existing photo of the rating label"
+            title="Pick an existing photo of the rating label or QR code"
           >
-            <app-icon [path]="icons.upload" [size]="18" /> Upload photo
+            <app-icon [path]="icons.upload" [size]="18" /> {{ scanEnabled() ? 'Upload photo' : 'Upload QR photo' }}
           </button>
         </div>
         <input
@@ -99,7 +102,14 @@ async function downscaleImage(file: File, maxEdge: number): Promise<File> {
     @if (scanning()) {
       <div class="card scan-banner">
         <span class="spinner"></span>
-        Reading the label with {{ scanModel() }} — on a local GPU this can take a minute or two.
+        @if (scanCodes().length) {
+          Found {{ scanCodes().length === 1 ? 'a code' : scanCodes().length + ' codes' }} on the label.
+        }
+        @if (scanEnabled()) {
+          Reading the label with {{ scanModel() }} — on a local GPU this can take a minute or two.
+        } @else {
+          Looking it up…
+        }
       </div>
     }
     @if (scanResult(); as r) {
@@ -358,6 +368,10 @@ export class DeviceFormPageComponent implements OnInit {
   protected readonly statuses = DEVICE_STATUSES;
 
   protected readonly scanEnabled = signal(false);
+  /** QR/barcode reading works without an AI provider. */
+  protected readonly codesEnabled = signal(false);
+  /** Codes found in the photo being scanned (for the progress banner). */
+  protected readonly scanCodes = signal<string[]>([]);
   protected readonly scanModel = signal('');
   private scanMaxEdge = 1280;
   protected readonly scanning = signal(false);
@@ -392,6 +406,7 @@ export class DeviceFormPageComponent implements OnInit {
     this.labelScanApi.status().subscribe({
       next: (s) => {
         this.scanEnabled.set(s.enabled);
+        this.codesEnabled.set(!!s.codes);
         this.scanModel.set(s.model ?? s.provider);
         this.scanMaxEdge = s.maxImageEdge || 1280;
       },
@@ -437,11 +452,19 @@ export class DeviceFormPageComponent implements OnInit {
     if (!file) return;
     this.scanning.set(true);
     this.scanResult.set(null);
+    // Codes first, from the full-resolution photo (small QR codes need pixels).
+    const codes = await readCodes(file).catch(() => [] as string[]);
+    this.scanCodes.set(codes);
+    if (!this.scanEnabled() && codes.length === 0) {
+      this.scanning.set(false);
+      this.toast.error('No QR code or barcode found — try a closer, sharper photo of the code');
+      return;
+    }
     // The model only needs enough pixels to read the text; a full-size phone
     // photo blows the context window and is slower to process. The original
     // is still what gets attached to the device.
-    const forModel = await downscaleImage(file, this.scanMaxEdge).catch(() => file);
-    this.labelScanApi.scan(forModel).subscribe({
+    const forModel = this.scanEnabled() ? await downscaleImage(file, this.scanMaxEdge).catch(() => file) : null;
+    this.labelScanApi.scan(forModel, codes).subscribe({
       next: (result) => {
         this.scanning.set(false);
         this.labelPhoto = file;
@@ -474,6 +497,16 @@ export class DeviceFormPageComponent implements OnInit {
     take('Serial', 'serialNumber', f.serialNumber);
 
     if (f.productType) chips.push(`Type: ${f.productType}`);
+    for (const c of result.codes ?? []) {
+      const reg = c.registry;
+      chips.push(
+        reg?.productName
+          ? `Matter registry: ${[reg.vendorName, reg.productName].filter(Boolean).join(' ')}`
+          : c.summary.length > 70
+            ? c.summary.slice(0, 67) + '…'
+            : c.summary
+      );
+    }
     if (!this.model.name.trim()) {
       const name = [f.brand ?? f.manufacturer, f.productType ?? f.model]
         .filter(Boolean)
