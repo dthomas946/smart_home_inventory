@@ -1,5 +1,5 @@
 import { AiSettingsService } from '../settings/ai-settings.service';
-import { LabelScanService, mergeFields } from './label-scan.service';
+import { brandFromRegistry, LabelScanService, mergeFields } from './label-scan.service';
 import { MatterDclService } from './matter-dcl.service';
 
 const ai = {
@@ -26,6 +26,7 @@ describe('LabelScanService with codes', () => {
     const r = await svc.scan(null, null, ['MT:Y.K9042C00KA0648G00', 'https://example.com/p/1']);
     expect(dcl.lookup).toHaveBeenCalledWith(0xfff1, 0x8000);
     expect(r.fields.brand).toBe('Onvis');
+    expect(r.fields.manufacturer).toBe('Onvis');
     expect(r.fields.model).toBe('S4-US');
     expect(r.links.map((l) => l.label)).toEqual(['Manual (Matter registry)', 'Link from QR code']);
     expect(r.codes).toHaveLength(2);
@@ -54,5 +55,18 @@ describe('mergeFields', () => {
     expect(m.model).toBe('FRSS2623AS');
     expect(m.serialNumber).toBe('4A12345');
     expect(m.electrical.voltage).toBe('115V');
+  });
+});
+
+describe('brandFromRegistry', () => {
+  it('splits an OEM registrant from the brand in the product name', () => {
+    expect(brandFromRegistry('ChampOn', 'Onvis Smart Plug S4')).toEqual({ brand: 'Onvis', manufacturer: 'ChampOn' });
+  });
+  it('keeps the registrant when the product name carries the same name', () => {
+    expect(brandFromRegistry('Level Home, Part of ASSA ABLOY', 'Level Bolt (Matter)')).toEqual({
+      brand: 'Level Home, Part of ASSA ABLOY',
+      manufacturer: 'Level Home, Part of ASSA ABLOY',
+    });
+    expect(brandFromRegistry('Eve Systems', 'Eve Energy')).toEqual({ brand: 'Eve Systems', manufacturer: 'Eve Systems' });
   });
 });

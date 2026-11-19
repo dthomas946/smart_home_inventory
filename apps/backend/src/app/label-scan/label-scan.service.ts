@@ -293,8 +293,10 @@ export class LabelScanService {
           if (p) {
             out.registry = { vendorName: p.vendorName, productName: p.productName, partNumber: p.partNumber };
             out.registryLine = `Matter registry: ${[p.vendorName, p.productName, p.partNumber ? `part ${p.partNumber}` : null].filter(Boolean).join(', ')}`;
+            const { brand, manufacturer } = brandFromRegistry(p.vendorName, p.productName);
             out.fields = {
-              brand: p.vendorName,
+              brand,
+              manufacturer,
               model: p.partNumber ?? p.productName,
               productType: p.productLabel ?? p.productName,
             };
@@ -354,11 +356,39 @@ export function mergeFields(ai: LabelScanFields | null, codes: Partial<LabelScan
   return {
     ...base,
     brand: codes.brand ?? base.brand,
-    manufacturer: base.manufacturer ?? (ai ? null : codes.brand ?? null),
+    manufacturer: base.manufacturer ?? codes.manufacturer ?? (ai ? null : codes.brand ?? null),
     model: codes.model ?? base.model,
     productType: codes.productType ?? base.productType,
     serialNumber: base.serialNumber ?? codes.serialNumber ?? null,
   };
+}
+
+/** First words of product names that describe the product, not a brand. */
+const GENERIC_PRODUCT_WORDS = new Set(
+  ('smart matter thread wifi wi-fi zigbee mini micro plug outlet socket light lamp led bulb strip switch dimmer ' +
+    'sensor motion contact door window water leak temperature climate air thermostat lock video camera doorbell ' +
+    'wireless outdoor indoor color colour white rgb rgbw rgbtw ultra pro max lite plus home hub bridge button ' +
+    'remote controller control power energy blind shade curtain fan heater purifier speaker display panel').split(' ')
+);
+
+/**
+ * The registry lists the company that certified the product, which is often
+ * an OEM (e.g. "ChampOn" for an "Onvis Smart Plug S4"). When the product name
+ * leads with a different name, that's the brand; the company is the maker.
+ */
+export function brandFromRegistry(
+  vendorName: string | null,
+  productName: string | null
+): { brand: string | null; manufacturer: string | null } {
+  const lead = productName?.trim().split(/\s+/)[0] ?? '';
+  const looksLikeBrand =
+    /^[A-Z][A-Za-z0-9&'.-]{2,}$/.test(lead) &&
+    !GENERIC_PRODUCT_WORDS.has(lead.toLowerCase()) &&
+    (productName?.trim().split(/\s+/).length ?? 0) > 1;
+  if (vendorName && looksLikeBrand && !vendorName.toLowerCase().includes(lead.toLowerCase())) {
+    return { brand: lead, manufacturer: vendorName };
+  }
+  return { brand: vendorName, manufacturer: vendorName };
 }
 
 function dedupeLinks(links: LabelScanLinkDto[]): LabelScanLinkDto[] {

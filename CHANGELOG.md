@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1
+
+- Matter registry results now split brand from manufacturer when the product was certified by an OEM: "Onvis Smart Plug S4" registered by ChampOn fills brand **Onvis**, manufacturer **ChampOn**.
+
 ## 0.10.0
 
 - **Scan label reads QR codes and barcodes.** The browser finds codes in the photo (built-in barcode reader where available, otherwise a QR library) before anything is sent.
